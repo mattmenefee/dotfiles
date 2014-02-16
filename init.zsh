@@ -11,6 +11,10 @@ fi
 #  ln -s ~/.dotfiles/gvimrc ~/.gvimrc
 #fi
 
+if [ ! -e ~/.gitignore_global ]; then
+  ln -s ~/.dotfiles/gitignore_global ~/.gitignore_global
+fi
+
 # gemrc
 if [ ! -e ~/.gemrc ]; then
   ln -s ~/.dotfiles/gemrc ~/.gemrc

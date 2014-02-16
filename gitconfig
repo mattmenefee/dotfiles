@@ -1,0 +1,32 @@
+[user]
+	name =
+	email =
+[core]
+	excludesfile = /Users/matt/.gitignore_global
+	editor = /usr/local/bin/mvim -v
+[alias]
+	co = checkout
+	br = branch
+	st = status
+	ci = commit
+	springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
+[credential]
+	helper = osxkeychain
+[merge]
+	tool = diffmerge
+[mergetool "diffmerge"]
+	cmd = "diffmerge --merge --result=\"$MERGED\" \"$LOCAL\" \"$(if test -f \"$BASE\"; then echo \"$BASE\"; else echo \"$LOCAL\"; fi)\" \"$REMOTE\""
+	trustExitCode = true
+[mergetool]
+	keepBackup = false
+[diff]
+	tool = diffmerge
+[difftool "diffmerge"]
+	cmd = diffmerge $LOCAL $REMOTE
+[pull]
+  rebase = true
+[color]
+	ui = true
+[filter "media"]
+	clean = git-media-clean %f
+	smudge = git-media-smudge %f
