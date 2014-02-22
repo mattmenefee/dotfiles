@@ -15,7 +15,7 @@ set incsearch     " do incremental searching
 set laststatus=2  " Always display the status line
 
 " Declare bundles are handled via Vundle
-filetype off " required!
+filetype on " required!
 set rtp+=~/.vim/bundle/vundle/
 call vundle#rc()
 
@@ -93,6 +93,9 @@ set switchbuf=useopen
 set virtualedit=block
 set number
 set list
+
+" Open Markdown files in Chrome via F5
+autocmd BufEnter *.md exe 'noremap <F5> :!open -a "Google Chrome.app" %:p<CR>'
 
 " More natural vim splits
 " Ctrl+[direction keys] to move between splits
