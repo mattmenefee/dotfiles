@@ -7,10 +7,14 @@
 [alias]
 	co = checkout
 	br = branch
-	st = status
+	st = status -s
 	ci = commit
 	springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
         g = grep --break --heading --line-number
+        df = diff
+        dc = diff --cached
+        lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+
 [credential]
 	helper = osxkeychain
 [merge]
