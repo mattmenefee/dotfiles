@@ -59,7 +59,6 @@ Bundle 'tpope/vim-haml'
 Bundle 'jelera/vim-javascript-syntax'
 Bundle 'nathanaelkane/vim-indent-guides'
 Bundle 'Raimondi/delimitMate'
-Bundle 'Valloric/YouCompleteMe'
 Bundle 'marijnh/tern_for_vim'
 
 " NOTE: check docs for additional installation steps for YouCompleteMe
@@ -135,13 +134,6 @@ au BufRead,BufNewFile *.md setlocal spell
 
 " Automatically wrap at 80 characters for Markdown
 au BufRead,BufNewFile *.md setlocal textwidth=80
-
-" These are the tweaks I apply to YouCopmleteMe's config, you don't need them but they
-" might help. YCM gives you popups and splits by default that some people might not
-" like, so these should tidy it up a bit for you.
-let g:ycm_add_preview_to_completeopt=0
-let g:ycm_confirm_extra_conf=0
-set completeopt-=preview
 
 
 " Stuff from Paul below:
