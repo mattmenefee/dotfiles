@@ -125,6 +125,8 @@ let g:html_indent_tags = 'li\|p'
 
 " Display extra whitespace
 set list listchars=tab:»·,trail:·
+" Remove trailing whitespace on save
+autocmd BufWritePre * :%s/\s\+$//e
 
 " Markdown files end in .md
 au BufRead,BufNewFile *.md set filetype=markdown
@@ -135,6 +137,8 @@ au BufRead,BufNewFile *.md setlocal spell
 " Automatically wrap at 80 characters for Markdown
 au BufRead,BufNewFile *.md setlocal textwidth=80
 
+" Auto-lint Sass files
+let g:syntastic_scss_checkers = ['scss_lint']
 
 " Stuff from Paul below:
 
