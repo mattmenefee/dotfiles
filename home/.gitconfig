@@ -1,37 +1,36 @@
 [user]
-	name =
-	email =
+  name =
+  email =
 [core]
-	excludesfile = /Users/matt/.gitignore_global
-	editor = /usr/local/bin/mvim -v
+  excludesfile = ~/.gitignore_global
+  editor = /usr/local/bin/mvim -v
 [alias]
-	co = checkout
-	br = branch
-	st = status -s
-	ci = commit
-	springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
-        g = grep --break --heading --line-number
-        df = diff
-        dc = diff --cached
-        lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-
+  co = checkout
+  br = branch
+  st = status -s
+  ci = commit
+  springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
+    g = grep --break --heading --line-number
+    df = diff
+    dc = diff --cached
+    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
 [credential]
-	helper = osxkeychain
+  helper = osxkeychain
 [merge]
-	tool = diffmerge
+  tool = diffmerge
 [mergetool "diffmerge"]
-	cmd = "diffmerge --merge --result=\"$MERGED\" \"$LOCAL\" \"$(if test -f \"$BASE\"; then echo \"$BASE\"; else echo \"$LOCAL\"; fi)\" \"$REMOTE\""
-	trustExitCode = true
+  cmd = "diffmerge --merge --result=\"$MERGED\" \"$LOCAL\" \"$(if test -f \"$BASE\"; then echo \"$BASE\"; else echo \"$LOCAL\"; fi)\" \"$REMOTE\""
+  trustExitCode = true
 [mergetool]
-	keepBackup = false
+  keepBackup = false
 [diff]
-	tool = diffmerge
+  tool = diffmerge
 [difftool "diffmerge"]
-	cmd = diffmerge $LOCAL $REMOTE
+  cmd = diffmerge $LOCAL $REMOTE
 [pull]
   rebase = true
 [color]
-	ui = true
+  ui = true
 [filter "media"]
-	clean = git-media-clean %f
-	smudge = git-media-smudge %f
+  clean = git-media-clean %f
+  smudge = git-media-smudge %f
