@@ -1,8 +1,18 @@
 dotfiles
 ========
 
-Installation:
+dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 
-    git clone git://github.com/mattmenefee/dotfiles.git ~/.dotfiles
+### Installation
+
+1. Setup homesick and symlick dotfiles:
+```
+    gem install homesick
+    homesick clone mattmenefee/dotfiles
+    homesick symlink dotfiles
+```
+2. Install Vundle
+```
     cd ~/.dotfiles
     zsh init.zsh
+```
