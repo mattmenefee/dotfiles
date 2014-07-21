@@ -15,7 +15,7 @@ set incsearch     " do incremental searching
 set laststatus=2  " Always display the status line
 
 " Declare bundles are handled via Vundle
-filetype on " required!
+filetype off " must be off for Bundle declarations
 set rtp+=~/.vim/bundle/vundle/
 call vundle#rc()
 
@@ -60,12 +60,15 @@ Bundle 'jelera/vim-javascript-syntax'
 Bundle 'nathanaelkane/vim-indent-guides'
 Bundle 'Raimondi/delimitMate'
 Bundle 'marijnh/tern_for_vim'
+Bundle 'rking/ag.vim'
 
 " NOTE: check docs for additional installation steps for YouCompleteMe
 
+syntax enable
+syntax on " are both of these necessary?
+
 filetype plugin indent on
 
-syntax enable
 colorscheme railscasts
 
 map QQ :q<CR>
@@ -175,4 +178,3 @@ let @r="require 'ruby-debug';debugger"
 map <F3> :%s/>\s*</>\r</g<CR>:set ft=xml<CR>gg=G
 " re-indent json
 map <F4> :%s/{/{\r/g<CR>:%s/}/\r}/g<CR>:%s/,/,\r/g<CR>:set ft=javascript<CR>gg=G
-Bundle 'rking/ag.vim'
