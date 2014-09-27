@@ -13,6 +13,8 @@ alias gst='git status'
 alias ta='tmux -2 attach || tn'
 alias be="bundle exec"
 alias bi="bundle install"
+alias bo="bundle outdated"
+alias bu="bundle update"
 alias gg='git goggles'
 alias vim='mvim -v'
 
