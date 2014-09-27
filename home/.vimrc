@@ -91,7 +91,7 @@ set confirm
 set expandtab
 set hlsearch
 set ignorecase
-set pastetoggle=<F5>
+set pastetoggle=<F2>
 set scrolloff=7
 set shiftwidth=2
 set shortmess=atI
