@@ -5,10 +5,19 @@
   excludesfile = ~/.gitignore_global
   editor = /usr/local/bin/mvim -v
 [alias]
+  a = commit --amend
   co = checkout
+  cob = checkout -b
   br = branch
+  ec = config --global -e
   st = status -s
   ci = commit
+  undo = reset HEAD~1 --mixed
+  up = pull --rebase --prune
+  wip = !git add -A && git commit -m "WIP"
+  wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
+  bclean = "!f() { git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs -r git branch -d; }; f"
+  bdone = "!f() { git checkout ${1-master} && git up && git bclean ${1-master}; }; f"
   springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
     g = grep --break --heading --line-number
     df = diff
@@ -32,5 +41,6 @@
 [color]
   ui = true
 [filter "media"]
-  clean = git-media-clean %f
-  smudge = git-media-smudge %f
+  required = true
+  clean = git media clean %f
+  smudge = git media smudge %f
