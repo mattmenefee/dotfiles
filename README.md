@@ -55,4 +55,7 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 
   # Bundler
   $ gem update bundler
+  
+  # Dotfiles via Homesick
+  $ homesick pull --all
 ```
