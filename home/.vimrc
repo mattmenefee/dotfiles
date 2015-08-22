@@ -143,6 +143,9 @@ au BufRead,BufNewFile *.md setlocal textwidth=80
 " Auto-lint Sass files
 let g:syntastic_scss_checkers = ['scss_lint']
 
+" Spell checking and automatic wrapping at the recommended 72 columns
+autocmd Filetype gitcommit setlocal spell textwidth=72
+
 " Stuff from Paul below:
 
 
