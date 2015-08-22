@@ -49,5 +49,5 @@ export PATH="$HOME/.rbenv/bin:$PATH"
 export PATH="$PATH:/usr/local/sbin"
 eval "$(rbenv init -)"
 
-# Configure your Docker host to point to your boot2docker image
-$(boot2docker shellinit)
+# Export the Docker environment variables to the shell
+eval "$(docker-machine env dev)"
