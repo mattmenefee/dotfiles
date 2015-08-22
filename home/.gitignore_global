@@ -45,3 +45,5 @@ Thumbs.db
 # RBENV generated files #
 ######################
 .ruby-version
+
+.env.local
