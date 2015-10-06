@@ -15,53 +15,50 @@ brew coreutils
 #sudo ln -s /usr/local/bin/gsha256sum /usr/local/bin/sha256sum
 
 # Install frequently used tools
-brew ack
-brew apple-gcc42
-brew direnv
-brew elasticsearch
-brew ffmpeg
-brew gitsh
-brew gource
-brew graphviz
-brew hub
-brew imagemagick
+# brew ack
+# brew apple-gcc42
+# brew direnv
+# brew elasticsearch
+# brew ffmpeg
+# brew gitsh
+# brew gource
+# brew graphviz
+# brew hub
+# brew imagemagick
 brew macvim
-brew phantomjs
-brew python
-brew qt
+# brew phantomjs
+# brew python
+# brew qt
 brew rbenv-gem-rehash
-brew redis
-brew ruby-build
-brew ssh-copy-id
-brew the_silver_searcher
-brew unrar
-brew rbenv-gem-rehash
+# brew redis
+# brew ruby-build
+# brew ssh-copy-id
+# brew the_silver_searcher
+# brew unrar
 
-cask dropbox 2> /dev/null
-cask google-chrome 2> /dev/null
-cask google-chrome-canary 2> /dev/null
-cask imagealpha 2> /dev/null
-cask imageoptim 2> /dev/null
-cask iterm2 2> /dev/null
-cask macvim 2> /dev/null
-cask sublime-text 2> /dev/null
-cask the-unarchiver 2> /dev/null
-cask transmission 2> /dev/null
-cask virtualbox 2> /dev/null
-cask vlc 2> /dev/null
-cask quicklook-json
-cask vagrant
+# cask dropbox
+# cask google-chrome
+# cask imagealpha
+# cask imageoptim
+# cask iterm2
+# cask sublime-text 2
+# cask the-unarchiver
+# cask transmission
+# cask virtualbox
+# cask vlc
+# cask quicklook-json
+# cask vagrant
 
 # Install more recent versions of some OS X tools
 brew vim --override-system-vi
-brew homebrew/dupes/grep
-brew homebrew/dupes/screen
+# brew homebrew/dupes/grep
+# brew homebrew/dupes/screen
 
 # Install other useful binaries
 brew git
 # brew imagemagick --with-webp
-brew node # This brews `npm` too using the recommended installation method
-brew p7zip
+# brew node # This brews `npm` too using the recommended installation method
+# brew p7zip
 
 # Remove outdated versions from the cellar
 cleanup
