@@ -50,4 +50,4 @@ export PATH="$PATH:/usr/local/sbin"
 eval "$(rbenv init -)"
 
 # Export the Docker environment variables to the shell
-eval "$(docker-machine env dev)"
+eval "$(docker-machine env default)"
