@@ -6,17 +6,20 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 ### Installation
 
 1. Setup homebrew
+
 ```bash
   $ ruby -e "$(curl -fsSkL raw.github.com/mxcl/homebrew/go)"
 ```
 
-1. Install command-line tools using Homebrew and Brew-Cask
+1. Install command-line tools using Homebrew
+
 ```bash
   $ brew bundle ~/Brewfile
   $ brew bundle ~/Caskfile
 ```
 
 1. Setup homesick and symlick dotfiles:
+
 ```bash
   $ gem install homesick
   $ homesick clone mattmenefee/dotfiles
@@ -24,12 +27,14 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 ```
 
 1. Install Vundle
+
 ```bash
   $ cd ~/.dotfiles
   $ zsh init.zsh
 ```
 
 1. Install default gems
+
 ```bash
   $ gem install bundler
   $ gem install awesome_print
@@ -37,6 +42,7 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 ```
 
 1. Setup Git config
+
 ```bash
   # Insert appropriate values
   $ git config --global user.name "$GIT_AUTHOR_NAME"
@@ -47,15 +53,15 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 
 ```bash
   # Homebrew
-  $ brew update && brew upgrade brew-cask && brew cleanup && brew cask cleanup
-  $ brew doctor && brew cask doctor
+  $ brew update && brew upgrade && brew cleanup
+  $ brew doctor
 
   # RubyGems
   $ gem update --system
 
   # Bundler
   $ gem update bundler
-  
+
   # Dotfiles via Homesick
   $ homesick pull --all
 ```
