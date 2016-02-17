@@ -143,6 +143,9 @@ au BufRead,BufNewFile *.md setlocal textwidth=80
 " Auto-lint Sass files
 let g:syntastic_scss_checkers = ['scss_lint']
 
+" Specify coffeelint config options
+let coffee_lint_options = '-f config/coffeelint.json'
+
 " Spell checking and automatic wrapping at the recommended 72 columns
 autocmd Filetype gitcommit setlocal spell textwidth=72
 
