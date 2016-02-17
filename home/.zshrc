@@ -17,6 +17,8 @@ alias bo="bundle outdated"
 alias bu="bundle update"
 alias gg='git goggles'
 alias vim='mvim -v'
+alias dc='docker-compose'
+alias dcsp='docker-compose run --service-ports --rm web'
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
@@ -50,4 +52,7 @@ export PATH="$PATH:/usr/local/sbin"
 eval "$(rbenv init -)"
 
 # Export the Docker environment variables to the shell
-eval "$(docker-machine env dev)"
+eval "$(docker-machine env default)"
+
+# Use overcommit for all repositories created/cloned going forward
+export GIT_TEMPLATE_DIR=`overcommit --template-dir`
