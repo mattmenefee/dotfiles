@@ -162,6 +162,15 @@ let coffee_lint_options = '-f config/coffeelint.json'
 " Spell checking and automatic wrapping at the recommended 72 columns
 autocmd Filetype gitcommit setlocal spell textwidth=72
 
+" RSpec.vim mappings
+let g:rspec_runner = "os_x_iterm"
+" let g:rspec_command = "!bin/rspec {spec}"
+let g:rspec_command = "Dispatch bin/rspec {spec}"
+map <Leader>t :call RunCurrentSpecFile()<CR>
+map <Leader>s :call RunNearestSpec()<CR>
+map <Leader>l :call RunLastSpec()<CR>
+map <Leader>a :call RunAllSpecs()<CR>
+
 " Stuff from Paul below:
 
 
