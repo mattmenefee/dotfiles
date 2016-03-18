@@ -1,4 +1,67 @@
-" To update run :BundleInstall or vim +BundleInstall +qall
+set nocompatible              " be iMproved, required
+filetype off                  " required
+
+" set the runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+
+" let Vundle manage Vundle, required
+Plugin 'VundleVim/Vundle.vim'
+
+Plugin 'Align'
+Plugin 'DirDiff.vim'
+Plugin 'fugitive.vim'
+Plugin 'jQuery'
+Plugin 'matchit.zip'
+Plugin 'ruby-matchit'
+Plugin 'surround.vim'
+Plugin 'Tabular'
+Plugin 'textobj-rubyblock'
+Plugin 'textobj-user'
+Plugin 'DrawIt'
+Plugin 'Markdown'
+Plugin 'Rename'
+Plugin 'ervandew/supertab'
+Plugin 'pangloss/vim-javascript'
+Plugin 'jgdavey/vim-turbux'
+Plugin 'jgdavey/tslime.vim'
+Plugin 'scrooloose/nerdcommenter'
+Plugin 'scrooloose/nerdtree'
+Plugin 'scrooloose/syntastic'
+Plugin 'jpo/vim-railscasts-theme'
+Plugin 'flazz/vim-colorschemes'
+Plugin 'tpope/vim-rails.git'
+Plugin 'tpope/vim-eunuch.git'
+Plugin 'vim-coffee-script'
+Plugin 'tpope/vim-dispatch'
+Plugin 'tpope/vim-endwise'
+Plugin 'airblade/vim-gitgutter'
+Plugin 'nono/vim-handlebars'
+Plugin 'bogado/file-line'
+Plugin 'tpope/vim-haml'
+Plugin 'jelera/vim-javascript-syntax'
+Plugin 'nathanaelkane/vim-indent-guides'
+Plugin 'Raimondi/delimitMate'
+Plugin 'marijnh/tern_for_vim'
+Plugin 'rking/ag.vim'
+Plugin 'thoughtbot/vim-rspec'
+
+" TODO: check docs for additional installation steps for YouCompleteMe
+
+" All of your Plugins must be added before the following line
+call vundle#end()            " required
+filetype plugin indent on    " required
+" To ignore plugin indent changes, instead use:
+"filetype plugin on
+"
+" Brief help
+" :PluginList       - lists configured plugins
+" :PluginInstall    - installs plugins; append `!` to update or just :PluginUpdate
+" :PluginSearch foo - searches for foo; append `!` to refresh local cache
+" :PluginClean      - confirms removal of unused plugins; append `!` to auto-approve removal
+"
+" see :h vundle for more details or wiki for FAQ
+" Put your non-Plugin stuff after this line
 
 " Leader
 let mapleader = " "
@@ -13,56 +76,6 @@ set ruler         " show the cursor position all the time
 set showcmd       " display incomplete commands
 set incsearch     " do incremental searching
 set laststatus=2  " Always display the status line
-
-" Declare bundles are handled via Vundle
-filetype off " must be off for Bundle declarations
-set rtp+=~/.vim/bundle/vundle/
-call vundle#rc()
-
-" Let Vundle manage Vundle
-Bundle 'gmarik/vundle'
-
-" Define bundles via ?
-Bundle 'Align'
-Bundle 'DirDiff.vim'
-Bundle 'fugitive.vim'
-Bundle 'jQuery'
-Bundle 'matchit.zip'
-Bundle 'ruby-matchit'
-Bundle 'surround.vim'
-Bundle 'Tabular'
-Bundle 'textobj-rubyblock'
-Bundle 'textobj-user'
-Bundle 'DrawIt'
-Bundle 'Markdown'
-Bundle 'Rename'
-
-" Define bundles via Github repos
-Bundle 'ervandew/supertab'
-Bundle 'pangloss/vim-javascript'
-Bundle 'jgdavey/vim-turbux'
-Bundle 'jgdavey/tslime.vim'
-Bundle 'scrooloose/nerdcommenter'
-Bundle 'scrooloose/nerdtree'
-Bundle 'scrooloose/syntastic'
-Bundle 'jpo/vim-railscasts-theme'
-Bundle 'flazz/vim-colorschemes'
-Bundle 'tpope/vim-rails.git'
-Bundle 'tpope/vim-eunuch.git'
-Bundle 'vim-coffee-script'
-Bundle 'tpope/vim-dispatch'
-Bundle 'tpope/vim-endwise'
-Bundle 'airblade/vim-gitgutter'
-Bundle 'nono/vim-handlebars'
-Bundle 'bogado/file-line'
-Bundle 'tpope/vim-haml'
-Bundle 'jelera/vim-javascript-syntax'
-Bundle 'nathanaelkane/vim-indent-guides'
-Bundle 'Raimondi/delimitMate'
-Bundle 'marijnh/tern_for_vim'
-Bundle 'rking/ag.vim'
-
-" NOTE: check docs for additional installation steps for YouCompleteMe
 
 syntax enable
 syntax on " are both of these necessary?
@@ -154,7 +167,7 @@ autocmd Filetype gitcommit setlocal spell textwidth=72
 
 cabbrev h vertical help
 
-" The following gives you a quick "git blame" on the hightlighted code
+" The following gives you a quick 'git blame' on the hightlighted code
 vmap gl :<C-U>!git blame <C-R>=expand("%:p") <CR> \| sed -n <C-R>=line("'<") <CR>,<C-R>=line("'>") <CR>p <CR>
 
 " `. - Goto last edit.
