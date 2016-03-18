@@ -1,6 +1,3 @@
-[user]
-  name =
-  email =
 [core]
   excludesfile = ~/.gitignore_global
   editor = /usr/local/bin/mvim -v
@@ -46,3 +43,9 @@
   smudge = git media smudge %f
 [rebase]
   autosquash = true
+[filter "lfs"]
+  clean = git-lfs clean %f
+  smudge = git-lfs smudge %f
+  required = true
+[include]
+  path = ~/.gitconfig.local
