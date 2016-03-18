@@ -179,6 +179,10 @@ let g:turbux_command_prefix = 'bundle exec'
 " hide hidden files by default
 let NERDTreeShowHidden=0
 
+" open a NERDTree automatically when vim starts up if no files were specified
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+
 let @r="require 'ruby-debug';debugger"
 " re-indent xml
 map <F3> :%s/>\s*</>\r</g<CR>:set ft=xml<CR>gg=G
