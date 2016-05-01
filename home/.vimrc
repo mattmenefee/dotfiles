@@ -45,8 +45,7 @@ Plugin 'Raimondi/delimitMate'
 Plugin 'marijnh/tern_for_vim'
 Plugin 'rking/ag.vim'
 Plugin 'thoughtbot/vim-rspec'
-
-" TODO: check docs for additional installation steps for YouCompleteMe
+Plugin 'mtscout6/vim-cjsx'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
