@@ -20,6 +20,11 @@ alias gg='git goggles'
 alias vim='mvim -v'
 alias dc='docker-compose'
 alias dcsp='docker-compose run --service-ports --rm web'
+alias dockercleancontainers="docker ps -aq | xargs docker rm"
+alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
+alias dockerclean="dockercleancontainers && dockercleanimages"
+alias docker-killall="docker ps -q | xargs docker kill"
+alias rrr="bin/rspec"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
