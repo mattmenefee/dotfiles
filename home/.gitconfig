@@ -1,14 +1,19 @@
 [core]
   excludesfile = ~/.gitignore_global
+  autocrlf = input
   editor = /usr/local/bin/mvim -v
 [alias]
   a = commit --amend
+  aa = add --all
+  ap = add --patch
+  br = branch
+  branches = for-each-ref --sort=-committerdate --format=\"%(color:blue)%(authordate:relative)\t%(color:red)%(authorname)\t%(color:white)%(color:bold)%(refname:short)\" refs/remotes
+  ci = commit -v
   co = checkout
   cob = checkout -b
-  br = branch
   ec = config --global -e
   st = status -s
-  ci = commit
+  pf = push --force-with-lease
   undo = reset HEAD~1 --mixed
   up = pull --rebase --prune
   wip = !git add -A && git commit -m "WIP"
@@ -23,6 +28,7 @@
 [credential]
   helper = osxkeychain
 [merge]
+  ff = only
   tool = diffmerge
 [mergetool "diffmerge"]
   cmd = "diffmerge --merge --result=\"$MERGED\" \"$LOCAL\" \"$(if test -f \"$BASE\"; then echo \"$BASE\"; else echo \"$LOCAL\"; fi)\" \"$REMOTE\""
@@ -33,6 +39,10 @@
   tool = diffmerge
 [difftool "diffmerge"]
   cmd = diffmerge $LOCAL $REMOTE
+[fetch]
+  prune = true
+[push]
+  default = current
 [pull]
   rebase = true
 [color]
