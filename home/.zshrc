@@ -25,6 +25,7 @@ alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
 alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
 alias rrr="bin/rspec"
+alias puma="bin/puma -C config/puma.rb"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
