@@ -10,7 +10,6 @@ ZSH_THEME="robbyrussell"
 
 # Example aliases
 alias e='exec'
-alias gst='git status'
 alias ta='tmux -2 attach || tn'
 alias be="bundle exec"
 alias bi="bundle install -j 8"
