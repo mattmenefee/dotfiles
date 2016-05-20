@@ -25,6 +25,7 @@ alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
 alias rrr="bin/rspec"
 alias puma="bin/puma -C config/puma.rb"
+alias cuc="bin/cucumber"
 alias subl="/Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl"
 
 # Set to this to use case-sensitive completion
