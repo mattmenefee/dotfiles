@@ -63,3 +63,5 @@
   browser = open
 [grep]
   extendRegexp = true
+[rerere]
+  enabled = true
