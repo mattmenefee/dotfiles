@@ -46,6 +46,7 @@ Plugin 'marijnh/tern_for_vim'
 Plugin 'rking/ag.vim'
 Plugin 'thoughtbot/vim-rspec'
 Plugin 'mtscout6/vim-cjsx'
+Plugin 'mxw/vim-jsx'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -158,6 +159,9 @@ let g:syntastic_scss_checkers = ['scss_lint']
 " Specify coffeelint config options
 let coffee_lint_options = '-f config/coffeelint.json'
 
+" Allow JSX in normal JS files
+let g:jsx_ext_required = 0
+"
 " Spell checking and automatic wrapping at the recommended 72 columns
 autocmd Filetype gitcommit setlocal spell textwidth=72
 
