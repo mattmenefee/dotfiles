@@ -156,6 +156,9 @@ au BufRead,BufNewFile *.md setlocal textwidth=80
 " Auto-lint Sass files
 let g:syntastic_scss_checkers = ['scss_lint']
 
+" Auto-lint React files
+let g:syntastic_javascript_checkers = ['eslint']
+
 " Specify coffeelint config options
 let coffee_lint_options = '-f config/coffeelint.json'
 
