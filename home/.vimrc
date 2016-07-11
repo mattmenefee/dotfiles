@@ -47,6 +47,7 @@ Plugin 'rking/ag.vim'
 Plugin 'thoughtbot/vim-rspec'
 Plugin 'mtscout6/vim-cjsx'
 Plugin 'mxw/vim-jsx'
+Plugin 'ap/vim-css-color'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
