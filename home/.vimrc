@@ -157,6 +157,9 @@ au BufRead,BufNewFile *.md setlocal textwidth=80
 " Auto-lint Sass files
 let g:syntastic_scss_checkers = ['scss_lint']
 
+" Auto-lint Haml files
+let g:syntastic_haml_checkers = ['haml_lint']
+
 " Auto-lint React files
 let g:syntastic_javascript_checkers = ['eslint']
 
