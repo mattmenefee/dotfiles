@@ -28,15 +28,15 @@ Plugin 'jgdavey/tslime.vim'
 Plugin 'scrooloose/nerdcommenter'
 Plugin 'scrooloose/nerdtree'
 Plugin 'scrooloose/syntastic'
+Plugin 'myint/syntastic-extras'
 Plugin 'jpo/vim-railscasts-theme'
 Plugin 'flazz/vim-colorschemes'
-Plugin 'tpope/vim-rails.git'
-Plugin 'tpope/vim-eunuch.git'
+Plugin 'tpope/vim-rails'
+Plugin 'tpope/vim-eunuch'
 Plugin 'vim-coffee-script'
 Plugin 'tpope/vim-dispatch'
 Plugin 'tpope/vim-endwise'
 Plugin 'airblade/vim-gitgutter'
-Plugin 'nono/vim-handlebars'
 Plugin 'bogado/file-line'
 Plugin 'tpope/vim-haml'
 Plugin 'jelera/vim-javascript-syntax'
@@ -163,6 +163,12 @@ let g:syntastic_haml_checkers = ['haml_lint']
 " Auto-lint React files
 let g:syntastic_javascript_checkers = ['eslint']
 
+" Auto-lint language check (via syntastic-extras)
+let g:syntastic_gitcommit_checkers = ['language_check']
+
+" Auto-lint YAML (via syntastic-extras)
+let g:syntastic_yaml_checkers = ['pyyaml']
+
 " Specify coffeelint config options
 let coffee_lint_options = '-f config/coffeelint.json'
 
@@ -213,6 +219,8 @@ let g:turbux_command_prefix = 'bundle exec'
 
 " hide hidden files by default
 let NERDTreeShowHidden=0
+
+let g:NERDTreeHijackNetrw=1
 
 " open a NERDTree automatically when vim starts up if no files were specified
 autocmd StdinReadPre * let s:std_in=1
