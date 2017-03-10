@@ -31,6 +31,7 @@ Plugin 'scrooloose/syntastic'
 Plugin 'myint/syntastic-extras'
 Plugin 'jpo/vim-railscasts-theme'
 Plugin 'flazz/vim-colorschemes'
+Plugin 'tpope/vim-cucumber'
 Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-eunuch'
 Plugin 'vim-coffee-script'
@@ -48,6 +49,7 @@ Plugin 'thoughtbot/vim-rspec'
 Plugin 'mtscout6/vim-cjsx'
 Plugin 'mxw/vim-jsx'
 Plugin 'ap/vim-css-color'
+Plugin 'rainerborene/vim-reek'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
