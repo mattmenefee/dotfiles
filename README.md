@@ -58,6 +58,9 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
   $ gem install bundler
   $ gem install awesome_print
   $ gem install proxylocal
+  $ gem install gem_updater
+  $ gem install transpec
+  $ gem install mailcatcher
 ```
 
 1. Setup Git config
