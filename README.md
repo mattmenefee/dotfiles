@@ -43,7 +43,6 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 ```bash
   $ cd ~/.homesick/repos/dotfiles/
   $ brew bundle
-  $ brew bundle ~/.homesick/repos/dotfiles/Caskfile
 ```
 
 1. Install Vundle

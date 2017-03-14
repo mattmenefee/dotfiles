@@ -1,53 +1,142 @@
-# Install command-line tools using Homebrew
-# Usage: `brew bundle Brewfile`
-
-# Make sure we’re using the latest Homebrew
-update
-
-# Upgrade any already-installed formulae
-upgrade
-
-# Install GNU core utilities (those that come with OS X are outdated)
-# Don’t forget to add `$(brew --prefix coreutils)/libexec/gnubin` to `$PATH`.
-install coreutils
-#sudo ln -s /usr/local/bin/gsha256sum /usr/local/bin/sha256sum
-
-# Install frequently used tools
-install ack
-install apple-gcc42
-install direnv
-install elasticsearch
-install ffmpeg
-install gitsh
-install gource
-install graphviz
-install hub
-install imagemagick
-install macvim
-install phantomjs
-install python
-install qt
-install rbenv-gem-rehash
-install redis
-install ruby-build
-install ssh-copy-id
-install the_silver_searcher
-install unrar
-
-# Install more recent versions of some OS X tools
-install vim --override-system-vi
-install homebrew/dupes/grep
-install homebrew/dupes/screen
-
-# Install other useful binaries
-install ack
-install git
-install imagemagick --with-webp
-install node # This installs `npm` too using the recommended installation method
-install p7zip
-
-# Remove outdated versions from the cellar
-cleanup
-
-# Make sure everything is installed properly
-doctor
+tap 'caskroom/cask'
+tap 'homebrew/bundle'
+tap 'homebrew/core'
+tap 'homebrew/dupes'
+tap 'homebrew/fuse'
+tap 'homebrew/services'
+tap 'homebrew/versions'
+tap 'jappievw/kibana'
+tap 'thoughtbot/formulae'
+cask 'java'
+cask 'xquartz'
+brew 'ack'
+brew 'docbook'
+brew 'asciidoc'
+brew 'gdbm'
+brew 'openssl', args: ['universal']
+brew 'readline'
+brew 'sqlite'
+brew 'python'
+brew 'libxml2'
+brew 'augeas'
+brew 'autoconf'
+brew 'automake'
+brew 'cabextract'
+brew 'dialog'
+brew 'openssl@1.1'
+brew 'certbot'
+brew 'gmp@4'
+brew 'isl@0.12'
+brew 'cloog'
+brew 'cmake'
+brew 'cscope'
+brew 'direnv'
+brew 'dnsmasq'
+brew 'git'
+brew 'docker'
+brew 'docker-machine'
+brew 'libyaml'
+brew 'docker-compose'
+brew 'elasticsearch'
+brew 'faac'
+brew 'fdk-aac'
+brew 'lame'
+brew 'x264'
+brew 'xvid'
+brew 'ffmpeg', args: ['with-fdk-aac']
+brew 'libpng', args: ['universal']
+brew 'freetype', args: ['universal']
+brew 'fontconfig', args: ['universal']
+brew 'fpp'
+brew 'freexl'
+brew 'jpeg', args: ['universal']
+brew 'libtiff', args: ['universal']
+brew 'webp'
+brew 'gd', args: ['universal']
+brew 'geos'
+brew 'giflib'
+brew 'json-c'
+brew 'lzlib'
+brew 'proj'
+brew 'libgeotiff'
+brew 'liblwgeom'
+brew 'libspatialite'
+brew 'pcre'
+brew 'gdal'
+brew 'gettext'
+brew 'glew'
+brew 'libffi'
+brew 'glib'
+brew 'glm'
+brew 'gmp'
+brew 'gpp'
+brew 'libtool', args: ['universal']
+brew 'graphviz'
+brew 'hub'
+brew 'icu4c'
+brew 'xz', args: ['universal']
+brew 'imagemagick'
+brew 'isl'
+brew 'jasper', args: ['universal']
+brew 'kibana'
+brew 'libevent'
+brew 'libexif'
+brew 'libgpg-error'
+brew 'libusb', args: ['universal']
+brew 'libusb-compat', args: ['universal']
+brew 'libgphoto2', args: ['universal']
+brew 'libicns', args: ['universal']
+brew 'libksba'
+brew 'mpfr'
+brew 'libmpc'
+brew 'libvo-aacenc'
+brew 'libxslt'
+brew 'little-cms2', args: ['universal']
+brew 'macvim'
+brew 'makedepend'
+brew 'mercurial'
+brew 'net-snmp'
+brew 'nmap'
+brew 'node'
+brew 'ossp-uuid'
+brew 'p7zip'
+brew 'postgresql'
+brew 'pgcli'
+brew 'phantomjs'
+brew 'pkg-config'
+brew 'qt5'
+brew 'ruby-build'
+brew 'rbenv'
+brew 'redis'
+brew 'sane-backends', args: ['universal']
+brew 'scons'
+brew 'sdl'
+brew 'sdl2'
+brew 'sdl2_image'
+brew 'sdl_image'
+brew 'shellcheck'
+brew 'ssh-copy-id'
+brew 'texi2html'
+brew 'the_silver_searcher'
+brew 'tig'
+brew 'tmux'
+brew 'unrar'
+brew 'utf8proc'
+brew 'yasm'
+brew 'homebrew/dupes/apple-gcc42'
+brew 'homebrew/fuse/sshfs'
+brew 'thoughtbot/formulae/gitsh'
+cask 'betterzipql'
+cask 'jet'
+cask 'mono-mdk'
+cask 'qlcolorcode'
+cask 'qlmarkdown'
+cask 'qlprettypatch'
+cask 'qlstephen'
+cask 'quicklook-csv'
+cask 'quicklook-json'
+cask 'sonarr'
+cask 'suspicious-package'
+cask 'vagrant'
+cask 'webp-quicklook'
+cask 'google-chrome'
