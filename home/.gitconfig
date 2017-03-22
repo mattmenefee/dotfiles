@@ -11,6 +11,7 @@
   ci = commit -v
   co = checkout
   cob = checkout -b
+  cp = cherry-pick
   dc = diff --cached
   df = diff
   ec = config --global -e
@@ -65,3 +66,5 @@
   extendRegexp = true
 [rerere]
   enabled = true
+[status]
+  showUntrackedFiles = all
