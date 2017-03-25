@@ -1,5 +1,7 @@
-set nocompatible              " be iMproved, required
-filetype off                  " required
+" RULE #1: Don't put any lines in your vimrc that you don't understand
+
+set nocompatible " be iMproved, required
+filetype off " required
 
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
@@ -68,8 +70,8 @@ filetype plugin indent on    " required
 
 " Leader
 let mapleader = " "
-"let mapleader = ',' 'from Paul
 
+set backspace=2   " Backspace deletes like most programs in insert mode
 set nocompatible  " Use Vim settings, rather then Vi settings
 set nobackup
 set nowritebackup
@@ -79,6 +81,31 @@ set ruler         " show the cursor position all the time
 set showcmd       " display incomplete commands
 set incsearch     " do incremental searching
 set laststatus=2  " Always display the status line
+set autowrite     " Automatically :write before running commands
+
+" Softtabs, 2 spaces
+set tabstop=2
+set shiftwidth=2
+set shiftround
+set expandtab
+
+
+set autoindent
+set autoread
+set autowrite
+set confirm
+set hlsearch
+set ignorecase
+set pastetoggle=<F2>
+set scrolloff=7
+set shortmess=atI
+set showmatch
+set sidescroll=8
+set softtabstop=2
+set switchbuf=useopen
+set virtualedit=block
+set number
+set list
 
 syntax enable
 syntax on " are both of these necessary?
@@ -99,25 +126,6 @@ command T tabedit README
 inoremap <C-F> <C-X><C-F>
 inoremap <C-L> <C-X><C-L>
 
-set autoindent
-set autoread
-set autowrite
-set backspace=indent,eol,start
-set confirm
-set expandtab
-set hlsearch
-set ignorecase
-set pastetoggle=<F2>
-set scrolloff=7
-set shiftwidth=2
-set shortmess=atI
-set showmatch
-set sidescroll=8
-set softtabstop=2
-set switchbuf=useopen
-set virtualedit=block
-set number
-set list
 
 " Open Markdown files in Chrome via F5
 autocmd BufEnter *.md exe 'noremap <F5> :!open -a "Google Chrome.app" %:p<CR>'
@@ -176,8 +184,12 @@ let coffee_lint_options = '-f config/coffeelint.json'
 
 " Allow JSX in normal JS files
 let g:jsx_ext_required = 0
-"
-" Spell checking and automatic wrapping at the recommended 72 columns
+
+" show hidden files by default
+let NERDTreeShowHidden = 1
+
+" Git commit message spell checking and automatic wrapping at the
+" recommended 72 columns
 autocmd Filetype gitcommit setlocal spell textwidth=72
 
 " RSpec.vim mappings
@@ -192,44 +204,26 @@ map <Leader>a :call RunAllSpecs()<CR>
 " Allow copy/paste to work with OS X clipboard
 set clipboard=unnamed
 
-" Stuff from Paul below:
-
-
-cabbrev h vertical help
-
-" The following gives you a quick 'git blame' on the hightlighted code
-vmap gl :<C-U>!git blame <C-R>=expand("%:p") <CR> \| sed -n <C-R>=line("'<") <CR>,<C-R>=line("'>") <CR>p <CR>
-
-" `. - Goto last edit.
-
-autocmd User Rails Rnavcommand uploader app/uploaders -suffix=_uploader.rb -default=model()
-autocmd User Rails Rnavcommand steps features/step_definitions -suffix=_steps.rb -default=web
-autocmd User Rails Rnavcommand blueprint spec/blueprints -suffix=_blueprint.rb -default=model()
-autocmd User Rails Rnavcommand factory spec/factories -suffix=_factory.rb -default=model()
-autocmd User Rails Rnavcommand fabricator spec/fabricators -suffix=_fabricator.rb -default=model()
-autocmd User Rails Rnavcommand feature features -suffix=.feature -default=cucumber
-autocmd User Rails Rnavcommand acceptance acceptance -suffix=_spec.rb -default=model()
-autocmd User Rails Rnavcommand support spec/support features/support -default=env
-autocmd User Rails Rnavcommand report app/reports
-autocmd User Rails Rnavcommand import app/importers
-autocmd User Rails Rnavcommand export app/exporters
-
-map <Leader><Space> :nohlsearch<CR>
-map <Leader>, :%s/\s\+$//<CR>
-
-let g:turbux_command_prefix = 'bundle exec'
-
-" hide hidden files by default
-let NERDTreeShowHidden=0
-
-let g:NERDTreeHijackNetrw=1
-
 " open a NERDTree automatically when vim starts up if no files were specified
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
 
-let @r="require 'ruby-debug';debugger"
-" re-indent xml
-map <F3> :%s/>\s*</>\r</g<CR>:set ft=xml<CR>gg=G
-" re-indent json
-map <F4> :%s/{/{\r/g<CR>:%s/}/\r}/g<CR>:%s/,/,\r/g<CR>:set ft=javascript<CR>gg=G
+" Open help in vertical pane by default
+cabbrev h vertical help
+
+" Stuff from Paul below:
+
+" The following gives you a quick 'git blame' on the hightlighted code
+vmap gl :<C-U>!git blame <C-R>=expand("%:p") <CR> \| sed -n <C-R>=line("'<") <CR>,<C-R>=line("'>") <CR>p <CR>
+
+autocmd User Rails Rnavcommand uploader app/uploaders -suffix=_uploader.rb -default=model()
+autocmd User Rails Rnavcommand steps features/step_definitions -suffix=_steps.rb -default=web
+autocmd User Rails Rnavcommand factory spec/factories -suffix=_factory.rb -default=model()
+autocmd User Rails Rnavcommand feature features -suffix=.feature -default=cucumber
+autocmd User Rails Rnavcommand support spec/support features/support -default=env
+autocmd User Rails Rnavcommand report app/reports
+
+map <Leader><Space> :nohlsearch<CR>
+map <Leader>, :%s/\s\+$//<CR>
+
+let g:NERDTreeHijackNetrw=1
