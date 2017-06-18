@@ -126,6 +126,9 @@ command T tabedit README
 inoremap <C-F> <C-X><C-F>
 inoremap <C-L> <C-X><C-L>
 
+" Make `jj` and `jk` throw you into normal mode
+inoremap jj <esc>
+inoremap jk <esc>
 
 " Open Markdown files in Chrome via F5
 autocmd BufEnter *.md exe 'noremap <F5> :!open -a "Google Chrome.app" %:p<CR>'
