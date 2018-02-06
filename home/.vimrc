@@ -52,6 +52,8 @@ Plugin 'mtscout6/vim-cjsx'
 Plugin 'mxw/vim-jsx'
 Plugin 'ap/vim-css-color'
 Plugin 'rainerborene/vim-reek'
+" Plugin 'w0rp/ale' " conflicts with syntastic
+Plugin 'tpope/vim-repeat'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
