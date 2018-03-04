@@ -72,4 +72,5 @@ export EDITOR="mvim -v"
 # eval "$(docker-machine env default)"
 
 # Use overcommit for all repositories created/cloned going forward
-export GIT_TEMPLATE_DIR=`overcommit --template-dir`
+GIT_TEMPLATE_DIR=$(overcommit --template-dir)
+export GIT_TEMPLATE_DIR
