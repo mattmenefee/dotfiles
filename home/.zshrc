@@ -65,6 +65,9 @@ export PATH="$HOME/.rbenv/bin:$PATH"
 export PATH="$PATH:/usr/local/sbin"
 eval "$(rbenv init -)"
 
+# Set editor to Vim
+export EDITOR="mvim -v"
+
 # Export the Docker environment variables to the shell
 eval "$(docker-machine env default)"
 

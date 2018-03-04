@@ -169,6 +169,9 @@ au BufRead,BufNewFile *.md setlocal spell
 " Automatically wrap at 80 characters for Markdown
 au BufRead,BufNewFile *.md setlocal textwidth=80
 
+" Encrypted Rails credentials files end in .enc
+au BufRead,BufNewFile *.yml.enc* set filetype=yaml
+
 " Auto-lint Sass files
 let g:syntastic_scss_checkers = ['scss_lint']
 autocmd BufRead,BufNewFile */modus/* let g:syntastic_scss_checkers=[]
