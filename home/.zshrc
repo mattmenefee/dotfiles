@@ -19,6 +19,7 @@ alias gg='git goggles'
 alias vim='mvim -v'
 alias dc='docker-compose'
 alias dcsp='docker-compose run --service-ports --rm web'
+alias dcspr='docker-compose run --service-ports --rm web bundle exec rspec'
 alias dockercleancontainers="docker ps -aq | xargs docker rm"
 alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
 alias dockerclean="dockercleancontainers && dockercleanimages"
@@ -27,6 +28,11 @@ alias rrr="bin/rspec"
 alias puma="bin/puma -C config/puma.rb"
 alias cuc="bin/cucumber"
 alias subl="/Applications/Sublime\ Text\ 2.app/Contents/SharedSupport/bin/subl"
+alias reset_dev_db='bin/rails db:drop db:create db:migrate db:test:prepare'
+alias rbc="bin/rubocop"
+alias dbm="bin/rails db:migrate"
+alias ci="bin/rake ci"
+alias tp="bin/rails db:test:prepare"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
@@ -49,7 +55,7 @@ alias subl="/Applications/Sublime\ Text\ 2.app/Contents/SharedSupport/bin/subl"
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git zsh-syntax-highlighting rails docker)
+plugins=(git zsh-syntax-highlighting rails docker vi-mode)
 
 source $ZSH/oh-my-zsh.sh
 
