@@ -69,7 +69,7 @@ eval "$(rbenv init -)"
 export EDITOR="mvim -v"
 
 # Export the Docker environment variables to the shell
-eval "$(docker-machine env default)"
+# eval "$(docker-machine env default)"
 
 # Use overcommit for all repositories created/cloned going forward
 export GIT_TEMPLATE_DIR=`overcommit --template-dir`
