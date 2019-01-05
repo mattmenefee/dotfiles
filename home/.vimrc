@@ -160,6 +160,9 @@ set list listchars=tab:»·,trail:·
 " Remove trailing whitespace on save
 autocmd BufWritePre * :%s/\s\+$//e
 
+" Axlsx files end in .axlsx
+au BufRead,BufNewFile *.axlsx set filetype=ruby
+
 " Markdown files end in .md
 au BufRead,BufNewFile *.md set filetype=markdown
 
