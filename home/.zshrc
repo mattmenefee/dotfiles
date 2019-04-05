@@ -54,7 +54,7 @@ alias tp="bin/rails db:test:prepare"
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git zsh-syntax-highlighting rails docker vi-mode)
+plugins=(git rails docker vi-mode)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -76,3 +76,6 @@ export EDITOR="mvim -v"
 # Use overcommit for all repositories created/cloned going forward
 GIT_TEMPLATE_DIR=$(overcommit --template-dir)
 export GIT_TEMPLATE_DIR
+
+# Note: this must be placed at the bottom of .zshrc
+source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
