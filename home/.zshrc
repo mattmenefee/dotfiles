@@ -8,7 +8,6 @@ ZSH=$HOME/.oh-my-zsh
 # time that oh-my-zsh is loaded.
 ZSH_THEME="robbyrussell"
 
-# Example aliases
 alias e='exec'
 alias ta='tmux -2 attach || tn'
 alias be="bundle exec"
@@ -28,7 +27,7 @@ alias rrr="bin/rspec"
 alias puma="bin/puma -C config/puma.rb"
 alias cuc="bin/cucumber"
 alias subl="/Applications/Sublime\ Text\ 2.app/Contents/SharedSupport/bin/subl"
-alias reset_dev_db='bin/rails db:drop db:create db:migrate db:test:prepare'
+alias resetdb='bin/rails db:drop db:create db:migrate db:test:prepare'
 alias rbc="bin/rubocop"
 alias dbm="bin/rails db:migrate"
 alias ci="bin/rake ci"
