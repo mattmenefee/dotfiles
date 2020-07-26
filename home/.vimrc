@@ -25,15 +25,12 @@ Plugin 'Markdown'
 Plugin 'Rename'
 Plugin 'ervandew/supertab'
 Plugin 'pangloss/vim-javascript'
-Plugin 'jgdavey/vim-turbux'
-Plugin 'jgdavey/tslime.vim'
 Plugin 'scrooloose/nerdcommenter'
 Plugin 'scrooloose/nerdtree'
 Plugin 'scrooloose/syntastic'
 Plugin 'myint/syntastic-extras'
 Plugin 'jpo/vim-railscasts-theme'
 Plugin 'flazz/vim-colorschemes'
-Plugin 'tpope/vim-cucumber'
 Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-eunuch'
 Plugin 'vim-coffee-script'
@@ -45,14 +42,12 @@ Plugin 'tpope/vim-haml'
 Plugin 'jelera/vim-javascript-syntax'
 Plugin 'nathanaelkane/vim-indent-guides'
 Plugin 'Raimondi/delimitMate'
-Plugin 'marijnh/tern_for_vim'
 Plugin 'rking/ag.vim'
 Plugin 'thoughtbot/vim-rspec'
 Plugin 'mtscout6/vim-cjsx'
 Plugin 'mxw/vim-jsx'
 Plugin 'ap/vim-css-color'
 Plugin 'rainerborene/vim-reek'
-" Plugin 'w0rp/ale' " conflicts with syntastic
 Plugin 'tpope/vim-repeat'
 
 " All of your Plugins must be added before the following line
@@ -66,6 +61,7 @@ filetype plugin indent on    " required
 " :PluginInstall    - installs plugins; append `!` to update or just :PluginUpdate
 " :PluginSearch foo - searches for foo; append `!` to refresh local cache
 " :PluginClean      - confirms removal of unused plugins; append `!` to auto-approve removal
+"                     (Note: need to close and re-open Vim after removing a plugin)
 "
 " see :h vundle for more details or wiki for FAQ
 " Put your non-Plugin stuff after this line
