@@ -71,6 +71,14 @@ export GOPATH="$HOME/code/gopath"
 # Set editor to Vim
 export EDITOR="mvim -v"
 
+# Temporarily prevent Ruby deprecation warnings from showing while we adjust to Ruby 2.7
+export RUBYOPT="-W:no-deprecated"
+
+# ruby-build installs a non-Homebrew OpenSSL for each Ruby version installed and these are never upgraded.
+# To link Rubies to Homebrew's OpenSSL 1.1 (which is upgraded) add the following
+# to your ~/.zshrc:
+export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
+
 # Export the Docker environment variables to the shell
 # eval "$(docker-machine env default)"
 
@@ -80,3 +88,5 @@ export GIT_TEMPLATE_DIR
 
 # Note: this must be placed at the bottom of .zshrc
 source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
