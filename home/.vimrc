@@ -175,6 +175,12 @@ au BufRead,BufNewFile *.md setlocal textwidth=80
 " Encrypted Rails credentials files end in .enc
 au BufRead,BufNewFile *.yml.enc* set filetype=yaml
 
+" Python files end in .py
+au BufRead,BufNewFile *.py set filetype=python
+
+" Dockerfile files start with Dockerfile*
+au BufRead,BufNewFile Dockerfile* set filetype=dockerfile
+
 " Auto-lint Sass files
 let g:syntastic_scss_checkers = ['scss_lint']
 autocmd BufRead,BufNewFile */modus/* let g:syntastic_scss_checkers=[]

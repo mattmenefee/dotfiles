@@ -18,7 +18,7 @@ alias gg='git goggles'
 alias vim='mvim -v'
 alias dc='docker-compose'
 alias dcsp='docker-compose run --service-ports --rm web'
-alias dcspr='docker-compose run --service-ports --rm web bundle exec rspec'
+alias dcspr='docker-compose run --service-ports --rm web bin/rspec'
 alias dockercleancontainers="docker ps -aq | xargs docker rm"
 alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
 alias dockerclean="dockercleancontainers && dockercleanimages"
