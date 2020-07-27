@@ -230,13 +230,6 @@ cabbrev h vertical help
 " The following gives you a quick 'git blame' on the hightlighted code
 vmap gl :<C-U>!git blame <C-R>=expand("%:p") <CR> \| sed -n <C-R>=line("'<") <CR>,<C-R>=line("'>") <CR>p <CR>
 
-autocmd User Rails Rnavcommand uploader app/uploaders -suffix=_uploader.rb -default=model()
-autocmd User Rails Rnavcommand steps features/step_definitions -suffix=_steps.rb -default=web
-autocmd User Rails Rnavcommand factory spec/factories -suffix=_factory.rb -default=model()
-autocmd User Rails Rnavcommand feature features -suffix=.feature -default=cucumber
-autocmd User Rails Rnavcommand support spec/support features/support -default=env
-autocmd User Rails Rnavcommand report app/reports
-
 map <Leader><Space> :nohlsearch<CR>
 map <Leader>, :%s/\s\+$//<CR>
 
