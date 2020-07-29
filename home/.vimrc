@@ -48,7 +48,7 @@ Plugin 'mxw/vim-jsx'
 Plugin 'ap/vim-css-color'
 Plugin 'rainerborene/vim-reek'
 Plugin 'tpope/vim-repeat'
-Plugin 'jpo/vim-railscasts-theme'
+Plugin 'carakan/new-railscasts-theme'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
