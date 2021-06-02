@@ -35,6 +35,9 @@
   cleanup = "!git branch --merged | grep  -v '\\*\\|master\\|develop' | xargs -n 1 git branch -d"
   pc = "!f() { git pull && git cleanup; }; f"
 
+  # list of deleted files:
+  # git log --diff-filter=D --summary | grep delete
+
 [commit]
   # "other people can trust that the changes you've made really were made by you"
   # https://help.github.com/articles/about-gpg/
