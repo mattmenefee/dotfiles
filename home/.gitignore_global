@@ -41,6 +41,7 @@ Thumbs.db
 ######################
 *.swp
 *.swo
+*.un~
 
 # RBENV generated files #
 ######################
