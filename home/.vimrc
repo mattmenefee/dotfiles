@@ -1,5 +1,7 @@
 " RULE #1: Don't put any lines in your vimrc that you don't understand
 
+" Ensure that legacy compatibility mode is off
+" documentation: http://vimdoc.sourceforge.net/htmldoc/options.html#'compatible'
 set nocompatible " be iMproved, required
 filetype off " required
 
@@ -77,29 +79,44 @@ set noswapfile    " http://robots.thoughtbot.com/post/18739402579/global-gitigno
 set history=2000
 set ruler         " show the cursor position all the time
 set showcmd       " display incomplete commands
-set incsearch     " do incremental searching
 set laststatus=2  " Always display the status line
 set autowrite     " Automatically :write before running commands
+set autoindent
+set autoread
+set autowrite
+set confirm
+set pastetoggle=<F2>
+set shortmess=atI
+
+" Maintain the undo history even after the file is closed:
+set undofile
 
 " Softtabs, 2 spaces
 set tabstop=2
 set shiftwidth=2
 set shiftround
 set expandtab
+set softtabstop=2
 
+" Use 100 character lines by default
+set textwidth=100
+" Wrap text based on a number of columns from the right side
+set wrapmargin=2
 
-set autoindent
-set autoread
-set autowrite
-set confirm
+" Perform incremental searches as you type:
+set incsearch
+" Highlight the searched term in a file:
 set hlsearch
+" Search ignoring case:
 set ignorecase
-set pastetoggle=<F2>
+" Search without considering ignorecase when both ignorecase and smartcase are set and the search pattern contains uppercase:
+set smartcase
+" Prefer to have the cursor somewhere in the middle rather than on the first line - set the cursor position to the 7th row:
 set scrolloff=7
-set shortmess=atI
+
+" Identify open and close brace positions when you traverse through the file:
 set showmatch
 set sidescroll=8
-set softtabstop=2
 set switchbuf=useopen
 set virtualedit=block
 set number
