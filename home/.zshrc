@@ -36,6 +36,7 @@ alias dbm="bin/rails db:migrate"
 alias ci="bin/rake ci"
 alias tp="bin/rails db:test:prepare"
 alias bdi="brew deps --tree --installed"
+alias r="bin/rails"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
