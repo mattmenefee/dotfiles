@@ -30,7 +30,7 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
     ```bash
     $ gem install homesick
     $ homesick clone mattmenefee/dotfiles
-    $ homesick symlink dotfiles
+    $ homesick link dotfiles
     ```
 
 1. Install tools managed by Homebrew
