@@ -50,10 +50,7 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 1. Install default gems
 
     ```bash
-    $ gem install gem_updater
-    $ gem install mailcatcher
-    $ gem install awesome_print
-    $ gem install proxylocal
+    $ gem install overcommit gem_updater mailcatcher awesome_print proxylocal
     ```
 
 1. Set up Git config
