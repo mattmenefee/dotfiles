@@ -7,12 +7,7 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 
 1. Set up [homebrew](http://brew.sh/) and [homebrew-bundle](https://github.com/Homebrew/homebrew-bundle) ([tips](https://robots.thoughtbot.com/brewfile-a-gemfile-but-for-homebrew))
 
-1. Setup homebrew
-
-    ```bash
-    $ ruby -e "$(curl -fsSkL raw.github.com/mxcl/homebrew/go)"
-    $ brew tap homebrew/bundle
-    ```
+1. Install [homebrew](https://brew.sh/)
 
 1. Install [rbenv](https://github.com/sstephenson/rbenv)
 
@@ -32,7 +27,7 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
     $ gem update --system
     ```
 
-1. Setup homesick and symlick dotfiles:
+1. Install homesick and symlick dotfiles:
 
     ```bash
     $ gem install homesick
@@ -57,15 +52,13 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 1. Install default gems
 
     ```bash
-    $ gem install bundler
+    $ gem install gem_updater
+    $ gem install mailcatcher
     $ gem install awesome_print
     $ gem install proxylocal
-    $ gem install gem_updater
-    $ gem install transpec
-    $ gem install mailcatcher
     ```
 
-1. Setup Git config
+1. Set up Git config
 
     ```bash
     # Insert appropriate values
@@ -77,7 +70,8 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 
 ```bash
 # Homebrew
-$ brew update && brew upgrade && brew cleanup
+$ brew update && brew outdated
+$ brew upgrade && brew cleanup
 $ brew doctor
 
 # RubyGems
