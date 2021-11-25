@@ -5,9 +5,7 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 
 ### Getting Started
 
-1. Set up [homebrew](http://brew.sh/) and [homebrew-bundle](https://github.com/Homebrew/homebrew-bundle) ([tips](https://robots.thoughtbot.com/brewfile-a-gemfile-but-for-homebrew))
-
-1. Install [homebrew](https://brew.sh/)
+1. Install [Homebrew](http://brew.sh/) and [homebrew-bundle](https://github.com/Homebrew/homebrew-bundle) ([tips](https://robots.thoughtbot.com/brewfile-a-gemfile-but-for-homebrew))
 
 1. Install [rbenv](https://github.com/sstephenson/rbenv)
 
