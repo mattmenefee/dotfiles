@@ -64,9 +64,9 @@ plugins=(git rails docker vi-mode)
 source $ZSH/oh-my-zsh.sh
 
 ### Added by the Heroku Toolbelt
-export PATH="/usr/local/heroku/bin:$PATH"
+export PATH="/opt/homebrew/heroku/bin:$PATH"
 export PATH="$HOME/.rbenv/bin:$PATH"
-export PATH="$PATH:/usr/local/sbin"
+export PATH="$PATH:/opt/homebrew/sbin"
 eval "$(rbenv init -)"
 
 ### Set up Go
@@ -91,6 +91,6 @@ GIT_TEMPLATE_DIR=$(overcommit --template-dir)
 export GIT_TEMPLATE_DIR
 
 # Note: this must be placed at the bottom of .zshrc
-source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"

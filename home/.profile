@@ -1,2 +1,2 @@
-homebrew=/usr/local/bin:/usr/local/sbin
+homebrew=/opt/homebrew/bin:/opt/homebrew/sbin
 export PATH=$homebrew:$PATH

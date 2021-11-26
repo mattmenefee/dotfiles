@@ -1,7 +1,7 @@
 [core]
   excludesfile = ~/.gitignore_global
   autocrlf = input
-  editor = /usr/local/bin/mvim -v
+  editor = /opt/homebrew/bin/mvim -v
 [alias]
   a = commit --amend
   aa = add --all
