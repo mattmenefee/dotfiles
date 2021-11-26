@@ -58,7 +58,7 @@ brew 'heroku'
 # brew 'httpie'
 # brew 'hub'
 # brew 'icu4c'
-# brew 'imagemagick'
+brew 'imagemagick'
 # brew 'isl'
 # brew 'jansson'
 # brew 'jasper', args: ['universal']
@@ -177,3 +177,7 @@ cask 'kindle'
 cask 'github'
 cask 'miro'
 cask 'zeplin'
+
+# For the Open Source Risk Engine (ORE)
+brew 'cmake'
+brew 'boost'
