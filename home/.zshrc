@@ -69,9 +69,6 @@ export PATH="$HOME/.rbenv/bin:$PATH"
 export PATH="$PATH:/opt/homebrew/sbin"
 eval "$(rbenv init -)"
 
-### Set up Go
-export GOPATH="$HOME/code/gopath"
-
 # Set editor to Vim
 export EDITOR="mvim -v"
 
