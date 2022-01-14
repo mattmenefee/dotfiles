@@ -1,3 +1,6 @@
+# Instructions: run using "brew bundle"
+
+
 # tap 'caskroom/cask'
 tap 'homebrew/bundle'
 # tap 'homebrew/core'
@@ -29,7 +32,6 @@ brew 'bash'
 # brew 'docker'
 # brew 'docker-compose'
 # brew 'docker-machine'
-# brew 'elasticsearch@5.6' # TODO: fix this
 # brew 'epsilon'
 # brew 'expat'
 # brew 'faac'
@@ -106,7 +108,6 @@ brew 'macvim'
 # brew 'nss'
 # brew 'numpy'
 # brew 'node'
-brew 'openjdk' # for Elasticsearch
 # brew 'openssl', args: ['universal']
 # brew 'ossp-uuid'
 # brew 'p7zip'
@@ -177,6 +178,10 @@ cask 'kindle'
 cask 'github'
 cask 'miro'
 cask 'zeplin'
+
+# For Elasticsearch
+tap 'elastic/tap'
+brew 'elastic/tap/elasticsearch-full'
 
 # For the Open Source Risk Engine (ORE)
 brew 'cmake'
