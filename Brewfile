@@ -106,7 +106,7 @@ brew 'macvim'
 # brew 'nss'
 # brew 'numpy'
 # brew 'node'
-# brew 'openjdk'
+brew 'openjdk' # for Elasticsearch
 # brew 'openssl', args: ['universal']
 # brew 'ossp-uuid'
 # brew 'p7zip'
