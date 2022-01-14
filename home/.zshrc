@@ -80,9 +80,6 @@ export RUBYOPT="-W:no-deprecated"
 # to your ~/.zshrc:
 export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
 
-# Export the Docker environment variables to the shell
-# eval "$(docker-machine env default)"
-
 # Use overcommit for all repositories created/cloned going forward
 GIT_TEMPLATE_DIR=$(overcommit --template-dir)
 export GIT_TEMPLATE_DIR
