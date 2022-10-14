@@ -207,6 +207,10 @@ let g:syntastic_javascript_checkers = ['eslint']
 " Auto-lint language check (via syntastic-extras)
 let g:syntastic_gitcommit_checkers = ['language_check']
 
+" Set python version
+let g:syntastic_python_python_exec = 'python3'
+let g:syntastic_python_checkers = ['python']
+
 " Auto-lint YAML (via syntastic-extras)
 let g:syntastic_yaml_checkers = ['pyyaml']
 

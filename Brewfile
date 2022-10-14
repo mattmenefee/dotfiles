@@ -179,10 +179,14 @@ cask 'github'
 cask 'miro'
 cask 'zeplin'
 
+# For CIRM's infrastructure management
+brew 'ansible'
+
 # For Elasticsearch
 tap 'elastic/tap'
 brew 'elastic/tap/elasticsearch-full'
 
 # For the Open Source Risk Engine (ORE)
 brew 'cmake'
+brew 'ninja' # Use Ninja for cmake
 brew 'boost'
