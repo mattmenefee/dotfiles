@@ -51,6 +51,7 @@ Plugin 'ap/vim-css-color'
 Plugin 'rainerborene/vim-reek'
 Plugin 'tpope/vim-repeat'
 Plugin 'carakan/new-railscasts-theme'
+Plugin 'tpope/vim-abolish'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
