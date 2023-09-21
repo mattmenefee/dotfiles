@@ -14,7 +14,6 @@ alias be="bundle exec"
 alias bi="bundle install -j 8"
 alias bo="bundle outdated"
 alias bu="bundle update"
-alias gg='git goggles'
 alias vim='mvim -v'
 alias dc='docker-compose'
 alias dcb='docker-compose build'
@@ -26,9 +25,8 @@ alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
 alias rrr="bin/rspec"
 alias rrrore="bin/rspec spec --tag @open_source_risk --format documentation --format RSpec::Instafail"
+alias rrroresys="bin/rspec spec/system --tag @open_source_risk --format documentation --format RSpec::Instafail"
 alias puma="bin/puma -C config/puma.rb"
-alias cuc="bin/cucumber"
-alias subl="/Applications/Sublime\ Text\ 2.app/Contents/SharedSupport/bin/subl"
 alias resetdb='bin/rails db:drop db:create db:migrate db:test:prepare'
 alias rbc="bin/rubocop"
 alias rbca="bin/rubocop -A"
@@ -37,7 +35,11 @@ alias dbm="bin/rails db:migrate"
 alias ci="bin/rake ci"
 alias tp="bin/rails db:test:prepare"
 alias bdi="brew deps --tree --installed"
+alias bubo="brew update && brew outdated"
+alias bubcbd="brew upgrade && brew cleanup && brew doctor"
 alias r="bin/rails"
+alias vallog="tail -f log/valuations.log"
+alias yo="yarn outdated"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
@@ -84,6 +86,9 @@ export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
 # Use overcommit for all repositories created/cloned going forward
 GIT_TEMPLATE_DIR=$(overcommit --template-dir)
 export GIT_TEMPLATE_DIR
+
+# Make postgresql@16 available in the PATH
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
 
 # Note: this must be placed at the bottom of .zshrc
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

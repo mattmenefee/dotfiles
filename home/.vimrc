@@ -52,6 +52,8 @@ Plugin 'rainerborene/vim-reek'
 Plugin 'tpope/vim-repeat'
 Plugin 'carakan/new-railscasts-theme'
 Plugin 'tpope/vim-abolish'
+Plugin 'gabesoft/vim-ags' " For searching Vim using the_silver_searcher
+Plugin 'hashivim/vim-terraform'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -88,6 +90,8 @@ set autowrite
 set confirm
 set pastetoggle=<F2>
 set shortmess=atI
+set visualbell " stop Vim from beeping at me
+" set cursorline " Highlight the current line
 
 " Maintain the undo history even after the file is closed:
 set undofile
@@ -96,7 +100,7 @@ set undofile
 set tabstop=2
 set shiftwidth=2
 set shiftround
-set expandtab
+set expandtab " convert tabs to spaces
 set softtabstop=2
 
 " Use 100 character lines by default
@@ -195,6 +199,9 @@ au BufRead,BufNewFile *.py set filetype=python
 " Dockerfile files start with Dockerfile*
 au BufRead,BufNewFile Dockerfile* set filetype=dockerfile
 
+" Capistrano service templates end in .service.erb
+au BufRead,BufNewFile *.service.erb set filetype=ruby.ini
+
 " Auto-lint Sass files
 let g:syntastic_scss_checkers = ['scss_lint']
 autocmd BufRead,BufNewFile */modus/* let g:syntastic_scss_checkers=[]
@@ -256,3 +263,13 @@ map <Leader><Space> :nohlsearch<CR>
 map <Leader>, :%s/\s\+$//<CR>
 
 let g:NERDTreeHijackNetrw=1
+
+" Ags / The Silver Searcher configuration:
+" Search for the word under cursor
+nnoremap <Leader>s :Ags<Space><C-R>=expand('<cword>')<CR><CR>
+" Search for the visually selected text
+vnoremap <Leader>s y:Ags<Space><C-R>='"' . escape(@", '"*?()[]{}.') . '"'<CR><CR>
+" Run Ags
+nnoremap <Leader>a :Ags<Space>
+" Quit Ags
+nnoremap <Leader><Leader>a :AgsQuit<CR>

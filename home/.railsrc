@@ -1,2 +1,3 @@
 -T
 -d postgresql
+# pass --main to install the latest version of Rails from the main branch
