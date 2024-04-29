@@ -75,14 +75,6 @@ eval "$(rbenv init -)"
 # Set editor to Vim
 export EDITOR="mvim -v"
 
-# Temporarily prevent Ruby deprecation warnings from showing while we adjust to Ruby 2.7
-export RUBYOPT="-W:no-deprecated"
-
-# ruby-build installs a non-Homebrew OpenSSL for each Ruby version installed and these are never upgraded.
-# To link Rubies to Homebrew's OpenSSL 1.1 (which is upgraded) add the following
-# to your ~/.zshrc:
-export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
-
 # Use overcommit for all repositories created/cloned going forward
 GIT_TEMPLATE_DIR=$(overcommit --template-dir)
 export GIT_TEMPLATE_DIR
