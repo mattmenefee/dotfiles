@@ -191,3 +191,5 @@ brew 'ansible'
 brew 'cmake'
 brew 'ninja' # Use Ninja for cmake
 brew 'boost'
+
+brew 'rust' # for running Ruby with the YJIT compiler
