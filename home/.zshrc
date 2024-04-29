@@ -17,10 +17,13 @@ alias bu="bundle update"
 alias vim='mvim -v'
 alias dc='docker-compose'
 alias dcb='docker-compose build'
+# docker-compose build --progress=plain --no-cache # to view output of RUN commands
 alias dcsp='docker-compose run --service-ports --rm web'
 alias dcspr='docker-compose run --service-ports --rm web bin/rspec'
 alias dockercleancontainers="docker ps -aq | xargs docker rm"
 alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
+# docker system prune --all
+# docker volumes ls
 alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
 alias rrr="bin/rspec"
@@ -38,6 +41,7 @@ alias bdi="brew deps --tree --installed"
 alias bubo="brew update && brew outdated"
 alias bubcbd="brew upgrade && brew cleanup && brew doctor"
 alias r="bin/rails"
+alias bd="bin/dev"
 alias vallog="tail -f log/valuations.log"
 alias yo="yarn outdated"
 
