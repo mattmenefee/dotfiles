@@ -1,3 +1,7 @@
 -T # Skip tests
 -d postgresql
+-a propshaft
+-j esbuild
+--skip-jbuilder
+--devcontainer
 # pass --main to install the latest version of Rails from the main branch

@@ -34,6 +34,7 @@ alias resetdb='bin/rails db:drop db:create db:migrate db:test:prepare'
 alias rbc="bin/rubocop"
 alias rbca="bin/rubocop -A"
 alias rbctodo="bin/rubocop --regenerate-todo"
+alias hltodo="haml-lint --auto-gen-config --auto-gen-exclude-limit 1000"
 alias dbm="bin/rails db:migrate"
 alias ci="bin/rake ci"
 alias tp="bin/rails db:test:prepare"
