@@ -86,6 +86,8 @@ export GIT_TEMPLATE_DIR
 
 # Instruct ruby-build to enable the YJIT compiler
 export RUBY_CONFIGURE_OPTS="--enable-yjit"
+# Enable YJIT
+export RUBY_YJIT_ENABLE=1
 
 # Make postgresql@16 available in the PATH
 export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
