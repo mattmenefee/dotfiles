@@ -43,7 +43,7 @@ alias bubcbd="brew upgrade && brew cleanup && brew doctor"
 alias r="bin/rails"
 alias bd="bin/dev"
 alias vallog="tail -f log/valuations.log"
-alias yo="yarn outdated"
+alias yo="yarn upgrade-interactive"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"

@@ -193,3 +193,9 @@ brew 'ninja' # Use Ninja for cmake
 brew 'boost'
 
 brew 'rust' # for running Ruby with the YJIT compiler
+
+brew 'corepack' # for help with managing versions of your package managers, related to Node.js
+
+brew 'neovim'
+
+brew 'puma/puma/puma-dev'

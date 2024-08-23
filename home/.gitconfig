@@ -62,6 +62,7 @@
   keepBackup = false
 [diff]
   tool = diffmerge
+	submodule = log
 [difftool "diffmerge"]
   cmd = diffmerge $LOCAL $REMOTE
 [fetch]
