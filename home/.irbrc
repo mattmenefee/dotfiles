@@ -1,3 +1,5 @@
+puts "Successfully loaded ~/.irbrc"
+
 # unless defined?(ActiveRecord)
 # #  ActiveRecord::Base.logger = ActiveSupport::Logger.new(STDOUT) if defined?(ActiveRecord)
 #   ActiveRecord::Base.logger.level = 1 if defined?(ActiveRecord)

@@ -94,7 +94,6 @@ export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
 export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
 # Fix Ruby Debug from hanging when using save_and_open_screenshot
-export RUBY_DEBUG_IRB_CONSOLE="true"
 export RUBY_DEBUG_FORK_MODE="parent"
 
 # Note: this must be placed at the bottom of .zshrc
