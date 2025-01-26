@@ -199,3 +199,11 @@ brew 'corepack' # for help with managing versions of your package managers, rela
 brew 'neovim'
 
 brew 'puma/puma/puma-dev'
+
+brew 'gh' # for the GitHub CLI
+
+cask 'raycast'
+
+brew 'yamllint'
+
+brew 'vips' # the Rails v7 default for image processing (instead of ImageMagick)
