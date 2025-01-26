@@ -43,9 +43,7 @@ Thumbs.db
 *.swo
 *.un~
 
-# RBENV generated files #
-######################
-.ruby-version
-
+# Local configuration files #
+#############################
 .env.local
 .gitconfig.local
