@@ -5,6 +5,7 @@ cask 'iterm2'
 brew 'bash'
 brew 'macvim'
 brew 'neovim'
+brew 'ripgrep' # TODO: add note here
 brew 'the_silver_searcher'
 brew 'zsh'
 brew 'zsh-syntax-highlighting'

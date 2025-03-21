@@ -42,8 +42,6 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
     $ brew bundle
     ```
 
-1. Install [Vundle](https://github.com/VundleVim/Vundle.vim)
-
 1. Install [oh-my-zsh](https://ohmyz.sh/#install)
 
     ```bash
