@@ -1,158 +1,82 @@
 # Instructions: run using "brew bundle"
 
-
-# tap 'caskroom/cask'
-tap 'homebrew/bundle'
-# tap 'homebrew/core'
-# tap 'homebrew/dupes'
-# tap 'homebrew/fuse'
-# tap 'homebrew/services'
-# tap 'jappievw/kibana'
-# tap 'thoughtbot/formulae'
-# cask 'java'
-# cask 'xquartz'
-# brew 'ack'
-# brew 'asciidoc'
-# brew 'augeas'
-# brew 'autoconf'
-# brew 'automake'
+# Terminal tools
+cask 'iterm2'
 brew 'bash'
-# brew 'cabextract'
-# brew 'certbot'
-# brew 'cabextract'
-# brew 'cfitsio'
-# brew 'circleci'
-# brew 'cloog'
-# brew 'cmake'
-# brew 'cscope'
-# brew 'dialog'
+brew 'macvim'
+brew 'neovim'
+brew 'the_silver_searcher'
+brew 'zsh'
+brew 'zsh-syntax-highlighting'
+
+# Web Development tools
+brew 'puma/puma/puma-dev'
+cask 'firefox'
+cask 'tableplus'
+cask 'miro'
+cask 'zeplin'
+
+# MacOS interface management tools
+cask 'raycast'
+cask 'caffeine'
+
+# Programming languages and related tools
+brew 'dart'
+brew 'rust' # for running Ruby with the YJIT compiler
+brew 'rbenv'
+brew 'ruby-build'
+brew 'node'
+brew 'corepack' # for help with managing versions of your package managers, related to Node.js
+brew 'yarn'
+
+# Version Control tools
+brew 'git'
+brew 'gh' # for the GitHub CLI
+cask 'github'
+
+# Databases
+brew 'sqlite'
+brew 'redis'
+brew 'postgresql@17'
+brew 'pgcli'
+
+# Image processing tools
+brew 'vips' # the Rails v7 default for image processing
+brew 'poppler' # for creating PDF previews
+
+# Hosting tools
+brew 'heroku'
+brew 'flyctl'
+
+# For CIRM's infrastructure management
+brew 'ansible'
+brew 'asdf'
+
+# For the Open Source Risk Engine (ORE)
+brew 'cmake'
+brew 'ninja' # Use Ninja for cmake
+brew 'boost'
+
+# For linting
+brew 'yamllint'
+brew 'ansible-lint'
+brew 'shellcheck'
+
+# Other programs
+cask 'calibre'
+cask 'zoom'
+cask 'cleanmymac'
+
+
 # brew 'direnv'
 # brew 'dnsmasq'
 # brew 'docbook'
 # brew 'docker'
 # brew 'docker-compose'
-# brew 'docker-machine'
-# brew 'epsilon'
-# brew 'expat'
-# brew 'faac'
-# brew 'fdk-aac'
-# brew 'ffmpeg', args: ['with-fdk-aac']
-# brew 'fontconfig', args: ['universal']
-# brew 'fpp'
-# brew 'freetype', args: ['universal']
-# brew 'freexl'
-# brew 'gd', args: ['universal']
-# brew 'gdal'
-# brew 'gdbm'
-# brew 'geos'
-# brew 'gettext'
-# brew 'giflib'
-brew 'git'
-# brew 'glew'
-# brew 'glib'
-# brew 'glm'
-# brew 'gmp'
-# brew 'gpp'
 # brew 'graphviz'
-brew 'heroku'
-# brew 'homebrew/dupes/apple-gcc42'
-# brew 'homebrew/fuse/sshfs'
 # brew 'httpie'
-# brew 'hub'
-# brew 'icu4c'
-brew 'imagemagick'
-# brew 'isl'
-# brew 'jansson'
-# brew 'jasper', args: ['universal']
-# brew 'jpeg', args: ['universal']
-# brew 'json-c'
-# brew 'kibana'
-# brew 'lame'
-# brew 'libdap'
-# brew 'libevent'
-# brew 'libexif'
-# brew 'libffi'
-# brew 'libgeotiff'
-# brew 'libgpg-error'
-# brew 'libgphoto2', args: ['universal']
-# brew 'libicns', args: ['universal']
-# brew 'libksba'
-# brew 'liblwgeom'
-# brew 'libmpc'
-# brew 'libpng', args: ['universal']
-# brew 'librttopo'
-# brew 'libspatialite'
-# brew 'libtiff', args: ['universal']
-# brew 'libtool', args: ['universal']
-# brew 'libusb', args: ['universal']
-# brew 'libusb-compat', args: ['universal']
-# brew 'libvo-aacenc'
-# brew 'libvterm'
-# brew 'libxml2'
-# brew 'libxslt'
-# brew 'libyaml'
-# brew 'little-cms2', args: ['universal']
-# brew 'luajit'
-# brew 'lzlib'
-brew 'macvim'
-# brew 'makedepend'
-# brew 'mercurial'
-# brew 'minizip'
-# brew 'mpfr'
-# brew 'nasm'
-# brew 'neovim'
-# brew 'netcdf'
-# brew 'net-snmp'
-# brew 'nghttp2'
-# brew 'nmap'
-# brew 'nss'
-# brew 'numpy'
-# brew 'node'
-# brew 'openssl', args: ['universal']
-# brew 'ossp-uuid'
+# brew 'hub' # an extension to command-line git that helps you do everyday GitHub tasks without ever leaving the terminal
 # brew 'p7zip'
-# brew 'pcre'
-# brew 'pgcli'
-# brew 'pkg-config'
-# brew 'podofo'
-brew 'postgresql@16'
-# brew 'proj'
-# brew 'python'
-# brew 'qt5'
-brew 'rbenv'
-# brew 'readline'
-brew 'redis'
-# brew 'rename'
-# brew 'rtmpdump'
-brew 'ruby-build'
-# brew 'sane-backends', args: ['universal']
-# brew 'scons'
-# brew 'sdl'
-# brew 'sdl2'
-# brew 'sdl2_image'
-# brew 'sdl_image'
-brew 'shellcheck'
-# brew 'sqlite'
-# brew 'ssh-copy-id'
-# brew 'texi2html'
-brew 'the_silver_searcher'
-# brew 'thoughtbot/formulae/gitsh'
-# brew 'tig'
-# brew 'tmux'
-# brew 'unixodbc'
-# brew 'unrar'
-# brew 'utf8proc'
-# brew 'watchman'
-# brew 'webp'
-# brew 'x264'
-# brew 'xerces-c'
-# brew 'xvid'
-# brew 'xz', args: ['universal']
-# brew 'yamllint'
-brew 'yarn'
-# brew 'yasm'
-brew 'zsh'
-brew 'zsh-syntax-highlighting'
 # cask 'betterzipql'
 # cask 'jet'
 # cask 'mono-mdk'
@@ -164,46 +88,4 @@ brew 'zsh-syntax-highlighting'
 # cask 'quicklook-json'
 # cask 'sonarr'
 # cask 'suspicious-package'
-# cask 'vagrant'
 # cask 'webp-quicklook'
-# cask 'google-chrome'
-cask 'calibre'
-cask 'spectacle'
-cask 'firefox'
-cask 'tableplus'
-cask 'caffeine'
-cask 'zoom'
-cask 'cleanmymac'
-cask 'kindle'
-cask 'github'
-cask 'miro'
-cask 'zeplin'
-
-# For CIRM's infrastructure management
-brew 'ansible'
-
-# For Elasticsearch
-# TODO: update this for however the latest versions are installed
-# tap 'elastic/tap'
-# brew 'elastic/tap/elasticsearch-full'
-
-# For the Open Source Risk Engine (ORE)
-brew 'cmake'
-brew 'ninja' # Use Ninja for cmake
-brew 'boost'
-
-brew 'rust' # for running Ruby with the YJIT compiler
-
-brew 'corepack' # for help with managing versions of your package managers, related to Node.js
-
-brew 'neovim'
-
-brew 'puma/puma/puma-dev'
-
-brew 'gh' # for the GitHub CLI
-
-cask 'raycast'
-
-brew 'yamllint'
-
-brew 'vips' # the Rails v7 default for image processing (instead of ImageMagick)
