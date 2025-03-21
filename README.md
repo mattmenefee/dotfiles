@@ -13,9 +13,12 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
     $ brew install rbenv ruby-build
     $ rbenv init # See rbenv Readme for why this is necessary
 
+    # Set up the [default gems installation plugin](https://github.com/rbenv/rbenv-default-gems)
+    $ git clone https://github.com/rbenv/rbenv-default-gems.git $(rbenv root)/plugins/rbenv-default-gems
+
     $ rbenv install -l # list all available versions
     $ rbenv install [version]
-    # Restart shell for changes with PATH to take effect
+    # Restart shell for changes with $PATH to take effect
     $ rbenv global [version] # set global Ruby version
     ```
 
@@ -28,7 +31,6 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 1. Install homesick and symlick dotfiles:
 
     ```bash
-    $ gem install homesick
     $ homesick clone mattmenefee/dotfiles
     $ homesick link dotfiles
     ```
@@ -55,12 +57,6 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
     $ zsh init.zsh
     ```
 
-1. Install default gems
-
-    ```bash
-    $ gem install overcommit gem_updater mailcatcher awesome_print proxylocal
-    ```
-
 1. Set up Git config
 
     ```bash
@@ -74,8 +70,7 @@ dotfiles managed using [homesick](https://github.com/technicalpickles/homesick).
 ```bash
 # Homebrew
 $ brew update && brew outdated
-$ brew upgrade && brew cleanup
-$ brew doctor
+$ brew upgrade && brew cleanup && brew doctor
 
 # RubyGems
 $ gem update --system
