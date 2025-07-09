@@ -56,6 +56,7 @@ brew 'asdf'
 brew 'cmake'
 brew 'ninja' # Use Ninja for cmake
 brew 'boost'
+brew 'swig'
 
 # For linting
 brew 'yamllint'
