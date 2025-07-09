@@ -15,17 +15,6 @@ alias bi="bundle install -j 8"
 alias bo="bundle outdated"
 alias bu="bundle update"
 alias vim='mvim -v'
-alias dc='docker compose'
-alias dcb='docker compose build'
-# docker compose build --progress=plain --no-cache # to view output of RUN commands
-alias dcsp='docker compose run --service-ports --rm web'
-alias dcspr='docker compose run --service-ports --rm web bin/rspec'
-alias dockercleancontainers="docker ps -aq | xargs docker rm"
-alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
-# docker system prune --all
-# docker volumes ls
-alias dockerclean="dockercleancontainers && dockercleanimages"
-alias docker-killall="docker ps -q | xargs docker kill"
 alias rrr="bin/rspec"
 alias rrrore="bin/rspec spec --tag @open_source_risk --format documentation --format RSpec::Instafail"
 alias rrroresys="bin/rspec spec/system --tag @open_source_risk --format documentation --format RSpec::Instafail"
@@ -38,13 +27,29 @@ alias hltodo="haml-lint --auto-gen-config --auto-gen-exclude-limit 1000"
 alias dbm="bin/rails db:migrate"
 alias ci="bin/rake ci"
 alias tp="bin/rails db:test:prepare"
-alias bdi="brew deps --tree --installed"
-alias bubo="brew update && brew outdated"
-alias bubcbd="brew upgrade && brew cleanup && brew doctor"
 alias r="bin/rails"
 alias bd="bin/dev"
 alias vallog="tail -f log/valuations.log"
 alias yo="yarn upgrade-interactive"
+
+# Docker
+alias dc='docker compose'
+alias dcb='docker compose build'
+# docker compose build --progress=plain --no-cache # to view output of RUN commands
+alias dcsp='docker compose run --service-ports --rm web'
+alias dcspr='docker compose run --service-ports --rm web bin/rspec'
+alias dockercleancontainers="docker ps -aq | xargs docker rm"
+alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
+# docker system prune --all
+# docker volumes ls
+alias dockerclean="dockercleancontainers && dockercleanimages"
+alias docker-killall="docker ps -q | xargs docker kill"
+
+# Homebrew
+alias bdi="brew deps --tree --installed"
+alias bubo="brew update && brew outdated"
+alias brewup="brew upgrade && brew cleanup && brew autoremove && brew doctor"
+
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
