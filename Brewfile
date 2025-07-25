@@ -67,6 +67,9 @@ cask 'calibre'
 cask 'zoom'
 cask 'cleanmymac'
 
+# For Claude
+brew 'uv' # For running the Serena MCP
+
 
 # brew 'direnv'
 # brew 'dnsmasq'

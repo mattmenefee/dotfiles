@@ -47,3 +47,7 @@ Thumbs.db
 #############################
 .env.local
 .gitconfig.local
+
+# Claude and MCP related files #
+#############################
+/.serena/*

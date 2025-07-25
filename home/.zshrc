@@ -49,6 +49,8 @@ alias docker-killall="docker ps -q | xargs docker kill"
 alias bdi="brew deps --tree --installed"
 alias bubo="brew update && brew outdated"
 alias brewup="brew upgrade && brew cleanup && brew autoremove && brew doctor"
+# Consider using `brew cleanup --prune=all --dry-run`
+# See https://mac.install.guide/homebrew/8
 
 
 # Set to this to use case-sensitive completion
