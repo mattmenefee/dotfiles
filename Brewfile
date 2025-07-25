@@ -27,7 +27,6 @@ brew 'rbenv'
 brew 'ruby-build'
 brew 'node'
 brew 'corepack' # for help with managing versions of your package managers, related to Node.js
-brew 'yarn'
 
 # Version Control tools
 brew 'git'
