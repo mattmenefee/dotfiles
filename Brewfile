@@ -66,6 +66,7 @@ brew 'shellcheck'
 cask 'calibre'
 cask 'zoom'
 cask 'cleanmymac'
+cask 'qlmarkdown'
 
 # For Claude
 brew 'uv' # For running the Serena MCP
