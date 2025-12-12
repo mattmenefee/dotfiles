@@ -96,8 +96,8 @@ export RUBY_CONFIGURE_OPTS="--enable-yjit"
 # Enable YJIT
 export RUBY_YJIT_ENABLE=1
 
-# Make postgresql@17 available in the PATH
-export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
+# Make postgresql@18 available in the PATH
+export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"
 export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
 # Fix Ruby Debug from hanging when using save_and_open_screenshot
