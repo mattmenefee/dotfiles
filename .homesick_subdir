@@ -1,2 +1,4 @@
 .rbenv
 .claude
+.config/gh
+Library/Application Support/Claude
