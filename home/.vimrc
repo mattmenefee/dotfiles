@@ -273,3 +273,8 @@ vnoremap <Leader>s y:Ags<Space><C-R>='"' . escape(@", '"*?()[]{}.') . '"'<CR><CR
 nnoremap <Leader>a :Ags<Space>
 " Quit Ags
 nnoremap <Leader><Leader>a :AgsQuit<CR>
+
+" Preview a Markdown file
+" nnoremap <leader>mp :silent !open -a "Quick Look" %:p > /dev/null 2>&1 &<CR>:redraw!<CR>
+" nnoremap <leader>mp :silent !open -R % && osascript -e 'tell app "System Events" to keystroke space'<CR>:redraw!<CR>
+nnoremap <leader>mp :silent !qlmanage -p % > /dev/null 2>&1 & sleep 0.1 && osascript -e 'tell application "qlmanage" to activate'<CR>:redraw!<CR>
