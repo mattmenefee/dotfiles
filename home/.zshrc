@@ -106,5 +106,3 @@ export RUBY_DEBUG_FORK_MODE="parent"
 
 # Note: this must be placed at the bottom of .zshrc
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
