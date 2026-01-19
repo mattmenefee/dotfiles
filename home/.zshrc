@@ -88,10 +88,6 @@ eval "$(rbenv init -)"
 # Set editor to Vim
 export EDITOR="mvim -v"
 
-# Use overcommit for all repositories created/cloned going forward
-GIT_TEMPLATE_DIR=$(overcommit --template-dir)
-export GIT_TEMPLATE_DIR
-
 # Instruct ruby-build to enable the YJIT compiler
 export RUBY_CONFIGURE_OPTS="--enable-yjit"
 # Enable YJIT
