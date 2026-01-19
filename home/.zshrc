@@ -33,6 +33,21 @@ alias bd="bin/dev"
 alias vallog="tail -f log/valuations.log"
 alias yo="yarn upgrade-interactive"
 
+# Git worktrees - navigate by number (e.g., wt 1, wt 2)
+# Run from any worktree to switch between them
+wt() {
+  local worktree_path
+  worktree_path=$(git worktree list 2>/dev/null | sed -n "${1}p" | awk '{print $1}')
+  if [[ -n "$worktree_path" ]]; then
+    cd "$worktree_path" || return
+  else
+    echo "Worktree $1 not found (are you in a git repo with worktrees?)"
+  fi
+}
+
+# List all worktrees with numbers
+alias wtl='git worktree list | nl'
+
 # Docker
 alias dc='docker compose'
 alias dcb='docker compose build'
