@@ -28,6 +28,7 @@ alias dbm="bin/rails db:migrate"
 alias dbms="bin/rails db:migrate:status"
 alias ci="bin/rake ci"
 alias tp="bin/rails db:test:prepare"
+alias tcac="bin/rails tmp:clear assets:clobber"
 alias r="bin/rails"
 alias bd="bin/dev"
 alias vallog="tail -f log/valuations.log"
@@ -111,6 +112,9 @@ export RUBY_YJIT_ENABLE=1
 # Make postgresql@18 available in the PATH
 export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"
 export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+
+# Added by Claude Code
+export PATH="$HOME/.local/bin:$PATH"
 
 # Fix Ruby Debug from hanging when using save_and_open_screenshot
 export RUBY_DEBUG_FORK_MODE="parent"

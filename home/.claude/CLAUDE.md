@@ -22,8 +22,8 @@ When creating Linear issues, write descriptions for a non-technical audience:
 
 After completing any coding task, run these commands in order:
 
-1. **Code Quality**: `bin/rubocop -A` and `bin/rails lint`
-2. **Testing**: `bin/rspec spec` - ensure all tests pass
+1. **Code Quality**: Run only the relevant linters for your changes (e.g. `bin/rubocop -A` for Ruby files, `bin/rails lint:haml` for Haml, etc.) — never run `bin/rails lint`
+2. **Testing**: Run only the specs relevant to your changes (never the entire suite)
 3. **Frontend Build**: `yarn build` (if frontend changes were made)
 4. **Search Indexing**: `bin/rails chewy:update` (if model changes affect search)
 
@@ -43,6 +43,22 @@ After completing any coding task, run these commands in order:
   - Do not exceed 100 character line length
   - Use a maximum example group nesting of 4 levels
   - Use `Time.zone.today` instead of `Date.current`
+  - Use single-line `let` and `before` blocks when they fit within 100 characters
+  - Generally prefer fewer lines — avoid multi-line blocks for simple expressions
+
+# Browser Automation
+
+- Prefer `@playwright/cli` for browser automation tasks over the Playwright MCP
+  server
+
+# Serena MCP Server
+
+- Serena must be activated at the start of each session before its tools can be used
+- Activation steps:
+  1. Load the tool: `ToolSearch` with query `select:mcp__serena__activate_project`
+  2. Activate the project: `mcp__serena__activate_project` with the current project path
+- Serena has project memories that can be read with `read_memory` when relevant
+- Do NOT attempt to call any `mcp__serena__*` tool without first loading it via `ToolSearch`
 
 # System Workarounds
 
