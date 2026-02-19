@@ -113,6 +113,9 @@ export RUBY_YJIT_ENABLE=1
 export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"
 export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
+# Added by Claude Code
+export PATH="$HOME/.local/bin:$PATH"
+
 # Fix Ruby Debug from hanging when using save_and_open_screenshot
 export RUBY_DEBUG_FORK_MODE="parent"
 
