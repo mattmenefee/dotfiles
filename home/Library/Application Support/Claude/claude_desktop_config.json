@@ -2,7 +2,14 @@
   "mcpServers": {
     "linear": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/sse"]
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.linear.app/sse"
+      ]
     }
+  },
+  "preferences": {
+    "sidebarMode": "code"
   }
 }
