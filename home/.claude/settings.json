@@ -70,7 +70,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "/Users/matt/.claude/statusline-robbyrussell.sh"
+    "command": "/Users/matt/.claude/statusline.sh"
   },
   "enabledPlugins": {
     "frontend-design@claude-code-plugins": true,
