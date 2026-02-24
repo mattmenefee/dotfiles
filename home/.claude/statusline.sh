@@ -7,40 +7,58 @@ input=$(cat)
 current_dir=$(echo "$input" | /usr/bin/jq -r '.workspace.current_dir')
 model=$(echo "$input" | /usr/bin/jq -r '.model.display_name')
 
-# Extract context window information
-input_tokens=$(echo "$input" | /usr/bin/jq -r '.context_window.total_input_tokens // 0')
-output_tokens=$(echo "$input" | /usr/bin/jq -r '.context_window.total_output_tokens // 0')
-context_size=$(echo "$input" | /usr/bin/jq -r '.context_window.context_window_size // 200000')
+# Use pre-calculated context percentage (accurate after auto-compaction)
+pct=$(echo "$input" | /usr/bin/jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
+[ -z "$pct" ] && pct=0
 
 # Get current directory basename
 dir_name=$(basename "$current_dir")
 
-# Git information
-if [ -d "$current_dir/.git" ] || git -C "$current_dir" rev-parse --git-dir > /dev/null 2>&1; then
-  branch=$(git -C "$current_dir" branch --show-current 2>/dev/null || echo 'detached')
+# Git information (cached per-directory for performance)
+dir_hash=$(echo "$current_dir" | md5 -q 2>/dev/null || echo "$current_dir" | md5sum | cut -d' ' -f1)
+CACHE_FILE="/tmp/statusline-git-cache-${dir_hash}"
+CACHE_MAX_AGE=5
 
-  # Fast dirty check - short-circuits on first difference found
-  if ! git -C "$current_dir" diff --quiet HEAD 2>/dev/null; then
-    dirty=" \033[0;33m✗\033[0m"
-  else
+cache_is_stale() {
+  [ ! -f "$CACHE_FILE" ] || \
+  [ $(($(date +%s) - $(stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0))) -gt $CACHE_MAX_AGE ]
+}
+
+if cache_is_stale; then
+  if [ -d "$current_dir/.git" ] || git -C "$current_dir" rev-parse --git-dir > /dev/null 2>&1; then
+    branch=$(git -C "$current_dir" branch --show-current 2>/dev/null || echo 'detached')
+
     dirty=""
-  fi
+    if ! git -C "$current_dir" diff --quiet HEAD 2>/dev/null; then
+      dirty="dirty"
+    fi
 
-  # Ahead/behind tracking
-  ahead_behind=$(git -C "$current_dir" rev-list --left-right --count HEAD...@{upstream} 2>/dev/null)
-  if [ -n "$ahead_behind" ]; then
-    ahead=$(echo "$ahead_behind" | cut -f1)
-    behind=$(echo "$ahead_behind" | cut -f2)
-    sync_status=""
-    [ "$ahead" -gt 0 ] && sync_status="${sync_status} \033[0;32m↑${ahead}\033[0m"
-    [ "$behind" -gt 0 ] && sync_status="${sync_status} \033[0;31m↓${behind}\033[0m"
+    ahead=0
+    behind=0
+    ahead_behind=$(git -C "$current_dir" rev-list --left-right --count HEAD...@{upstream} 2>/dev/null)
+    if [ -n "$ahead_behind" ]; then
+      ahead=$(echo "$ahead_behind" | cut -f1)
+      behind=$(echo "$ahead_behind" | cut -f2)
+    fi
+
+    echo "$branch|$dirty|$ahead|$behind" > "$CACHE_FILE"
   else
-    sync_status=""
+    echo "|||" > "$CACHE_FILE"
   fi
+fi
 
-  git_info=$(printf "%b%b \033[1;34mgit:(\033[0;31m%s\033[1;34m)\033[0m" "$dirty" "$sync_status" "$branch")
-else
-  git_info=""
+IFS='|' read -r branch dirty ahead behind < "$CACHE_FILE"
+
+git_info=""
+if [ -n "$branch" ]; then
+  dirty_indicator=""
+  [ "$dirty" = "dirty" ] && dirty_indicator=" \033[0;33m✗\033[0m"
+
+  sync_status=""
+  [ "$ahead" -gt 0 ] 2>/dev/null && sync_status="${sync_status} \033[0;32m↑${ahead}\033[0m"
+  [ "$behind" -gt 0 ] 2>/dev/null && sync_status="${sync_status} \033[0;31m↓${behind}\033[0m"
+
+  git_info=$(printf "%b%b \033[1;34mgit:(\033[0;31m%s\033[1;34m)\033[0m" "$dirty_indicator" "$sync_status" "$branch")
 fi
 
 # Rails server indicator (check PID file and verify process is running)
@@ -53,34 +71,29 @@ if [ -f "$pid_file" ]; then
   fi
 fi
 
-# Green arrow (robbyrussell theme default)
+# Green arrow
 arrow=$(printf "\033[1;32m➜\033[0m")
 
-# Calculate context remaining as percentage
-# NOTE: Known issue - tokens are cumulative session totals, not current context usage.
-#       This means percentage may be inaccurate after auto-compaction.
-#       See: https://github.com/anthropics/claude-code/issues/13783
-context_info=""
-if [ "$context_size" -gt 0 ] 2>/dev/null; then
-  used_tokens=$((input_tokens + output_tokens))
-  percent_used=$((used_tokens * 100 / context_size))
+# --- Line 1: arrow + directory + rails + model + git ---
+printf "%s \033[0;36m%s\033[0m%b \033[1;35m%s\033[0m %b\n" "$arrow" "$dir_name" "$rails_indicator" "$model" "$git_info"
 
-  # Cap at 100% (can exceed due to cumulative token bug)
-  [ "$percent_used" -gt 100 ] && percent_used=100
-
-  percent_remaining=$((100 - percent_used))
-
-  # Color based on usage: green (<50%), yellow (50-80%), red (>80%)
-  if [ "$percent_used" -lt 50 ]; then
-    context_color="\033[0;32m"  # green
-  elif [ "$percent_used" -lt 80 ]; then
-    context_color="\033[0;33m"  # yellow
-  else
-    context_color="\033[0;31m"  # red
-  fi
-
-  context_info=$(printf " %b%d%% left\033[0m" "$context_color" "$percent_remaining")
+# --- Line 2: context progress bar + cost + duration ---
+# Color thresholds: green (<70%), yellow (70-89%), red (>=90%)
+if [ "$pct" -ge 90 ]; then
+  bar_color="\033[0;31m"  # red
+elif [ "$pct" -ge 70 ]; then
+  bar_color="\033[0;33m"  # yellow
+else
+  bar_color="\033[0;32m"  # green
 fi
 
-# Output: arrow + cyan directory + rails indicator + magenta model + context + git info
-printf "%s \033[0;36m%s\033[0m%b \033[1;35m%s\033[0m%b%b" "$arrow" "$dir_name" "$rails_indicator" "$model" "$context_info" "$git_info"
+# Build 20-char progress bar for finer granularity
+BAR_WIDTH=20
+FILLED=$((pct * BAR_WIDTH / 100))
+EMPTY=$((BAR_WIDTH - FILLED))
+bar=""
+[ "$FILLED" -gt 0 ] && bar=$(printf "%${FILLED}s" | tr ' ' '█')
+[ "$EMPTY" -gt 0 ] && bar="${bar}$(printf "%${EMPTY}s" | tr ' ' '░')"
+
+printf "%b%s\033[0m %d%%" "$bar_color" "$bar" "$pct"
+
