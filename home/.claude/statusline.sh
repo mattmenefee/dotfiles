@@ -7,8 +7,20 @@ input=$(cat)
 current_dir=$(echo "$input" | /usr/bin/jq -r '.workspace.current_dir')
 model=$(echo "$input" | /usr/bin/jq -r '.model.display_name')
 
-# Use pre-calculated context percentage (accurate after auto-compaction)
-pct=$(echo "$input" | /usr/bin/jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
+# Calculate context percentage including output tokens to match auto-compact threshold.
+# The pre-calculated used_percentage excludes output tokens, so it underreports usage.
+pct=$(echo "$input" | /usr/bin/jq -r '
+  .context_window |
+  if .current_usage != null and .context_window_size > 0 then
+    ((.current_usage.input_tokens // 0)
+     + (.current_usage.cache_creation_input_tokens // 0)
+     + (.current_usage.cache_read_input_tokens // 0)
+     + (.current_usage.output_tokens // 0))
+    * 100 / .context_window_size | floor
+  else
+    .used_percentage // 0 | floor
+  end
+')
 [ -z "$pct" ] && pct=0
 
 # Get current directory basename
