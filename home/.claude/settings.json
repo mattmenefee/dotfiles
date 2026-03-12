@@ -1,7 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "ENABLE_TOOL_SEARCH": "auto:5"
+    "ENABLE_TOOL_SEARCH": "auto:5",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
   },
   "attribution": {
     "commit": "",
@@ -21,8 +22,6 @@
       "Bash(gh pr view:*)",
       "Bash(yarn build)",
       "mcp__circleci-mcp-server__get_job_test_results",
-      "mcp__context7__get-library-docs",
-      "mcp__context7__resolve-library-id",
       "mcp__linear-server__get_issue_status",
       "mcp__linear-server__get_project",
       "mcp__linear-server__get_team",
@@ -75,9 +74,13 @@
   "enabledPlugins": {
     "frontend-design@claude-code-plugins": true,
     "explanatory-output-style@claude-code-plugins": true,
-    "playwright-cli@playwright-cli": true
+    "playwright-cli@playwright-cli": true,
+    "clangd-lsp@claude-plugins-official": true,
+    "ruby-lsp@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
+  "voiceEnabled": true,
   "feedbackSurveyState": {
     "lastShownTime": 1754089078351
   }
