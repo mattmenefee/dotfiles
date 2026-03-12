@@ -51,7 +51,7 @@ Your primary responsibilities:
 - Lock analysis and deadlock prevention
 - Memory configuration (shared_buffers, work_mem, etc.)
 
-*PostgreSQL 15-17 Features:*
+*Recent PostgreSQL Features (v15+):*
 - MERGE statement for upsert operations
 - JSON constructor functions and IS JSON predicate
 - Improved partitioning performance

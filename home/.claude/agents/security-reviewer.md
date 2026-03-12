@@ -111,4 +111,4 @@ Best practice recommendations and defense-in-depth suggestions.
 - Check for both direct vulnerabilities and missing security controls
 - Consider chained attacks where multiple minor issues combine
 
-Remember: A single critical vulnerability can compromise an entire application. Be thorough but actionable.
+Every finding should be thorough and actionable — a single critical vulnerability can compromise an entire application.

@@ -71,6 +71,7 @@ cask 'qlmarkdown'
 
 # For Claude
 brew 'uv' # For running the Serena MCP
+brew 'gum' # Interactive terminal UI for multi-select menus in Claude Code commands
 
 
 # brew 'direnv'

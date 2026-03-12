@@ -18,6 +18,14 @@ When creating Linear issues, write descriptions for a non-technical audience:
 - Include a Test plan section with checkboxes
 - Reference related Linear issues if applicable
 
+## Committing Changes
+
+- Always use the `/commit` slash command when writing or editing a commit message
+  — this includes creating new commits, amending commits, and editing commit
+  messages
+- Consider using the `/doc-review` slash command after writing or updating a
+  significant amount of documentation
+
 ## Task Completion Checklist
 
 After completing any coding task, run these commands in order:
