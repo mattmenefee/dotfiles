@@ -49,7 +49,7 @@ brew 'flyctl'
 
 # For CIRM's infrastructure management
 brew 'ansible'
-brew 'asdf'
+brew 'mise'
 brew 'awscli' # for syncing DigitalOcean Spaces files from Production to Staging
 
 # For the Open Source Risk Engine (ORE)
