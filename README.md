@@ -51,6 +51,25 @@ dotfiles managed using [homesick][homesick_link].
     $ sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     ```
 
+    The following oh-my-zsh plugins are enabled in `.zshrc`:
+
+    | Plugin | Source | Description |
+    |--------|--------|-------------|
+    | [git][omz_git] | built-in | Git aliases and completions |
+    | [rails][omz_rails] | built-in | Rails command aliases |
+    | [docker][omz_docker] | built-in | Docker completions |
+    | [vi-mode][omz_vimode] | built-in | Vim keybindings in the shell |
+    | [mise][omz_mise] | built-in | Activates [mise][mise_link] for version management |
+    | [z][omz_z] | built-in | Jump to frequently used directories (e.g., `z dotfiles`) |
+    | [gh][omz_gh] | built-in | GitHub CLI completions |
+    | [bundler][omz_bundler] | built-in | Auto-prefixes gem commands with `bundle exec` |
+
+    Two additional zsh plugins are installed via Homebrew (included in the
+    Brewfile) and sourced at the bottom of `.zshrc`:
+
+    - **[zsh-syntax-highlighting][zsh_sh_link]** — highlights commands as you type
+    - **[zsh-autosuggestions][zsh_as_link]** — suggests commands from history as you type
+
 1. Set up zsh
 
     ```shell
@@ -90,4 +109,15 @@ $ homesick pull --all
 [rbenv_link]: https://github.com/sstephenson/rbenv
 [rbenv_default_gems_link]: https://github.com/rbenv/rbenv-default-gems
 [vundle_link]: https://github.com/VundleVim/Vundle.vim
+[mise_link]: https://mise.jdx.dev/
+[omz_bundler]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/bundler
+[omz_docker]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/docker
+[omz_gh]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/gh
+[omz_git]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git
+[omz_mise]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/mise
+[omz_rails]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/rails
+[omz_vimode]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/vi-mode
+[omz_z]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/z
 [oh_my_zsh_link]: https://ohmyz.sh/#install
+[zsh_as_link]: https://github.com/zsh-users/zsh-autosuggestions
+[zsh_sh_link]: https://github.com/zsh-users/zsh-syntax-highlighting

@@ -7,6 +7,7 @@ brew 'macvim'
 brew 'neovim'
 brew 'the_silver_searcher'
 brew 'zsh'
+brew 'zsh-autosuggestions'
 brew 'zsh-syntax-highlighting'
 
 # Web Development tools
