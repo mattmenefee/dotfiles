@@ -113,6 +113,12 @@ When the review file already exists:
 1. **Strike through findings** that are no longer applicable (e.g., the section
    they referenced has been deleted or rewritten) — do **not** remove them;
    apply strikethrough and add a brief explanation of why
+1. **Update the review date** at the top of the document:
+   ```markdown
+   ## Review History
+   - **Initial review:** YYYY-MM-DD
+   - **Re-review:** YYYY-MM-DD (findings F1, F2 fixed; F5–F6 added)
+   ```
 
 ### Severity Indicators
 
@@ -206,20 +212,24 @@ At the end, provide:
 ### PR Comment Format
 
 When posting review findings as a PR comment (e.g., during `/ship-it` or when
-explicitly asked), wrap the full content in a collapsible `<details><summary>`
-block so only a summary line is visible by default:
+explicitly asked), build a temporary file with a collapsible
+`<details><summary>` wrapper and post it with `--body-file` to avoid heredoc
+quoting issues:
 
-```markdown
-## Document Review: [document name] — [status summary]
-
-**[N findings — X actionable, Y observations]**
-
-<details>
-<summary>Click to expand full review details</summary>
-
-[full review content: all findings, summary table, checklist]
-
-</details>
+```bash
+{
+  echo "## Document Review: [document name] — [status summary]"
+  echo ""
+  echo "**[N findings — X actionable, Y observations]**"
+  echo ""
+  echo "<details>"
+  echo "<summary>Click to expand full review details</summary>"
+  echo ""
+  cat "$review_file"
+  echo ""
+  echo "</details>"
+} > /tmp/pr-comment.md
+gh pr comment --body-file /tmp/pr-comment.md
 ```
 
 The `<summary>` line should include the total finding count and a breakdown
