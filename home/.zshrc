@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# Configure oh-my-zsh updates (once per day)
+zstyle ':omz:update' mode auto
+zstyle ':omz:update' frequency 1
+zstyle ':omz:update' verbosity default
+
 # Path to your oh-my-zsh configuration.
 ZSH=$HOME/.oh-my-zsh
 
@@ -61,6 +67,7 @@ alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
 # docker volumes ls
 alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
+alias dc-es="docker compose up -d docker_elasticsearch"
 
 # Homebrew
 alias bdi="brew deps --tree --installed"
