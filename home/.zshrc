@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# Configure oh-my-zsh updates (once per day)
+zstyle ':omz:update' mode auto
+zstyle ':omz:update' frequency 1
+zstyle ':omz:update' verbosity default
+
 # Path to your oh-my-zsh configuration.
 ZSH=$HOME/.oh-my-zsh
 
@@ -61,6 +67,7 @@ alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
 # docker volumes ls
 alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
+alias dc-es="docker compose up -d docker_elasticsearch"
 
 # Homebrew
 alias bdi="brew deps --tree --installed"
@@ -91,7 +98,7 @@ alias brewup="brew upgrade && brew cleanup && brew autoremove && brew doctor"
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git rails docker vi-mode asdf)
+plugins=(git rails docker vi-mode mise)
 
 source $ZSH/oh-my-zsh.sh
 

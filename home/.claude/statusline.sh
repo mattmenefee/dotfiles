@@ -3,7 +3,7 @@
 # Read JSON input from stdin
 input=$(cat)
 
-# Extract values from JSON (use system jq to avoid asdf shim issues)
+# Extract values from JSON
 current_dir=$(echo "$input" | /usr/bin/jq -r '.workspace.current_dir')
 model=$(echo "$input" | /usr/bin/jq -r '.model.display_name')
 

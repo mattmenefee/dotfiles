@@ -67,18 +67,3 @@ After completing any coding task, run these commands in order:
   2. Activate the project: `mcp__serena__activate_project` with the current project path
 - Serena has project memories that can be read with `read_memory` when relevant
 - Do NOT attempt to call any `mcp__serena__*` tool without first loading it via `ToolSearch`
-
-# System Workarounds
-
-## jq and asdf
-
-The `jq` command may be managed by asdf without a version specified. Use the
-full path `/usr/bin/jq` instead of just `jq` to bypass the asdf shim:
-
-```bash
-# Use this
-/usr/bin/jq -r '.key'
-
-# Not this
-jq -r '.key'
-```
