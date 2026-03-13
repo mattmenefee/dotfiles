@@ -95,7 +95,8 @@ findings are addressed during the conversation.
 **IMPORTANT: Never delete findings.** Findings are a permanent record of what
 was reviewed. When a finding is addressed, mark it with strikethrough and a
 status icon (✅ Fixed, 🚫 Ignored, ⏸️ Deferred) — but preserve the original
-content. This follows the same convention as `/local-review`.
+content. This follows the same convention as `/local-review` (a code review
+command available in project repositories).
 
 ### Merging with Existing Findings
 
@@ -115,7 +116,8 @@ When the review file already exists:
 
 ### Severity Indicators
 
-Use the same severity conventions as `/local-review` for quick visual scanning:
+Use the same severity conventions as `/local-review` (code review command) for
+quick visual scanning:
 
 **Actionable findings** (require attention):
 
@@ -200,6 +202,30 @@ At the end, provide:
 - [ ] F1 - Fix description
 - [ ] F2 - Fix description
 ```
+
+### PR Comment Format
+
+When posting review findings as a PR comment (e.g., during `/ship-it` or when
+explicitly asked), wrap the full content in a collapsible `<details><summary>`
+block so only a summary line is visible by default:
+
+```markdown
+## Document Review: [document name] — [status summary]
+
+**[N findings — X actionable, Y observations]**
+
+<details>
+<summary>Click to expand full review details</summary>
+
+[full review content: all findings, summary table, checklist]
+
+</details>
+```
+
+The `<summary>` line should include the total finding count and a breakdown
+(e.g., "24 findings — 14 fixed, 2 ignored, 8 observations"). When all
+actionable findings have been addressed, lead with that:
+"24 findings — 16 fixed, 8 observations — all clear".
 
 ### Interactive Finding Selection
 

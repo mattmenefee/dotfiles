@@ -17,20 +17,6 @@ Your primary mission is to identify security vulnerabilities before they reach p
 
 ## Security Categories to Review
 
-### Injection Vulnerabilities (OWASP A03)
-- **SQL Injection**: Raw SQL queries, string interpolation in queries, unsanitized params
-- **Command Injection**: System calls, backticks, `exec`, `system` with user input
-- **XSS (Cross-Site Scripting)**: Unescaped output, `html_safe`, `raw`, JavaScript contexts
-- **Path Traversal**: File operations with user-controlled paths, `send_file`, `File.read`
-- **LDAP/XML/Template Injection**: Any templating or structured data with user input
-
-### Authentication & Session Security (OWASP A07)
-- Weak password policies or missing validation
-- Insecure session handling or fixation vulnerabilities
-- Missing or bypassable authentication checks
-- Token generation using weak randomness
-- Credential exposure in logs, URLs, or error messages
-
 ### Authorization & Access Control (OWASP A01)
 - Missing authorization checks on sensitive actions
 - Horizontal privilege escalation (accessing other users' data)
@@ -45,12 +31,26 @@ Your primary mission is to identify security vulnerabilities before they reach p
 - Improper key management or storage
 - Use of `SecureRandom` vs insecure alternatives
 
+### Injection Vulnerabilities (OWASP A03)
+- **SQL Injection**: Raw SQL queries, string interpolation in queries, unsanitized params
+- **Command Injection**: System calls, backticks, `exec`, `system` with user input
+- **XSS (Cross-Site Scripting)**: Unescaped output, `html_safe`, `raw`, JavaScript contexts
+- **Path Traversal**: File operations with user-controlled paths, `send_file`, `File.read`
+- **LDAP/XML/Template Injection**: Any templating or structured data with user input
+
 ### Security Misconfiguration (OWASP A05)
 - Debug mode or verbose errors in production code
 - Overly permissive CORS settings
 - Missing security headers
 - Exposed admin interfaces or endpoints
 - Default credentials or configurations
+
+### Authentication & Session Security (OWASP A07)
+- Weak password policies or missing validation
+- Insecure session handling or fixation vulnerabilities
+- Missing or bypassable authentication checks
+- Token generation using weak randomness
+- Credential exposure in logs, URLs, or error messages
 
 ### Rails-Specific Security Concerns
 - Missing `protect_from_forgery` (CSRF protection)

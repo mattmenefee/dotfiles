@@ -1,3 +1,5 @@
+<!-- Claude Code project instructions for dotfiles and related projects -->
+
 # Workflow
 
 - When creating Pull Requests or Linear issues, assign them to me by default
@@ -46,16 +48,15 @@ When creating Linear issues, write descriptions for a non-technical audience:
 After completing any coding task, run these commands in order:
 
 1. **Code Quality**: Run only the relevant linters for your changes (e.g. `bin/rubocop -A` for Ruby files, `bin/rails lint:haml` for Haml, etc.) — never run `bin/rails lint`
-2. **Testing**: Run only the specs relevant to your changes (never the entire suite)
-3. **Frontend Build**: `yarn build` (if frontend changes were made)
-4. **Search Indexing**: `bin/rails chewy:update` (if model changes affect search)
+2. **Testing**: Run only the specs relevant to your changes — never the entire suite
+3. **Frontend Build**: `yarn build` — if frontend changes were made
+4. **Search Indexing**: `bin/rails chewy:update` — if model changes affect search
 
 # Code Style
 
-- Try to follow Sandi Metz's rules in her "Practical Object-Oriented Design in
-  Ruby" book
-- Try to follow the rules in the [Ruby Style Guide](https://rubystyle.guide/)
-  and the [Rails Style Guide](https://rails.rubystyle.guide/)
+- Follow Sandi Metz's rules from "Practical Object-Oriented Design in Ruby"
+- Follow the [Ruby Style Guide](https://rubystyle.guide/) and the
+  [Rails Style Guide](https://rails.rubystyle.guide/)
 - Always leave a blank line at the end of a file
 
 # Testing

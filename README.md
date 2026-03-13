@@ -1,13 +1,17 @@
 # dotfiles
 
-dotfiles managed using [homesick][homesick_link].
+Personal macOS development environment managed with [Homesick][homesick_link].
+Configures Zsh (with [Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link],
+Ruby development tools via [rbenv][rbenv_link], and a curated set of
+[Homebrew][homebrew_link] packages for web development. Uses
+[mise][mise_link] for managing non-Ruby tool versions.
 
 ## Getting Started
 
 1. Install [Homebrew][homebrew_link] and
-  [homebrew-bundle][brew_bundle_link]
+   [homebrew-bundle][brew_bundle_link]
 
-1. Install homesick and symlink dotfiles:
+1. Install Homesick and symlink dotfiles:
 
     ```shell
     $ homesick clone mattmenefee/dotfiles
@@ -22,10 +26,15 @@ dotfiles managed using [homesick][homesick_link].
     ```
 
 1. Set up [rbenv][rbenv_link] and
-  [rbenv-default-gems][rbenv_default_gems_link] plugin
+   [rbenv-default-gems][rbenv_default_gems_link] plugin
+
+    Ruby versions are managed with rbenv (installed via Homebrew in step 3).
+    Other tool versions (e.g., Ansible, Terraform) are managed with
+    [mise][mise_link], which is also installed via Homebrew and activated
+    through the Oh My Zsh `mise` plugin.
 
     ```shell
-    $ rbenv init # See rbenv Readme for why this is necessary
+    $ rbenv init # See rbenv README for why this is necessary
 
     # Set up the rbenv-default-gems plugin
     $ git clone https://github.com/rbenv/rbenv-default-gems.git $(rbenv root)/plugins/rbenv-default-gems
@@ -36,19 +45,19 @@ dotfiles managed using [homesick][homesick_link].
     $ rbenv global [version] # set global Ruby version
     ```
 
-1. Update Rubygems
+1. Update RubyGems
 
     ```shell
     $ gem update --system
     ```
 
-1. Install [oh-my-zsh][oh_my_zsh_link]
+1. Install [Oh My Zsh][oh_my_zsh_link]
 
     ```shell
-    $ sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    $ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     ```
 
-    The following oh-my-zsh plugins are enabled in `.zshrc`:
+    The following Oh My Zsh plugins are enabled in `.zshrc`:
 
     | Plugin | Source | Description |
     |--------|--------|-------------|
@@ -61,18 +70,21 @@ dotfiles managed using [homesick][homesick_link].
     | [gh][omz_gh] | built-in | GitHub CLI completions |
     | [bundler][omz_bundler] | built-in | Auto-prefixes gem commands with `bundle exec` |
 
-    Two additional zsh plugins are installed via Homebrew (included in the
+    Two additional Zsh plugins are installed via Homebrew (included in the
     Brewfile) and sourced at the bottom of `.zshrc`:
 
     - **[zsh-syntax-highlighting][zsh_sh_link]** — highlights commands as you type
     - **[zsh-autosuggestions][zsh_as_link]** — suggests commands from history as you type
 
-1. Install [Vundle][vundle_link] and run the plugin installer
+1. Install [Vundle][vundle_link] and run the Vim plugin installer
 
     ```shell
     $ cd ~/.homesick/repos/dotfiles
     $ zsh init.zsh
     ```
+
+    This installs Vundle plugins for MacVim. Neovim (also in the Brewfile)
+    uses a separate configuration.
 
 1. Set up Git config
 
@@ -94,11 +106,15 @@ $ gem update --system
 # Bundler
 $ gem update bundler
 
+# mise (non-Ruby tool versions)
+$ mise self-update
+$ mise upgrade
+
 # Dotfiles via Homesick
 $ homesick pull --all
 ```
 
-oh-my-zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
+Oh My Zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
 
 [homesick_link]: https://github.com/technicalpickles/homesick
 [homebrew_link]: https://brew.sh/
