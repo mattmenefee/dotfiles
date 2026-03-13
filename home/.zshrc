@@ -98,7 +98,7 @@ alias brewup="brew upgrade && brew cleanup && brew autoremove && brew doctor"
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git rails docker vi-mode mise)
+plugins=(git rails docker vi-mode mise z gh bundler)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -126,5 +126,6 @@ export PATH="$HOME/.local/bin:$PATH"
 # Fix Ruby Debug from hanging when using save_and_open_screenshot
 export RUBY_DEBUG_FORK_MODE="parent"
 
-# Note: this must be placed at the bottom of .zshrc
+# Note: these must be placed at the bottom of .zshrc
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh

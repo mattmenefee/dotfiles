@@ -7,10 +7,12 @@ brew 'macvim'
 brew 'neovim'
 brew 'the_silver_searcher'
 brew 'zsh'
+brew 'zsh-autosuggestions'
 brew 'zsh-syntax-highlighting'
 
 # Web Development tools
 brew 'puma/puma/puma-dev'
+brew 'sass/sass/migrator'
 cask 'firefox'
 cask 'tableplus'
 cask 'miro'
@@ -18,6 +20,7 @@ cask 'zeplin'
 
 # MacOS interface management tools
 cask 'raycast'
+cask 'rectangle'
 cask 'caffeine'
 
 # Programming languages and related tools
@@ -27,6 +30,7 @@ brew 'rbenv'
 brew 'ruby-build'
 brew 'node'
 brew 'corepack' # for help with managing versions of your package managers, related to Node.js
+brew 'uv' # Python package installer, runner, and virtualenv manager
 
 # Version Control tools
 brew 'git'
@@ -36,7 +40,7 @@ cask 'github'
 # Databases
 brew 'sqlite'
 brew 'redis'
-brew 'postgresql@17'
+brew 'postgresql@18'
 brew 'pgcli'
 
 # Image processing tools
@@ -50,6 +54,7 @@ brew 'flyctl'
 # For CIRM's infrastructure management
 brew 'ansible'
 brew 'mise'
+brew 'yq' # YAML processor (like jq for YAML)
 brew 'awscli' # for syncing DigitalOcean Spaces files from Production to Staging
 
 # For the Open Source Risk Engine (ORE)
@@ -59,18 +64,20 @@ brew 'boost'
 brew 'swig'
 
 # For linting
+brew 'hadolint' # Dockerfile linter
 brew 'yamllint'
 brew 'ansible-lint'
 brew 'shellcheck'
 
 # Other programs
+cask 'basictex'
 cask 'calibre'
+cask 'typora'
 cask 'zoom'
 cask 'cleanmymac'
 cask 'qlmarkdown'
 
-# For Claude
-brew 'uv' # For running the Serena MCP
+# For Claude Code
 brew 'gum' # Interactive terminal UI for multi-select menus in Claude Code commands
 
 
@@ -87,7 +94,6 @@ brew 'gum' # Interactive terminal UI for multi-select menus in Claude Code comma
 # cask 'jet'
 # cask 'mono-mdk'
 # cask 'qlcolorcode'
-# cask 'qlmarkdown'
 # cask 'qlprettypatch'
 # cask 'qlstephen'
 # cask 'quicklook-csv'

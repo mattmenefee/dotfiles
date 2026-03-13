@@ -17,6 +17,21 @@ When creating Linear issues, write descriptions for a non-technical audience:
 - Include a Summary section with bullet points
 - Include a Test plan section with checkboxes
 - Reference related Linear issues if applicable
+- When posting review findings (local review, doc review, etc.) as a PR
+  comment, wrap the full content in a `<details><summary>` block so only a
+  summary line is visible by default:
+  ```markdown
+  ## [Review Type] — [status summary]
+
+  **[brief stats line]**
+
+  <details>
+  <summary>Click to expand full review details</summary>
+
+  [full review content here]
+
+  </details>
+  ```
 
 ## Committing Changes
 

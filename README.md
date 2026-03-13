@@ -5,13 +5,26 @@ dotfiles managed using [homesick][homesick_link].
 ## Getting Started
 
 1. Install [Homebrew][homebrew_link] and
-  [homebrew-bundle][brew_bundle_link] ([tips][brewfile_tips_link])
+  [homebrew-bundle][brew_bundle_link]
 
-1. Install [rbenv][rbenv_link] and
+1. Install homesick and symlink dotfiles:
+
+    ```shell
+    $ homesick clone mattmenefee/dotfiles
+    $ homesick link dotfiles
+    ```
+
+1. Install tools managed by Homebrew
+
+    ```shell
+    $ cd ~/.homesick/repos/dotfiles/
+    $ brew bundle
+    ```
+
+1. Set up [rbenv][rbenv_link] and
   [rbenv-default-gems][rbenv_default_gems_link] plugin
 
     ```shell
-    $ brew install rbenv ruby-build
     $ rbenv init # See rbenv Readme for why this is necessary
 
     # Set up the rbenv-default-gems plugin
@@ -29,29 +42,32 @@ dotfiles managed using [homesick][homesick_link].
     $ gem update --system
     ```
 
-1. Install homesick and symlick dotfiles:
-
-    ```shell
-    $ homesick clone mattmenefee/dotfiles
-    $ homesick link dotfiles
-    ```
-
-1. Install tools managed by Homebrew
-
-    ```shell
-    $ cd ~/.homesick/repos/dotfiles/
-    $ brew bundle
-    ```
-
-1. Install [Vundle][vundle_link]
-
 1. Install [oh-my-zsh][oh_my_zsh_link]
 
     ```shell
     $ sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     ```
 
-1. Set up zsh
+    The following oh-my-zsh plugins are enabled in `.zshrc`:
+
+    | Plugin | Source | Description |
+    |--------|--------|-------------|
+    | [git][omz_git] | built-in | Git aliases and completions |
+    | [rails][omz_rails] | built-in | Rails command aliases |
+    | [docker][omz_docker] | built-in | Docker completions |
+    | [vi-mode][omz_vimode] | built-in | Vim keybindings in the shell |
+    | [mise][omz_mise] | built-in | Activates [mise][mise_link] for version management |
+    | [z][omz_z] | built-in | Jump to frequently used directories (e.g., `z dotfiles`) |
+    | [gh][omz_gh] | built-in | GitHub CLI completions |
+    | [bundler][omz_bundler] | built-in | Auto-prefixes gem commands with `bundle exec` |
+
+    Two additional zsh plugins are installed via Homebrew (included in the
+    Brewfile) and sourced at the bottom of `.zshrc`:
+
+    - **[zsh-syntax-highlighting][zsh_sh_link]** — highlights commands as you type
+    - **[zsh-autosuggestions][zsh_as_link]** — suggests commands from history as you type
+
+1. Install [Vundle][vundle_link] and run the plugin installer
 
     ```shell
     $ cd ~/.homesick/repos/dotfiles
@@ -69,9 +85,8 @@ dotfiles managed using [homesick][homesick_link].
 ## Updating
 
 ```shell
-# Homebrew
-$ brew update && brew outdated
-$ brew upgrade && brew cleanup && brew doctor
+# Homebrew (or use the `brewup` alias defined in .zshrc)
+$ brew upgrade && brew cleanup && brew autoremove && brew doctor
 
 # RubyGems
 $ gem update --system
@@ -83,11 +98,23 @@ $ gem update bundler
 $ homesick pull --all
 ```
 
+oh-my-zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
+
 [homesick_link]: https://github.com/technicalpickles/homesick
-[homebrew_link]: http://brew.sh/
+[homebrew_link]: https://brew.sh/
 [brew_bundle_link]: https://docs.brew.sh/Brew-Bundle-and-Brewfile
-[brewfile_tips_link]: https://robots.thoughtbot.com/brewfile-a-gemfile-but-for-homebrew
-[rbenv_link]: https://github.com/sstephenson/rbenv
+[rbenv_link]: https://github.com/rbenv/rbenv
 [rbenv_default_gems_link]: https://github.com/rbenv/rbenv-default-gems
 [vundle_link]: https://github.com/VundleVim/Vundle.vim
+[mise_link]: https://mise.jdx.dev/
+[omz_bundler]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/bundler
+[omz_docker]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/docker
+[omz_gh]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/gh
+[omz_git]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git
+[omz_mise]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/mise
+[omz_rails]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/rails
+[omz_vimode]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/vi-mode
+[omz_z]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/z
 [oh_my_zsh_link]: https://ohmyz.sh/#install
+[zsh_as_link]: https://github.com/zsh-users/zsh-autosuggestions
+[zsh_sh_link]: https://github.com/zsh-users/zsh-syntax-highlighting
