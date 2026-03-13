@@ -5,13 +5,26 @@ dotfiles managed using [homesick][homesick_link].
 ## Getting Started
 
 1. Install [Homebrew][homebrew_link] and
-  [homebrew-bundle][brew_bundle_link] ([tips][brewfile_tips_link])
+  [homebrew-bundle][brew_bundle_link]
 
-1. Install [rbenv][rbenv_link] and
+1. Install homesick and symlink dotfiles:
+
+    ```shell
+    $ homesick clone mattmenefee/dotfiles
+    $ homesick link dotfiles
+    ```
+
+1. Install tools managed by Homebrew
+
+    ```shell
+    $ cd ~/.homesick/repos/dotfiles/
+    $ brew bundle
+    ```
+
+1. Set up [rbenv][rbenv_link] and
   [rbenv-default-gems][rbenv_default_gems_link] plugin
 
     ```shell
-    $ brew install rbenv ruby-build
     $ rbenv init # See rbenv Readme for why this is necessary
 
     # Set up the rbenv-default-gems plugin
@@ -28,22 +41,6 @@ dotfiles managed using [homesick][homesick_link].
     ```shell
     $ gem update --system
     ```
-
-1. Install homesick and symlick dotfiles:
-
-    ```shell
-    $ homesick clone mattmenefee/dotfiles
-    $ homesick link dotfiles
-    ```
-
-1. Install tools managed by Homebrew
-
-    ```shell
-    $ cd ~/.homesick/repos/dotfiles/
-    $ brew bundle
-    ```
-
-1. Install [Vundle][vundle_link]
 
 1. Install [oh-my-zsh][oh_my_zsh_link]
 
@@ -70,7 +67,7 @@ dotfiles managed using [homesick][homesick_link].
     - **[zsh-syntax-highlighting][zsh_sh_link]** — highlights commands as you type
     - **[zsh-autosuggestions][zsh_as_link]** — suggests commands from history as you type
 
-1. Set up zsh
+1. Install [Vundle][vundle_link] and run the plugin installer
 
     ```shell
     $ cd ~/.homesick/repos/dotfiles
@@ -88,9 +85,8 @@ dotfiles managed using [homesick][homesick_link].
 ## Updating
 
 ```shell
-# Homebrew
-$ brew update && brew outdated
-$ brew upgrade && brew cleanup && brew doctor
+# Homebrew (or use the `brewup` alias defined in .zshrc)
+$ brew upgrade && brew cleanup && brew autoremove && brew doctor
 
 # RubyGems
 $ gem update --system
@@ -102,11 +98,12 @@ $ gem update bundler
 $ homesick pull --all
 ```
 
+oh-my-zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
+
 [homesick_link]: https://github.com/technicalpickles/homesick
-[homebrew_link]: http://brew.sh/
+[homebrew_link]: https://brew.sh/
 [brew_bundle_link]: https://docs.brew.sh/Brew-Bundle-and-Brewfile
-[brewfile_tips_link]: https://robots.thoughtbot.com/brewfile-a-gemfile-but-for-homebrew
-[rbenv_link]: https://github.com/sstephenson/rbenv
+[rbenv_link]: https://github.com/rbenv/rbenv
 [rbenv_default_gems_link]: https://github.com/rbenv/rbenv-default-gems
 [vundle_link]: https://github.com/VundleVim/Vundle.vim
 [mise_link]: https://mise.jdx.dev/
