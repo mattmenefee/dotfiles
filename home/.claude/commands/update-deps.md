@@ -1,7 +1,7 @@
 # Update Dependencies
 
-Update the app's Ruby and JavaScript dependencies, generate a detailed
-changelog commit message, and open a pull request.
+Update the app's Ruby and JavaScript dependencies, build a detailed
+commit message from changelogs, and open a pull request.
 
 ## Overview
 
@@ -43,11 +43,11 @@ Examples:
 
 | Scenario | Branch | Title |
 |----------|--------|-------|
-| First of the month | `update-dependencies-march-2026` | `Update the app's dependencies - March 2026` |
-| Second update | `update-dependencies-early-march-2026` | `Update the app's dependencies - early March 2026` |
-| Third update | `update-dependencies-mid-march-2026` | `Update the app's dependencies - mid March 2026` |
-| Fourth update | `update-dependencies-late-march-2026` | `Update the app's dependencies - late March 2026` |
-| Close together | `update-dependencies-end-of-march-2026` | `Update the app's dependencies - end of March 2026` |
+| First of the month | `update-dependencies-{month}-{year}` | `Update the app's dependencies - {Month} {Year}` |
+| Second update | `update-dependencies-early-{month}-{year}` | `Update the app's dependencies - early {Month} {Year}` |
+| Third update | `update-dependencies-mid-{month}-{year}` | `Update the app's dependencies - mid {Month} {Year}` |
+| Fourth update | `update-dependencies-late-{month}-{year}` | `Update the app's dependencies - late {Month} {Year}` |
+| Close together | `update-dependencies-end-of-{month}-{year}` | `Update the app's dependencies - end of {Month} {Year}` |
 
 ### Step 2: Create the Feature Branch
 
@@ -65,9 +65,12 @@ dependency changes:
 gem_update 2>&1 | tee /tmp/gem-update-output.txt
 ```
 
-`gem_update` runs `bundle update` internally and outputs a formatted
-changelog with version diffs and changelog links. Capture this output —
-it will be the starting point for the commit message body.
+`gem_update` is a custom gem (installed via `gem install gem_update`) that
+runs `bundle update` internally and outputs a formatted changelog with
+version diffs and changelog links. Capture this output — it will be the
+starting point for the commit message body. If `gem_update` is not
+available, run `bundle update` directly and manually build the changelog
+from the `Gemfile.lock` diff.
 
 A successful run prints a list of gem updates with version diffs. If
 no gems were updated, the output will indicate that the bundle is
@@ -342,9 +345,9 @@ When a new version is available:
 
 ## Important Notes
 
-- **Start from an up-to-date `main`** — see Step 2.
-- **Changelog links are required** — see Step 7.
-- **Never skip linter checks** — see Steps 5 and 6.
-- **Version-locked packages** — see Step 4 and
+- **Start from an up-to-date `main`** — see [Step 2](#step-2-create-the-feature-branch).
+- **Changelog links are required** — see [Step 7](#step-7-build-the-final-commit-message).
+- **Never skip linter checks** — see [Step 5](#step-5-handle-rubocop-updates) and [Step 6](#step-6-handle-haml-lint-updates).
+- **Version-locked packages** — see [Step 4](#step-4-update-javascript-dependencies) and
   [Version-Locked Packages](#version-locked-packages).
 - If no dependencies changed at all, inform the user and stop.

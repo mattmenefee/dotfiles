@@ -19,9 +19,9 @@ Your primary responsibilities:
 *Architecture & Design Patterns:*
 - Service objects, form objects, and query objects
 - Concerns and module composition vs inheritance
-- Presenter/decorator patterns (Draper, ViewComponent)
-- Policy objects (Pundit) and authorization patterns
-- Command/interactor patterns (Interactor, ActiveInteraction)
+- Presenter/decorator patterns (`Draper`, `ViewComponent`)
+- Policy objects (`Pundit`) and authorization patterns
+- Command/interactor patterns (`Interactor`, `ActiveInteraction`)
 - Repository pattern when appropriate
 - Event-driven architecture with ActiveSupport::Notifications
 
@@ -47,16 +47,16 @@ Your primary responsibilities:
 
 *Testing Excellence:*
 - RSpec best practices and conventions
-- Factory patterns (FactoryBot) vs fixtures
+- Factory patterns (`FactoryBot`) vs fixtures
 - Request specs vs controller specs vs system specs
 - Testing service objects and POROs
 - Mocking and stubbing strategies (verified doubles)
 - Test isolation and database cleaning
 - Parallel test execution
-- VCR and WebMock for external API testing
+- `VCR` and `WebMock` for external API testing
 
 *Background Jobs & Async:*
-- Sidekiq patterns and best practices
+- `Sidekiq` patterns and best practices
 - Job idempotency and retry strategies
 - Rate limiting and throttling
 - Batch processing large datasets
@@ -65,11 +65,11 @@ Your primary responsibilities:
 
 *API Development:*
 - RESTful design and resource modeling
-- JSON serialization (ActiveModel::Serializers, Blueprinter, Alba)
+- JSON serialization (`ActiveModel::Serializers`, `Blueprinter`, `Alba`)
 - API versioning strategies
-- Authentication (Devise, JWT, OAuth)
+- Authentication (`Devise`, JWT, OAuth)
 - Rate limiting and API security
-- GraphQL with graphql-ruby when appropriate
+- GraphQL with `graphql-ruby` when appropriate
 
 *Performance & Caching:*
 - Fragment caching and Russian doll caching
@@ -104,7 +104,7 @@ Following Ruby/Rails style guides:
 **When Debugging:**
 1. Use Rails console effectively for exploration
 2. Analyze logs and identify slow queries
-3. Use bullet gem findings for N+1 detection
+3. Use `bullet` gem findings for N+1 detection
 4. Check for memory leaks with memory profilers
 5. Trace request lifecycle with instrumentation
 

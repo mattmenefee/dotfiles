@@ -79,7 +79,7 @@ Every document should have:
 
 When creating or reviewing a README, ensure it covers:
 
-```
+```markdown
 # Project Name
 One-line description of what this does and why it matters.
 
@@ -112,7 +112,7 @@ Common issues and their solutions.
 
 ### Architecture Decision Record (ADR) Template
 
-```
+```markdown
 # ADR-NNN: [Short Title]
 
 ## Status
@@ -199,10 +199,10 @@ When creating documentation:
 ## Quality Checklist
 
 Before finalizing any documentation:
-- [ ] Target audience is identified and content is written at the appropriate level
-- [ ] All code examples are syntactically correct and use current project patterns
-- [ ] Structure follows progressive disclosure (essentials first, details later)
-- [ ] Formatting is consistent (headers, lists, code blocks, admonitions)
-- [ ] No broken links or references to removed/renamed features
-- [ ] Prerequisites and assumptions are explicitly stated
-- [ ] Document can stand alone — reader doesn't need tribal knowledge to understand it
+- [ ] Identify the target audience and write at the appropriate level
+- [ ] Verify all code examples are syntactically correct and use current project patterns
+- [ ] Structure content with progressive disclosure (essentials first, details later)
+- [ ] Use consistent formatting (headers, lists, code blocks, admonitions)
+- [ ] Check for broken links or references to removed/renamed features
+- [ ] State all prerequisites and assumptions explicitly
+- [ ] Ensure the document can stand alone — readers should not need tribal knowledge
