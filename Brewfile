@@ -68,6 +68,7 @@ brew 'hadolint' # Dockerfile linter
 brew 'yamllint'
 brew 'ansible-lint'
 brew 'shellcheck'
+brew 'shfmt' # Autoformat shell script source code
 
 # Other programs
 cask 'basictex'
