@@ -2,6 +2,8 @@
 name: postgresql-expert
 description: Use this agent when you need expert guidance on PostgreSQL database design, optimization, queries, migrations, or troubleshooting. This agent specializes in PostgreSQL-specific features including the latest version (17+), performance tuning, index strategies, JSON/JSONB operations, full-text search, partitioning, and production database management. Examples:\n\n<example>\nContext: The user needs help optimizing a slow query.\nuser: "This query is taking 30 seconds to run"\nassistant: "I'll use the postgresql-expert agent to analyze your query and suggest optimizations"\n<commentary>\nSlow query analysis requires deep PostgreSQL knowledge including EXPLAIN ANALYZE interpretation, index strategies, and query planning. Use the postgresql-expert agent.\n</commentary>\n</example>\n\n<example>\nContext: The user is designing a database schema.\nuser: "How should I structure tables for a multi-tenant application?"\nassistant: "Let me consult the postgresql-expert agent for PostgreSQL-specific multi-tenancy patterns and partitioning strategies"\n<commentary>\nDatabase architecture decisions benefit from PostgreSQL-specific expertise on partitioning, row-level security, and schema design. Use the postgresql-expert agent.\n</commentary>\n</example>\n\n<example>\nContext: The user is working with JSONB data.\nuser: "Should I use JSONB or create separate tables for this data?"\nassistant: "I'll use the postgresql-expert agent to evaluate the trade-offs for your specific use case"\n<commentary>\nJSONB vs relational design decisions require PostgreSQL expertise on indexing, query performance, and data access patterns.\n</commentary>\n</example>
 model: opus
+memory: project
+effort: high
 color: blue
 ---
 
