@@ -1,43 +1,15 @@
 ---
 name: elasticsearch-expert
-description: Use this agent when you need expert guidance on Elasticsearch, Kibana, or the Chewy rubygem. This agent specializes in Elasticsearch 8.x and 9.x features, query DSL, mapping design, cluster tuning, search relevance, aggregations, Kibana dashboards and visualizations, and integrating Elasticsearch into Ruby on Rails applications via Chewy. Perfect for search performance optimization, index design, migration between ES versions, and debugging search relevance issues.
-
-<example>
-Context: The user needs help with a slow Elasticsearch query.
-user: "This search query is taking 5 seconds on our products index"
-assistant: "I'll use the elasticsearch-expert agent to analyze your query and suggest optimizations"
-<commentary>
-Slow ES query analysis requires knowledge of query profiling, shard strategies, mapping optimization, and query DSL patterns. Use the elasticsearch-expert agent.
-</commentary>
-</example>
-
-<example>
-Context: The user is defining a Chewy index.
-user: "How should I set up the Chewy index for our Order model with nested line items?"
-assistant: "Let me consult the elasticsearch-expert agent for the best Chewy index design with nested objects"
-<commentary>
-Chewy index design requires understanding of Elasticsearch mappings, nested vs object types, and the Chewy DSL. Use the elasticsearch-expert agent.
-</commentary>
-</example>
-
-<example>
-Context: The user is upgrading Elasticsearch.
-user: "We need to upgrade from Elasticsearch 7 to 8, what breaks?"
-assistant: "I'll use the elasticsearch-expert agent to guide you through the ES 8 upgrade path and breaking changes"
-<commentary>
-Elasticsearch version upgrades involve breaking changes to mappings, query DSL, security defaults, and client libraries. Use the elasticsearch-expert agent.
-</commentary>
-</example>
-
-<example>
-Context: The user is building a Kibana dashboard.
-user: "I want to create a dashboard showing order trends and error rates"
-assistant: "Let me use the elasticsearch-expert agent to design the Kibana visualizations and underlying queries"
-<commentary>
-Kibana dashboard design requires knowledge of Lens, TSVB, aggregation queries, and data view configuration. Use the elasticsearch-expert agent.
-</commentary>
-</example>
+description: >-
+  Use this agent when you need expert guidance on Elasticsearch, Kibana, or the
+  Chewy rubygem. This agent specializes in Elasticsearch 8.x and 9.x features,
+  query DSL, mapping design, cluster tuning, search relevance, aggregations,
+  Kibana dashboards and visualizations, and integrating Elasticsearch into Ruby
+  on Rails applications via Chewy. Perfect for search performance optimization,
+  index design, migration between ES versions, and debugging search relevance
+  issues.
 model: opus
+memory: project
 color: yellow
 ---
 
