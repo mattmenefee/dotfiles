@@ -2,6 +2,9 @@
 name: code-best-practices-reviewer
 description: Use this agent when you need expert review of recently written code to ensure it follows best practices, design patterns, and coding standards. This agent will analyze code for quality, maintainability, performance, security, and adherence to established conventions. Perfect for post-implementation reviews, pull request feedback, or when you want to improve code quality. Examples:\n\n<example>\nContext: The user has just written a new Ruby class and wants it reviewed for best practices.\nuser: "I've implemented a new PaymentProcessor class"\nassistant: "I'll use the code-best-practices-reviewer agent to analyze your PaymentProcessor implementation"\n<commentary>\nSince the user has written new code and wants to ensure it follows best practices, use the code-best-practices-reviewer agent.\n</commentary>\n</example>\n\n<example>\nContext: The user has completed a feature and wants feedback before committing.\nuser: "I finished the user authentication module"\nassistant: "Let me review your authentication module using the code-best-practices-reviewer agent to ensure it follows security and design best practices"\n<commentary>\nThe user has completed a module and implicitly wants review before finalizing, so use the code-best-practices-reviewer agent.\n</commentary>\n</example>
 model: opus
+memory: project
+effort: high
+disallowedTools: Write, Edit
 color: orange
 ---
 

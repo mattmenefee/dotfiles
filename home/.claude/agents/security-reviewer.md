@@ -2,6 +2,9 @@
 name: security-reviewer
 description: Use this agent when you need expert security review of code changes to identify vulnerabilities, security anti-patterns, and potential attack vectors. This agent specializes in OWASP Top 10, secure coding practices, and Rails-specific security concerns. Perfect for pre-merge security audits, vulnerability assessments, or when handling sensitive data. Examples:\n\n<example>\nContext: The user has implemented authentication or authorization logic.\nuser: "I've added a new login system"\nassistant: "I'll use the security-reviewer agent to audit your login implementation for security vulnerabilities"\n<commentary>\nAuthentication is security-critical. Use the security-reviewer agent to check for common auth vulnerabilities.\n</commentary>\n</example>\n\n<example>\nContext: The user is working with user input or database queries.\nuser: "I added a search feature that queries the database"\nassistant: "Let me have the security-reviewer agent check for injection vulnerabilities in your search implementation"\n<commentary>\nDatabase queries with user input are prime targets for SQL injection. Use the security-reviewer agent.\n</commentary>\n</example>\n\n<example>\nContext: PR review includes code changes.\nuser: "Review this PR for security issues"\nassistant: "I'll use the security-reviewer agent to perform a thorough security audit of the changes"\n<commentary>\nExplicit security review requests should use the security-reviewer agent for comprehensive analysis.\n</commentary>\n</example>
 model: opus
+memory: project
+effort: high
+disallowedTools: Write, Edit
 color: red
 ---
 

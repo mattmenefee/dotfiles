@@ -13,6 +13,7 @@
     "coworkScheduledTasksEnabled": true,
     "ccdScheduledTasksEnabled": true,
     "sidebarMode": "code",
+    "dockBounceEnabled": true,
     "coworkWebSearchEnabled": true
   }
 }
