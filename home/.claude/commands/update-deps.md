@@ -184,6 +184,13 @@ The agent should:
    - `CHANGELOG`, `CHANGES`, `HISTORY`, `NEWS`
    - Extensions: `.md`, `.txt`, `.textile`, `.rdoc`, or no extension
 
+   **Diffend fallback for Ruby gems** — if a gem has no changelog,
+   no GitHub releases with meaningful notes, and no history file, use
+   [Diffend](https://my.diffend.io) as a last resort. Diffend shows a
+   file-level diff between gem versions. Link format:
+   `https://my.diffend.io/gems/<gem-name>/<old-version>/<new-version>`.
+   Diffend only works for RubyGems — do not use it for npm packages.
+
 3. **Add anchor tags to changelog links** — if a changelog link points
    to a file but lacks an anchor tag for the specific version, follow
    the link and find the correct heading anchor. For example, change
@@ -342,6 +349,16 @@ When a new version is available:
 2. Update the pinned version constraints in both manifest files:
    - `Gemfile`: update the `~>` constraint for `cocooned`
    - `package.json`: update the `^` constraint for `@notus.sh/cocooned`
+
+## Known Changelog Quirks
+
+### sass-embedded
+
+The `sass-embedded` Ruby gem wraps the Dart Sass compiler but does not
+maintain its own changelog or GitHub releases. For changelog details,
+use the sister repository's changelog at
+[sass/embedded-host-node](https://github.com/sass/embedded-host-node/blob/main/CHANGELOG.md)
+— versions are released in lockstep across both hosts.
 
 ## Important Notes
 
