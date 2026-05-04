@@ -4,6 +4,32 @@ Create a git commit for the changes made during this session.
 
 ## Arguments
 
+If `$ARGUMENTS` contains `reword <sha>` (or `reword` followed by a commit
+identifier):
+
+- Rewrite **only the commit message** of the specified commit, leaving its
+  content unchanged
+- Use `git history reword <sha>` (Git's experimental but linear-history-safe
+  command), which automatically updates descendant commits to point at the
+  rewritten commit
+- To pass the new message non-interactively, point `GIT_EDITOR` at a script
+  that overwrites the message file Git provides:
+
+  ```bash
+  printf '%s\n' "$NEW_MESSAGE" > /tmp/new-msg.txt
+  GIT_EDITOR='cp /tmp/new-msg.txt' git history reword <sha>
+  ```
+
+- `git history` is marked **EXPERIMENTAL** and has three caveats: (1) it does
+  **not** run git hooks, so it skips `commit-msg` validation — fall back to
+  the fixup+autosquash workflow if the project relies on a `commit-msg` hook
+  (see the "Amending a non-HEAD commit" memory entry); (2) it fails on merge
+  commits and on histories with conflicts, so the branch must be linear from
+  the target commit forward; (3) it only edits a single commit's message —
+  for collapsing or reordering commits, use `git rebase -i` instead.
+- After rewording, confirm with `git log --format=%B -1 <new-sha>` that the
+  message is correct.
+
 If `$ARGUMENTS` contains `amend` or `--amend`:
 
 - Amend the changes to the most recent commit
@@ -60,6 +86,16 @@ debugging or considering refactors months later.
 - `I added some new features and also fixed a few bugs` (too long, not imperative)
 
 ## Process
+
+If rewording an existing commit (no content changes):
+
+1. Confirm the target commit's current message with `git log --format=%B -1 <sha>`
+1. Draft the new message following the guidelines above
+1. Write the new message to a temp file (e.g. `/tmp/new-msg.txt`) and run
+   `GIT_EDITOR='cp /tmp/new-msg.txt' git history reword <sha>`
+1. Verify with `git log --format=%B -1 <new-sha>` that the message landed correctly
+
+Otherwise, for a new commit or amend:
 
 1. Run `git status` to see all changed files
 1. Run `git diff` to review the actual changes
