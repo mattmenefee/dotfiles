@@ -93,8 +93,15 @@ set shortmess=atI
 set visualbell " stop Vim from beeping at me
 " set cursorline " Highlight the current line
 
-" Maintain the undo history even after the file is closed:
+" Maintain the undo history even after the file is closed.
+" Without an explicit undodir, Vim writes .un~ files next to the source — which
+" inside the homesick castle means symlinks back into ~/Library, etc. The //
+" suffix encodes the full path in the filename so undo histories don't collide.
 set undofile
+set undodir=~/.vim/undo//
+if !isdirectory(expand(&undodir))
+  call mkdir(expand(&undodir), 'p')
+endif
 
 " Softtabs, 2 spaces
 set tabstop=2
