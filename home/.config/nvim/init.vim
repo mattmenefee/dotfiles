@@ -1,3 +1,7 @@
+" Make Neovim load plugins from ~/.vim/bundle (Vundle's default location).
+set runtimepath^=~/.vim runtimepath+=~/.vim/after
+let &packpath = &runtimepath
+
 " RULE #1: Don't put any lines in your vimrc that you don't understand
 
 " Ensure that legacy compatibility mode is off
@@ -25,13 +29,11 @@ Plugin 'textobj-user'
 Plugin 'DrawIt'
 Plugin 'Markdown'
 Plugin 'Rename'
-Plugin 'ervandew/supertab'
 Plugin 'pangloss/vim-javascript'
 Plugin 'scrooloose/nerdcommenter'
 Plugin 'scrooloose/nerdtree'
 Plugin 'scrooloose/syntastic'
 Plugin 'myint/syntastic-extras'
-Plugin 'flazz/vim-colorschemes'
 Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-eunuch'
 Plugin 'vim-coffee-script'
@@ -88,29 +90,14 @@ set autoindent
 set autoread
 set autowrite
 set confirm
-set pastetoggle=<F2>
 set shortmess=atI
 set visualbell " stop Vim from beeping at me
 " set cursorline " Highlight the current line
 
 " Maintain the undo history even after the file is closed.
-" Without an explicit undodir, Vim writes .un~ files next to the source — which
-" inside the homesick castle means symlinks back into ~/Library, etc. The //
-" suffix encodes the full path in the filename so undo histories don't collide.
+" Neovim's default undodir (~/.local/state/nvim/undo//) lives outside the
+" homesick castle and is auto-created, so no explicit undodir is needed.
 set undofile
-set undodir=~/.vim/undo//
-if !isdirectory(expand(&undodir))
-  call mkdir(expand(&undodir), 'p')
-endif
-
-" MacVim loads Ruby only when something first uses it, looking for Homebrew's `ruby` by default.
-" Point it at rbenv's global version instead. Reading the version file directly avoids the ~80ms
-" that shelling out to `rbenv prefix` would add to every launch.
-let s:rbenv_version_file = expand('~/.rbenv/version')
-if exists('+rubydll') && filereadable(s:rbenv_version_file)
-  let s:rbenv_version = get(readfile(s:rbenv_version_file, '', 1), 0, '')
-  let &rubydll = expand('~/.rbenv/versions/') . s:rbenv_version . '/lib/libruby.dylib'
-endif
 
 " Softtabs, 2 spaces
 set tabstop=2
@@ -150,9 +137,10 @@ syntax on " are both of these necessary?
 
 filetype plugin indent on
 
-" Absent during the `+PluginInstall` run that installs it, since Vim sources this file first.
+set termguicolors
+" Absent during the `+PluginInstall` run that installs it, since Neovim sources this file first.
 try
-  colorscheme railscasts
+  colorscheme new-railscasts
 catch /^Vim\%((\a\+)\)\=:E185/
   colorscheme default
 endtry
