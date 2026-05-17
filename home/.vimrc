@@ -50,7 +50,7 @@ Plugin 'mxw/vim-jsx'
 Plugin 'ap/vim-css-color'
 Plugin 'rainerborene/vim-reek'
 Plugin 'tpope/vim-repeat'
-Plugin 'carakan/new-railscasts-theme'
+Plugin 'mushanyoung/vim-windflower'
 Plugin 'tpope/vim-abolish'
 Plugin 'gabesoft/vim-ags' " For searching Vim using the_silver_searcher
 Plugin 'hashivim/vim-terraform'
@@ -141,7 +141,8 @@ syntax on " are both of these necessary?
 
 filetype plugin indent on
 
-colorscheme railscasts
+set termguicolors
+colorscheme windflower
 
 map QQ :q<CR>
 map WW :wall<CR>
