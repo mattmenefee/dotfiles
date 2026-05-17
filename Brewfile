@@ -3,7 +3,6 @@
 # Terminal tools
 cask 'iterm2'
 brew 'bash'
-brew 'macvim'
 brew 'neovim'
 brew 'the_silver_searcher'
 brew 'zsh'
