@@ -69,6 +69,22 @@ alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
 alias dc-es="docker compose up -d docker_elasticsearch"
 
+# GitHub
+# List open PRs with merge conflicts. PR numbers are OSC 8 hyperlinks
+# (clickable in modern terminals). Optional first arg overrides the default
+# fetch limit of 500.
+pr-conflicts() {
+  local limit=${1:-500}
+  local esc=$'\033'
+  gh pr list --limit "$limit" \
+      --json number,title,headRefName,mergeStateStatus,url \
+    | jq -r --arg esc "$esc" '
+        .[]
+        | select(.mergeStateStatus == "DIRTY")
+        | "\($esc)]8;;\(.url)\($esc)\\#\(.number)\($esc)]8;;\($esc)\\\t\(.headRefName)\t\(.title)"
+      '
+}
+
 # Homebrew
 alias bdi="brew deps --tree --installed"
 alias bubo="brew update && brew outdated"

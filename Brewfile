@@ -22,6 +22,7 @@ cask 'zeplin'
 cask 'raycast'
 cask 'rectangle'
 cask 'caffeine'
+brew 'mole' # for deep cleaning and optimizing your Mac
 
 # Programming languages and related tools
 brew 'dart'
@@ -62,6 +63,7 @@ brew 'cmake'
 brew 'ninja' # Use Ninja for cmake
 brew 'boost'
 brew 'swig'
+brew 'eigen'
 
 # For linting
 brew 'hadolint' # Dockerfile linter

@@ -10,6 +10,7 @@
   },
   "permissions": {
     "allow": [
+      "Bash(bin/lint-markdown *)",
       "Bash(bin/rails lint:*)",
       "Bash(bin/rails lint:coffee:*)",
       "Bash(bin/rails lint:haml:*)",
