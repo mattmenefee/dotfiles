@@ -52,8 +52,8 @@ Plugin 'mxw/vim-jsx'
 Plugin 'ap/vim-css-color'
 Plugin 'rainerborene/vim-reek'
 Plugin 'tpope/vim-repeat'
-Plugin 'carakan/new-railscasts-theme'
 Plugin 'tpope/vim-abolish'
+Plugin 'mushanyoung/vim-windflower'
 Plugin 'gabesoft/vim-ags' " For searching Vim using the_silver_searcher
 Plugin 'hashivim/vim-terraform'
 
@@ -140,7 +140,7 @@ filetype plugin indent on
 set termguicolors
 " Absent during the `+PluginInstall` run that installs it, since Neovim sources this file first.
 try
-  colorscheme new-railscasts
+  colorscheme windflower
 catch /^Vim\%((\a\+)\)\=:E185/
   colorscheme default
 endtry
