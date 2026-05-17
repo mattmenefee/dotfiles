@@ -11,4 +11,4 @@
 
 # Vundle install
 cd ~/.homesick/repos/dotfiles/
-vim +BundleInstall +qall
+nvim +PluginInstall +qall

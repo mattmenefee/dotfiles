@@ -1,9 +1,10 @@
 # dotfiles
 
 Personal macOS development environment managed with [Homesick][homesick_link]. Configures Zsh (with
-[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], Ruby development tools via
-[rbenv][rbenv_link], and a curated set of [Homebrew][homebrew_link] packages for web development.
-Uses [mise][mise_link] for managing non-Ruby tool versions.
+[Oh My Zsh][oh_my_zsh_link]), Neovim (still using [Vundle][vundle_link] for now — migration in
+progress), Ruby development tools via [rbenv][rbenv_link], and a curated set of
+[Homebrew][homebrew_link] packages for web development. Uses [mise][mise_link] for managing non-Ruby
+tool versions.
 
 ## Getting Started
 
@@ -76,15 +77,15 @@ Uses [mise][mise_link] for managing non-Ruby tool versions.
     - **[zsh-syntax-highlighting][zsh_sh_link]** — highlights commands as you type
     - **[zsh-autosuggestions][zsh_as_link]** — suggests commands from history as you type
 
-1. Install [Vundle][vundle_link] and run the Vim plugin installer
+1. Install [Vundle][vundle_link] and run the Neovim plugin installer
 
     ```shell
     cd ~/.homesick/repos/dotfiles
     zsh init.zsh
     ```
 
-    This installs Vundle plugins for MacVim. Neovim (also in the Brewfile) uses a separate
-    configuration.
+    This installs Vundle plugins for Neovim from `~/.config/nvim/init.vim`. Vundle is
+    transitional — see [`PLAN.md`](PLAN.md) for the migration to [lazy.nvim][lazy_link].
 
 1. Set up Git config
 
@@ -147,6 +148,7 @@ Oh My Zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
 [rbenv_link]: https://github.com/rbenv/rbenv
 [rbenv_default_gems_link]: https://github.com/rbenv/rbenv-default-gems
 [vundle_link]: https://github.com/VundleVim/Vundle.vim
+[lazy_link]: https://github.com/folke/lazy.nvim
 [mise_link]: https://mise.jdx.dev/
 [omz_bundler]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/bundler
 [omz_docker]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/docker
