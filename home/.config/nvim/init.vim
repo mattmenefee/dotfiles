@@ -1,3 +1,7 @@
+" Make Neovim load plugins from ~/.vim/bundle (Vundle's default location).
+set runtimepath^=~/.vim runtimepath+=~/.vim/after
+let &packpath = &runtimepath
+
 " RULE #1: Don't put any lines in your vimrc that you don't understand
 
 " Ensure that legacy compatibility mode is off
@@ -25,13 +29,11 @@ Plugin 'textobj-user'
 Plugin 'DrawIt'
 Plugin 'Markdown'
 Plugin 'Rename'
-Plugin 'ervandew/supertab'
 Plugin 'pangloss/vim-javascript'
 Plugin 'scrooloose/nerdcommenter'
 Plugin 'scrooloose/nerdtree'
 Plugin 'scrooloose/syntastic'
 Plugin 'myint/syntastic-extras'
-Plugin 'flazz/vim-colorschemes'
 Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-eunuch'
 Plugin 'vim-coffee-script'
@@ -88,20 +90,14 @@ set autoindent
 set autoread
 set autowrite
 set confirm
-set pastetoggle=<F2>
 set shortmess=atI
 set visualbell " stop Vim from beeping at me
 " set cursorline " Highlight the current line
 
 " Maintain the undo history even after the file is closed.
-" Without an explicit undodir, Vim writes .un~ files next to the source — which
-" inside the homesick castle means symlinks back into ~/Library, etc. The //
-" suffix encodes the full path in the filename so undo histories don't collide.
+" Neovim's default undodir (~/.local/state/nvim/undo//) lives outside the
+" homesick castle and is auto-created, so no explicit undodir is needed.
 set undofile
-set undodir=~/.vim/undo//
-if !isdirectory(expand(&undodir))
-  call mkdir(expand(&undodir), 'p')
-endif
 
 " Softtabs, 2 spaces
 set tabstop=2
@@ -141,7 +137,8 @@ syntax on " are both of these necessary?
 
 filetype plugin indent on
 
-colorscheme railscasts
+set termguicolors
+colorscheme new-railscasts
 
 map QQ :q<CR>
 map WW :wall<CR>
