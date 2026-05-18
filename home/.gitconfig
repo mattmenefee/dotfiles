@@ -33,8 +33,11 @@
   grog = log --graph --abbrev-commit --decorate --all --format=format:\"%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)\"
   recent = for-each-ref --count=10 --sort=-committerdate refs/heads/ --format="%(refname:short)"
   rc = rebase --continue
-  # Removed merged branches:
-  cleanup = "!git branch --merged | grep  -v '\\*\\|main' | xargs -n 1 git branch -d"
+
+  # Remove branches whose changes are already in main, including ones
+  # merged via "Rebase and merge" or "Squash and merge" (which rewrite SHAs,
+  # so `git branch --merged` misses them). `git cherry` compares by patch-id.
+  cleanup = "!f() { git branch --format='%(refname:short)' | grep -v '^main$' | while read b; do [ -z \"$(git cherry main \"$b\" | grep '^+')\" ] && git branch -D \"$b\"; done; }; f"
   pc = "!f() { git pull && git cleanup; }; f"
 
   # list of deleted files:
