@@ -26,9 +26,20 @@
   up = pull --rebase --prune
   wip = !git add -A && git commit -m "WIP"
   wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
-  bclean = "!f() { git branch --merged ${1-main} | grep -v " ${1-main}$" | xargs -r git branch -d; }; f"
+
+  # Delete local branches whose patches are all merged into the given base
+  # (default `main`). Like `cleanup`, but parameterized so you can clean up
+  # against any base branch (e.g. `git bclean develop`).
+  bclean = "!f() { base=${1-main}; git branch --format='%(refname:short)' | grep -v \"^${base}$\" | while read b; do [ -z \"$(git cherry \"$base\" \"$b\" | grep '^+')\" ] && git branch -D \"$b\"; done; }; f"
+
+  # Post-PR tidy-up: switch to base branch (default `main`), pull latest,
+  # then prune any local branches that are now merged into it.
   bdone = "!f() { git checkout ${1-main} && git up && git bclean ${1-main}; }; f"
+
+  # List all refs (local + remote branches, tags) sorted by most-recent
+  # commit. Scan the bottom of the output to spot stale branches to prune.
   springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
+
   stash-all = stash save --include-untracked
   grog = log --graph --abbrev-commit --decorate --all --format=format:\"%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)\"
   recent = for-each-ref --count=10 --sort=-committerdate refs/heads/ --format="%(refname:short)"
