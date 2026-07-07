@@ -11,8 +11,6 @@ brew 'zsh-autosuggestions'
 brew 'zsh-syntax-highlighting'
 
 # Web Development tools
-brew 'puma/puma/puma-dev'
-brew 'sass/sass/migrator'
 cask 'firefox'
 cask 'tableplus'
 cask 'miro'
@@ -25,12 +23,10 @@ cask 'caffeine'
 brew 'mole' # for deep cleaning and optimizing your Mac
 
 # Programming languages and related tools
-brew 'dart'
 brew 'rust' # for running Ruby with the YJIT compiler
 brew 'rbenv'
 brew 'ruby-build'
 brew 'node'
-brew 'corepack' # for help with managing versions of your package managers, related to Node.js
 brew 'uv' # Python package installer, runner, and virtualenv manager
 
 # Version Control tools
@@ -50,7 +46,6 @@ brew 'poppler' # for creating PDF previews
 
 # Hosting tools
 brew 'heroku'
-brew 'flyctl'
 
 # For CIRM's infrastructure management
 brew 'ansible'
@@ -78,7 +73,6 @@ cask 'calibre'
 cask 'typora'
 cask 'zoom'
 cask 'cleanmymac'
-cask 'qlmarkdown'
 
 # For Claude Code
 brew 'gum' # Interactive terminal UI for multi-select menus in Claude Code commands
