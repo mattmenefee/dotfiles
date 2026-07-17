@@ -51,6 +51,12 @@ Thumbs.db
 # Claude and MCP related files #
 #############################
 /.serena/*
+**/.claude/agent-memory
 
 # Claude local settings (machine-specific)
 **/.claude/settings.local.json
+
+# Python generated files #
+##########################
+__pycache__/
+*.pyc
