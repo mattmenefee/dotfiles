@@ -15,6 +15,7 @@ cask 'firefox'
 cask 'tableplus'
 cask 'miro'
 cask 'zeplin'
+cask 'zed'
 
 # MacOS interface management tools
 cask 'raycast'
