@@ -88,7 +88,7 @@ pr-conflicts() {
 # Homebrew
 alias bdi="brew deps --tree --installed"
 alias bubo="brew update && brew outdated"
-alias brewup="brew upgrade && brew cleanup && brew autoremove && brew doctor"
+alias brewup="HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 brew upgrade && brew cleanup && brew autoremove && brew doctor"
 # Consider using `brew cleanup --prune=all --dry-run`
 # See https://mac.install.guide/homebrew/8
 
