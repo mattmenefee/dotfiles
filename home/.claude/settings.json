@@ -43,7 +43,6 @@
       "mcp__chrome-devtools__select_page",
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__take_snapshot",
-      "mcp__circleci-mcp-server__get_job_test_results",
       "mcp__linear-server__get_issue",
       "mcp__linear-server__get_issue_status",
       "mcp__linear-server__get_project",

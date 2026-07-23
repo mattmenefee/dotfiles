@@ -20,8 +20,12 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
 
 1. Install tools managed by Homebrew
 
+    The Brewfile installs the CircleCI CLI from a third-party tap, which Homebrew's cask-trust gate
+    blocks until it is explicitly trusted. Run the one-time `brew trust` first, then `brew bundle`:
+
     ```shell
     $ cd ~/.homesick/repos/dotfiles/
+    $ brew trust --cask circleci-public/circleci/circleci@next
     $ brew bundle
     ```
 
