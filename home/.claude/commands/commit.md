@@ -133,24 +133,33 @@ Follow these commit message best practices:
 - **Do not** end with a period
 - Summarize the "what" concisely
 
-### Body (Optional, separated by blank line)
+### Body (always include one for non-trivial changes)
 
 - Wrap at **72 characters**
 - Explain the **"why"** behind the change, not just the "what"
-- Use bullet points where appropriate (hyphen or asterisk)
-- Include any relevant context or background
-- Reference related issues if applicable
+- Always include a body with context — even for routine changes like dependency
+  bumps. Only skip it for truly trivial changes (e.g. fixing a typo in a
+  comment).
+- Don't enumerate change counts ("Convert 6 legacy calls") — describe the nature
+  of the change; the diff shows the specifics
+- Use bullet points only for genuinely parallel items; otherwise prefer prose
 
-#### Recommended Structure for Non-Trivial Changes
+#### Use problem → solution → user impact as a content guide, not as headers
 
-For significant changes, follow the **problem → solution → user impact** structure:
+For significant changes, let the **problem → solution → user impact** structure
+shape the body's *content*:
 
 1. **Problem**: What was the previous behavior and why was it insufficient?
 1. **Solution**: What does this change do to address it?
-1. **User Impact**: What will users experience differently? (bullet points work well)
+1. **User Impact**: What will users experience differently?
 
-This helps future developers understand the intent behind the code—invaluable when
-debugging or considering refactors months later.
+Render this as flowing prose paragraphs; do **not** add explicit `Problem` /
+`Solution` / `User Impact` section headers. Lead with the motivating situation,
+then the mechanism, then the consequence, letting the order emerge from what a
+reader needs in sequence.
+
+This helps future developers understand the intent behind the code — invaluable
+when debugging or considering refactors months later.
 
 ### Examples of Good Subject Lines
 
@@ -164,6 +173,40 @@ debugging or considering refactors months later.
 - `fixed bug` (not capitalized, not descriptive)
 - `Updated the code to make it work better.` (ends with period, vague)
 - `I added some new features and also fixed a few bugs` (too long, not imperative)
+
+### Issue Trailers
+
+Many projects track no issues at all — skip this section entirely unless the
+repo already references them. Check `git log` for the identifier format in use
+and match it rather than inventing one.
+
+- For a bug-fix commit that should close its issue on merge, use the tracker's
+  magic keyword: `Fixes <ISSUE-ID>.` (Linear and GitHub both also honor
+  `Closes` / `Resolves`.)
+- For a commit that only references an issue without resolving it (partial work,
+  related changes), use `Refs <ISSUE-ID>.` — it won't auto-close the issue.
+- If unsure whether the commit fully resolves the issue, ask before defaulting
+  to `Fixes`; over-using it prematurely closes the ticket on merge.
+- Never invent an issue ID to satisfy the format; omit the trailer instead.
+
+### Subject Scope
+
+- Describe the fix's *true scope*, not where it was first observed. Don't write
+  "Fix staging deploys…" for a bug that exists on every environment running the
+  affected code — drop the environment name unless it is load-bearing.
+
+### Durable References Only
+
+- Reference durable identifiers, not ephemeral ones. Cite a PR number
+  ("PR #4139") rather than a branch name, and quote a CI error in prose rather
+  than linking a time-limited CI or log URL that will 404 once it rotates.
+
+### Squash Messages
+
+- When squashing a branch into one commit, describe only the **end state** as it
+  stands in the final diff. Skip the intra-branch journey ("refactored X to Y",
+  "addresses findings F1–F34", "no longer fires twice") — those intermediate
+  states aren't visible in the squashed result and only confuse a future reader.
 
 ## Process
 
@@ -213,6 +256,9 @@ quoting fragile.
 
 ## Important Notes
 
+- **Never** commit directly to the repository's default branch (`main` or
+  `master`) — always create a feature branch first. If you find yourself on the
+  default branch with changes to commit, branch from HEAD before committing.
 - **Never** stage files that were not modified during this session
 - **Never** use `git add -A` or `git add .` — always add specific files
 - **Never** commit sensitive files (`.env`, credentials, etc.)
