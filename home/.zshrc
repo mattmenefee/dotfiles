@@ -118,6 +118,9 @@ plugins=(git rails docker vi-mode mise z gh bundler)
 
 source $ZSH/oh-my-zsh.sh
 
+# Mole shell completion. Must follow oh-my-zsh.sh, which runs compinit.
+if output="$(mole completion zsh 2>/dev/null)"; then eval "$output"; fi
+
 ### Added by the Heroku Toolbelt
 export PATH="/opt/homebrew/heroku/bin:$PATH"
 export PATH="$HOME/.rbenv/bin:$PATH"
