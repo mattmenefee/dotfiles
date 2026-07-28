@@ -70,6 +70,19 @@ After completing any coding task, run these commands in order:
   - Use single-line `let` and `before` blocks when they fit within 100 characters
   - Generally prefer fewer lines — avoid multi-line blocks for simple expressions
 
+# Shell Commands
+
+- No TTY is available, so any command that opens an editor or waits for input
+  will hang — supply input via flags instead (`git commit -F <file>`,
+  `gh pr create --title --body`). Common offenders: bare `git commit`,
+  `git commit --squash`, `git add -i`/`-p`, `docker`/`kubectl -it`, REPLs
+  (`psql`, `rails console`), and `yarn upgrade-interactive`.
+- `-i` is not itself the hazard: `git rebase -i` runs fine when its editors are
+  neutralized (`GIT_SEQUENCE_EDITOR=true`), which some commands prescribe
+- When writing slash commands, agent files, or docs that prescribe shell
+  commands, prescribe the non-interactive form — a command file that says to run
+  an editor-opening command will be followed
+
 # Browser Automation
 
 - Prefer `@playwright/cli` for browser automation tasks over the Playwright MCP
