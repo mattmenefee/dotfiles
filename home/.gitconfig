@@ -11,7 +11,11 @@
   remote-branches = for-each-ref --sort=-committerdate --format=\"%(color:blue)%(authordate:relative)\t%(color:red)%(authorname)\t%(color:white)%(color:bold)%(refname:short)\" refs/remotes
   ci = commit -v
   co = checkout
-  com = checkout main
+  com = "!f() { \
+    [ $# -eq 0 ] || { echo 'com: takes no arguments' >&2; return 1; }; \
+    base=$(git base) || return 1; \
+    git checkout \"$base\" --; \
+  }; f"
   cob = checkout -b
   cp = cherry-pick
   dc = diff --cached
@@ -27,17 +31,23 @@
   wip = !git add -A && git commit -m "WIP"
   wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
 
-  # Delete local branches whose patches are all merged into the given base
-  # (default `main`). Like `cleanup`, but parameterized so you can clean up
-  # against any base branch (e.g. `git bclean develop`).
-  bclean = "!f() { base=${1-main}; git branch --format='%(refname:short)' | grep -v \"^${base}$\" | while read b; do [ -z \"$(git cherry \"$base\" \"$b\" | grep '^+')\" ] && git branch -D \"$b\"; done; }; f"
+  # Delete local branches whose patches are all merged into the base branch. A wrapper around
+  # `cleanup`, kept for muscle memory. Both take an optional base to compare against
+  # (e.g. `git bclean develop`) and resolve the repository's own when given none — never assume a
+  # name here, see `cleanup`.
+  bclean = !git cleanup
 
-  # Post-PR tidy-up: switch to base branch (default `main`), pull latest,
-  # then prune any local branches that are now merged into it.
-  bdone = "!f() { git checkout ${1-main} && git up && git bclean ${1-main}; }; f"
+  # Post-PR tidy-up: switch to the base branch, pull latest, then prune any local branches that are
+  # now merged into it. Takes the same optional base.
+  bdone = "!f() { \
+    base=$1; \
+    case $base in -*) echo \"bdone: invalid base '$base'\" >&2; return 1;; esac; \
+    if [ -z \"$base\" ]; then base=$(git base) || return 1; fi; \
+    git checkout \"$base\" -- && git up && git cleanup \"$base\"; \
+  }; f"
 
-  # List all refs (local + remote branches, tags) sorted by most-recent
-  # commit. Scan the bottom of the output to spot stale branches to prune.
+  # List all refs (local + remote branches, tags) sorted by most-recent commit. Scan the bottom of
+  # the output to spot stale branches to prune.
   springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
 
   stash-all = stash save --include-untracked
@@ -45,31 +55,64 @@
   recent = for-each-ref --count=10 --sort=-committerdate refs/heads/ --format="%(refname:short)"
   rc = rebase --continue
 
-  # Remove branches whose changes are already in the base branch, including
-  # ones merged via "Rebase and merge" or "Squash and merge" (which rewrite
-  # SHAs, so `git branch --merged` misses them). `git cherry` compares by
-  # patch-id.
+  # Print the repository's base branch: origin/HEAD when it still points at a ref that exists, else
+  # whichever of main or master exists locally or on origin. Prints nothing and fails when none
+  # resolves, so callers can abort instead of guessing a name.
+  base = "!f() { \
+    b=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||'); \
+    if [ -n \"$b\" ] \
+    && [ \"$(git for-each-ref --format='%(refname)' \"refs/heads/$b\")\" != \"refs/heads/$b\" ] \
+    && [ \"$(git for-each-ref --format='%(refname)' \"refs/remotes/origin/$b\")\" != \"refs/remotes/origin/$b\" ]; then b=; fi; \
+    if [ -z \"$b\" ]; then for c in main master; do \
+      if [ \"$(git for-each-ref --format='%(refname)' \"refs/heads/$c\")\" = \"refs/heads/$c\" ] \
+      || [ \"$(git for-each-ref --format='%(refname)' \"refs/remotes/origin/$c\")\" = \"refs/remotes/origin/$c\" ]; then b=$c; break; fi; \
+    done; fi; \
+    if [ -z \"$b\" ]; then echo 'base: cannot determine the base branch' >&2; return 1; fi; \
+    case $b in -*) echo \"base: refusing option-shaped base '$b'\" >&2; return 1;; esac; \
+    echo \"$b\"; \
+  }; f"
+
+  # Remove branches whose changes are already in the base branch, including ones merged via
+  # "Rebase and merge" (which rewrites SHAs, so `git branch --merged` misses them). `git cherry`
+  # compares by patch-id. Takes an optional base, resolving it with `git base` otherwise.
   #
-  # The base is read from origin/HEAD, falling back to whichever of main or
-  # master exists. It must never be hardcoded: `git cherry` prints nothing to
-  # stdout when its upstream does not resolve, so an emptiness test against a
-  # wrong base reads as "fully merged" and force-deletes every branch.
+  # Squash merges are only caught when the branch held a single commit; delete the rest by hand.
+  #
+  # Every way a comparison can fail has to skip the branch rather than delete it. `git cherry`
+  # prints nothing to stdout when its upstream does not resolve, so an emptiness test alone reads a
+  # failed comparison as "fully merged" and force-deletes unmerged work — this once wiped every
+  # branch in a master-based repository. Hence the exit-code check, the abort when no base resolves,
+  # and the fully qualified refs: a bare `main` resolves to `refs/tags/main` before `refs/heads/`,
+  # so a same-named tag makes `git cherry` answer about the tag's history — exiting 0 and reporting
+  # a branch as merged when it is not. Refs are also matched by exact name, against a separate
+  # hazard: `git show-ref --verify` resolves through the filesystem and answers for
+  # `refs/heads/Main` on a case-insensitive volume. Do not collapse any of it back into a pipe to
+  # grep.
+  #
+  # Branches carrying merge commits are skipped as well, since `git cherry` ignores merges and a
+  # conflict resolution living only in one would read as merged and be deleted. Three branches are
+  # never candidates: the base being compared against, the current one, and the repository's own
+  # base branch — `git cleanup develop` would otherwise eat a main that develop contains.
   cleanup = "!f() { \
-    base=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||'); \
-    if [ -z \"$base\" ]; then for c in main master; do git show-ref --verify --quiet \"refs/heads/$c\" && { base=$c; break; }; done; fi; \
-    if [ -z \"$base\" ]; then echo 'cleanup: cannot determine the base branch; aborting' >&2; return 1; fi; \
-    if git show-ref --verify --quiet \"refs/heads/$base\"; then ref=$base; \
-    elif git show-ref --verify --quiet \"refs/remotes/origin/$base\"; then ref=origin/$base; \
+    base=$1; \
+    if [ -z \"$base\" ]; then base=$(git base) || return 1; fi; \
+    keep=$(git base 2>/dev/null); \
+    if [ \"$(git for-each-ref --format='%(refname)' \"refs/heads/$base\")\" = \"refs/heads/$base\" ]; then ref=refs/heads/$base; label=$base; \
+    elif [ \"$(git for-each-ref --format='%(refname)' \"refs/remotes/origin/$base\")\" = \"refs/remotes/origin/$base\" ]; then ref=refs/remotes/origin/$base; label=origin/$base; \
     else echo \"cleanup: base branch '$base' not found locally or on origin; aborting\" >&2; return 1; fi; \
-    cur=$(git symbolic-ref --quiet --short HEAD); \
-    echo \"cleanup: comparing against $ref\"; \
-    git branch --format='%(refname:short)' | while read -r b; do \
-      if [ \"$b\" = \"$base\" ] || [ \"$b\" = \"$cur\" ]; then continue; fi; \
-      if ! out=$(git cherry \"$ref\" \"$b\" 2>/dev/null); then echo \"cleanup: skipping $b (cannot compare)\" >&2; continue; fi; \
-      if ! printf '%s' \"$out\" | grep -q '^+'; then git branch -D \"$b\"; fi; \
+    cur=$(git symbolic-ref --quiet HEAD); \
+    echo \"cleanup: comparing against $label\"; \
+    git for-each-ref --format='%(refname)' refs/heads/ | while read -r r; do \
+      if [ \"$r\" = \"refs/heads/$base\" ] || [ \"$r\" = \"refs/heads/$keep\" ] || [ \"$r\" = \"$cur\" ]; then continue; fi; \
+      b=${r#refs/heads/}; \
+      if ! out=$(git cherry \"$ref\" \"$r\" 2>/dev/null); then echo \"cleanup: skipping $b (cannot compare)\" >&2; continue; fi; \
+      if printf '%s' \"$out\" | grep -q '^+'; then continue; fi; \
+      if [ \"$(git rev-list --count --min-parents=2 \"$ref..$r\")\" != 0 ]; then echo \"cleanup: skipping $b (unique merge commits)\" >&2; continue; fi; \
+      git branch -D -- \"$b\"; \
     done; \
   }; f"
-  pc = "!f() { git pull && git cleanup; }; f"
+  # Pull the current branch, then prune whatever that merged. Takes the same optional base.
+  pc = "!f() { git pull && git cleanup \"$@\"; }; f"
 
   # list of deleted files:
   # git log --diff-filter=D --summary | grep delete
