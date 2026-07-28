@@ -136,10 +136,38 @@ quick visual scanning:
 - 🟢 **Low Priority / Nice-to-Have** — Can address later (minor typos, style
   preferences, missing examples)
 
-**Non-actionable findings** (no action required):
+**Observations** (not required to resolve the review — never appear in the
+checklist):
 
 - ℹ️  **Observation** — Highlights a well-written section, good pattern, or
   structural choice worth noting
+- 💡 **Observation (optional action)** — Something reads correctly but a small,
+  optional improvement is available; state the action inline. Keep genuine
+  praise (ℹ️) distinct from latent suggestions (💡) so neither drowns out the
+  other.
+
+### Recommendations
+
+Severity and recommendation are different axes: severity measures how much the
+issue matters; the recommendation measures whether acting on it *now* is worth
+the cost. A finding can be valid yet not worth implementing — rewriting a
+section that is about to be superseded, a terminology sweep through a document
+nobody reads, a stylistic preference with no effect on the reader. Say so
+plainly rather than implying every finding must be fixed. Use one of:
+
+- **Implement** — worth doing in this revision; benefit clearly exceeds cost.
+- **Defer** — legitimate, but better as a follow-up (out of scope, needs a
+  broader rewrite, or not urgent).
+- **Skip** — not worth doing; the cost (churn, review time, risk of introducing
+  new errors) outweighs the gain. Prefer this over a half-hearted "could fix"
+  when the value is marginal.
+
+State the recommendation with a one-line rationale. Every actionable finding
+(🔴🟠🟡🟢) must carry one. ℹ️ observations carry no recommendation; 💡
+observations state the optional action inline. When severity and recommendation
+diverge — a 🟢 Low recommended **Implement**, or a 🟠 High recommended
+**Defer** — that divergence is the useful signal; surface it rather than
+smoothing it over.
 
 ### Numbered Findings
 
@@ -155,17 +183,20 @@ For each finding, include:
 - **Location** — Section heading or line reference
 - **Issue** — Clear description of the problem
 - **Suggestion** — Concrete fix or improvement
+- **Recommendation** — Implement / Defer / Skip, plus a one-line rationale
+  (actionable findings only)
 
 ### Tracking Finding Status
 
 When a finding has been addressed (either by fixing, ignoring, or deferring),
-mark it visually while preserving the original content for reference. ℹ️
+mark it visually while preserving the original content for reference. ℹ️ and 💡
 Observation findings do not require status tracking.
 
 **Status indicators:**
 
 - ✅ **Fixed** — The issue has been resolved
-- 🚫 **Ignored** — Explicitly decided not to address (include reason)
+- 🚫 **Ignored** — Explicitly decided not to address, including any finding
+  recommended **Skip** (include reason)
 - ⏸️ **Deferred** — Will address later
 
 **How to mark findings:**
@@ -182,11 +213,14 @@ preserve it for reference.
 ...original finding content preserved...
 ```
 
-In the checklist, check the box for fixed findings:
+In the checklist, use the leading column as a pre-cognitive status indicator:
+`- [ ]` open, `- [x] … ✅` fixed, `- 🚫 …` ignored, `- ⏸️ …` deferred.
 
 ```markdown
-- [x] F1 - Standardize terminology (fixed) ✅
-- [ ] F2 - Add missing example (deferred to next revision) ⏸️
+- [x] F1 - Standardize terminology ✅
+- 🚫 F2 - Add Oxford commas (ignored — house style omits them)
+- ⏸️ F3 - Rewrite the API section (deferred to the next revision)
+- [ ] F4 - Fix the broken cross-reference
 ```
 
 ### Consolidated Summary
@@ -195,14 +229,15 @@ At the end, provide:
 
 1. **Summary table** of all findings:
 
-| Finding | Priority | Category | Description | Location | Status |
-|---------|----------|----------|-------------|----------|--------|
-| F1 | 🟡 Medium | Consistency | Example description | Section name | |
+| Finding | Priority | Category | Description | Location | Recommendation | Status |
+|---------|----------|----------|-------------|----------|----------------|--------|
+| F1 | 🟡 Medium | Consistency | Example description | Section name | Implement | |
 
 1. **Overall assessment** - Brief summary of document quality
 
 1. **Checklist** - Convert actionable findings (🔴🟠🟡🟢) into a checklist.
-   Do not include ℹ️ Observation findings in the checklist.
+   Do not include ℹ️ or 💡 Observation findings in the checklist — neither
+   requires action.
 
 ```markdown
 - [ ] F1 - Fix description
@@ -240,7 +275,7 @@ actionable findings have been addressed, lead with that:
 ### Interactive Finding Selection
 
 After displaying all review output, present the list of **actionable findings
-only** (🔴🟠🟡🟢 — not ℹ️ observations), formatted as:
+only** (🔴🟠🟡🟢 — not ℹ️ or 💡 observations), formatted as:
 
 ```text
 F1 🔴 Critical - Description (location)
