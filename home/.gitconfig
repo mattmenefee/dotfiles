@@ -45,10 +45,30 @@
   recent = for-each-ref --count=10 --sort=-committerdate refs/heads/ --format="%(refname:short)"
   rc = rebase --continue
 
-  # Remove branches whose changes are already in main, including ones
-  # merged via "Rebase and merge" or "Squash and merge" (which rewrite SHAs,
-  # so `git branch --merged` misses them). `git cherry` compares by patch-id.
-  cleanup = "!f() { git branch --format='%(refname:short)' | grep -v '^main$' | while read b; do [ -z \"$(git cherry main \"$b\" | grep '^+')\" ] && git branch -D \"$b\"; done; }; f"
+  # Remove branches whose changes are already in the base branch, including
+  # ones merged via "Rebase and merge" or "Squash and merge" (which rewrite
+  # SHAs, so `git branch --merged` misses them). `git cherry` compares by
+  # patch-id.
+  #
+  # The base is read from origin/HEAD, falling back to whichever of main or
+  # master exists. It must never be hardcoded: `git cherry` prints nothing to
+  # stdout when its upstream does not resolve, so an emptiness test against a
+  # wrong base reads as "fully merged" and force-deletes every branch.
+  cleanup = "!f() { \
+    base=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||'); \
+    if [ -z \"$base\" ]; then for c in main master; do git show-ref --verify --quiet \"refs/heads/$c\" && { base=$c; break; }; done; fi; \
+    if [ -z \"$base\" ]; then echo 'cleanup: cannot determine the base branch; aborting' >&2; return 1; fi; \
+    if git show-ref --verify --quiet \"refs/heads/$base\"; then ref=$base; \
+    elif git show-ref --verify --quiet \"refs/remotes/origin/$base\"; then ref=origin/$base; \
+    else echo \"cleanup: base branch '$base' not found locally or on origin; aborting\" >&2; return 1; fi; \
+    cur=$(git symbolic-ref --quiet --short HEAD); \
+    echo \"cleanup: comparing against $ref\"; \
+    git branch --format='%(refname:short)' | while read -r b; do \
+      if [ \"$b\" = \"$base\" ] || [ \"$b\" = \"$cur\" ]; then continue; fi; \
+      if ! out=$(git cherry \"$ref\" \"$b\" 2>/dev/null); then echo \"cleanup: skipping $b (cannot compare)\" >&2; continue; fi; \
+      if ! printf '%s' \"$out\" | grep -q '^+'; then git branch -D \"$b\"; fi; \
+    done; \
+  }; f"
   pc = "!f() { git pull && git cleanup; }; f"
 
   # list of deleted files:
