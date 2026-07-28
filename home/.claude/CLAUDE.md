@@ -59,6 +59,15 @@ After completing any coding task, run these commands in order:
   [Rails Style Guide](https://rails.rubystyle.guide/)
 - Always leave a blank line at the end of a file
 
+# Writing & Copy Conventions
+
+- Use American English spelling everywhere — code, comments, commit messages, PR
+  descriptions, issue descriptions and user-facing copy. Write "behavior" not
+  "behaviour", "favor" not "favour", "color" not "colour", "organize" not
+  "organise".
+- Generally prefer spelling terms out over abbreviating, though it can depend on
+  the context — for example, write "DigitalOcean" rather than "DO"
+
 # Testing
 
 - When writing tests:
