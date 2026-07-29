@@ -8,6 +8,7 @@ description: >-
   on Rails applications via Chewy. Perfect for search performance optimization,
   index design, migration between ES versions, and debugging search relevance
   issues.
+tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSearch, mcp__serena__*, mcp__elastic-agent-builder__*
 model: opus
 memory: project
 color: yellow
