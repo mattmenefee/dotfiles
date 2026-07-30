@@ -1,6 +1,43 @@
 ---
 name: documentation-expert
-description: Use this agent when you need to create, review, or improve documentation of any kind. This includes writing READMEs, API documentation, architecture decision records, user guides, onboarding docs, changelogs, inline code documentation, runbooks, and technical specifications. Perfect for creating new documentation from scratch, improving existing docs, ensuring consistency across documentation, or translating technical concepts for different audiences. Examples:\n\n<example>\nContext: The user has just built a new feature and needs documentation.\nuser: "I just finished the notification system, can you write the docs for it?"\nassistant: "I'll use the documentation-expert agent to create comprehensive documentation for your notification system"\n<commentary>\nCreating feature documentation requires understanding the audience, structuring information clearly, and covering usage examples. Use the documentation-expert agent.\n</commentary>\n</example>\n\n<example>\nContext: The user wants to improve their project's README.\nuser: "Our README is outdated and hard to follow"\nassistant: "Let me use the documentation-expert agent to audit and rewrite your README for clarity and completeness"\n<commentary>\nREADME improvements require understanding project goals, developer audience, and documentation best practices. Use the documentation-expert agent.\n</commentary>\n</example>\n\n<example>\nContext: The user needs an architecture decision record.\nuser: "We decided to switch from REST to GraphQL, can you document why?"\nassistant: "I'll use the documentation-expert agent to create an Architecture Decision Record capturing the context, decision, and consequences"\n<commentary>\nADRs require a specific structure and the ability to articulate trade-offs clearly. Use the documentation-expert agent.\n</commentary>\n</example>\n\n<example>\nContext: The user wants API documentation for their endpoints.\nuser: "Document the API endpoints in the payments controller"\nassistant: "Let me use the documentation-expert agent to create clear API documentation with request/response examples for your payments endpoints"\n<commentary>\nAPI documentation needs structured formatting, example payloads, error codes, and clear parameter descriptions. Use the documentation-expert agent.\n</commentary>\n</example>
+description: |-
+  Use this agent when you need to create, review, or improve documentation of any kind. This includes writing READMEs, API documentation, architecture decision records, user guides, onboarding docs, changelogs, inline code documentation, runbooks, and technical specifications. Perfect for creating new documentation from scratch, improving existing docs, ensuring consistency across documentation, or translating technical concepts for different audiences. Examples:
+
+  <example>
+  Context: The user has just built a new feature and needs documentation.
+  user: "I just finished the notification system, can you write the docs for it?"
+  assistant: "I'll use the documentation-expert agent to create comprehensive documentation for your notification system"
+  <commentary>
+  Creating feature documentation requires understanding the audience, structuring information clearly, and covering usage examples. Use the documentation-expert agent.
+  </commentary>
+  </example>
+
+  <example>
+  Context: The user wants to improve their project's README.
+  user: "Our README is outdated and hard to follow"
+  assistant: "Let me use the documentation-expert agent to audit and rewrite your README for clarity and completeness"
+  <commentary>
+  README improvements require understanding project goals, developer audience, and documentation best practices. Use the documentation-expert agent.
+  </commentary>
+  </example>
+
+  <example>
+  Context: The user needs an architecture decision record.
+  user: "We decided to switch from REST to GraphQL, can you document why?"
+  assistant: "I'll use the documentation-expert agent to create an Architecture Decision Record capturing the context, decision, and consequences"
+  <commentary>
+  ADRs require a specific structure and the ability to articulate trade-offs clearly. Use the documentation-expert agent.
+  </commentary>
+  </example>
+
+  <example>
+  Context: The user wants API documentation for their endpoints.
+  user: "Document the API endpoints in the payments controller"
+  assistant: "Let me use the documentation-expert agent to create clear API documentation with request/response examples for your payments endpoints"
+  <commentary>
+  API documentation needs structured formatting, example payloads, error codes, and clear parameter descriptions. Use the documentation-expert agent.
+  </commentary>
+  </example>
 tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSearch, mcp__serena__*
 model: sonnet
 memory: project
