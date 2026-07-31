@@ -120,7 +120,7 @@ Provide your security assessment in this structure:
 
 Brief overview of the security posture of the changes.
 
-### Critical Issues 🚨
+### Critical Issues 🔴
 
 Must-fix vulnerabilities that could lead to immediate exploitation.
 For each issue:
@@ -129,15 +129,15 @@ For each issue:
 - **Risk**: What an attacker could achieve
 - **Remediation**: Specific fix with code example
 
-### High Severity ⚠️
+### High Severity 🟠
 
 Significant security concerns that should be addressed before merge.
 
-### Medium Severity ⚡
+### Medium Severity 🟡
 
 Security improvements that should be tracked and addressed soon.
 
-### Low Severity / Hardening 💡
+### Low Severity / Hardening 🟢
 
 Best practice recommendations and defense-in-depth suggestions.
 
