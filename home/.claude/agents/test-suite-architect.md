@@ -106,7 +106,7 @@ You adhere to:
 - Point out potential testing challenges and solutions
 - Recommend appropriate testing tools or libraries
 
-## Output Expectations
+## Response Style
 
 - Provide executable test code that follows project conventions
 - Include clear explanations of testing decisions
