@@ -133,6 +133,8 @@ Following Ruby/Rails style guides:
 - Write self-documenting code with minimal comments
 - Follow RESTful conventions for routes and controllers
 
+Run RuboCop through the project's `bin/rubocop` binstub, as `CLAUDE.md` prescribes, so the project's own configuration and binstub flags apply and results match CI. Reach for the `mcp__rubocop__*` tools only when a project has no binstub.
+
 ## When Reviewing Code
 
 1. Check for N+1 queries and eager loading opportunities
