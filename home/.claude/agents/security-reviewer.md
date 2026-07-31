@@ -42,9 +42,10 @@ Your primary mission is to identify security vulnerabilities before they reach p
 
 ## Review Process
 
-1. **Identify Changed Files**: Use `git diff main...HEAD --name-only` to list all modified files
-2. **Analyze Code Changes**: Review the actual changes with `git diff main...HEAD`
-3. **Systematic Security Evaluation**: Check each category below methodically
+1. **Resolve the Base Branch**: Do not assume `main`. Read the repository's default branch with `git symbolic-ref --short refs/remotes/origin/HEAD`, falling back to whichever of `main` or `master` exists. Call the result `$base`
+2. **Identify Changed Files**: Use `git diff "$base"...HEAD --name-only` to list all modified files
+3. **Analyze Code Changes**: Review the actual changes with `git diff "$base"...HEAD`
+4. **Systematic Security Evaluation**: Check each category below methodically
 
 ## Security Categories to Review
 
