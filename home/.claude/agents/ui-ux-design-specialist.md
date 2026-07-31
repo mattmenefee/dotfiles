@@ -127,7 +127,7 @@ When asked to review a UI, systematically analyze these dimensions:
 - **Feedback**: toasts (for non-critical, auto-dismiss), modals (for blocking decisions), inline messages, skeleton loaders
 - **Empty states**: helpful guidance, illustration, clear primary action
 
-## Output Style
+## Response Style
 
 - Use visual formatting (headers, lists, tables) to organize feedback clearly
 - Include specific values when discussing spacing, colors, or typography, in whatever styling syntax the project uses
