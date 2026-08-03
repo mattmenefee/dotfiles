@@ -55,6 +55,12 @@ After completing any coding task, run these commands in order:
 - Follow the [Ruby Style Guide](https://rubystyle.guide/) and the
   [Rails Style Guide](https://rails.rubystyle.guide/)
 - Always leave a blank line at the end of a file
+- Wrap at 100 characters where it makes sense — source code, comments, Markdown prose, slash command
+  and agent files, and configuration. Defer to a project's own linter or `.editorconfig` when it
+  sets a different limit
+- Do not wrap where the line break would be wrong rather than merely long: PR and issue descriptions
+  (GitHub and Linear both reflow them), long URLs, Markdown tables, and strings or identifiers that
+  cannot be split
 
 # Writing & Copy Conventions
 
@@ -69,10 +75,9 @@ After completing any coding task, run these commands in order:
 - When writing tests:
   - Do not stub the subject
   - Use verified doubles
-  - Do not exceed 100 character line length
   - Use a maximum example group nesting of 4 levels
   - Use `Time.zone.today` instead of `Date.current`
-  - Use single-line `let` and `before` blocks when they fit within 100 characters
+  - Use single-line `let` and `before` blocks when they fit within the Code Style line length
   - Generally prefer fewer lines — avoid multi-line blocks for simple expressions
 
 # Shell Commands

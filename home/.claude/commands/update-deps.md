@@ -364,7 +364,8 @@ use the sister repository's changelog at
 
 - **Start from an up-to-date `main`** — see [Step 2](#step-2-create-the-feature-branch).
 - **Changelog links are required** — see [Step 7](#step-7-build-the-final-commit-message).
-- **Never skip linter checks** — see [Step 5](#step-5-handle-rubocop-updates) and [Step 6](#step-6-handle-haml-lint-updates).
+- **Never skip linter checks** — see [Step 5](#step-5-handle-rubocop-updates) and
+  [Step 6](#step-6-handle-haml-lint-updates).
 - **Version-locked packages** — see [Step 4](#step-4-update-javascript-dependencies) and
   [Version-Locked Packages](#version-locked-packages).
 - If no dependencies changed at all, inform the user and stop.

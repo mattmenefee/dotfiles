@@ -36,7 +36,8 @@ brew 'gh' # for the GitHub CLI
 cask 'github'
 
 # Continuous Integration tools
-# Requires a one-time `brew trust --cask circleci-public/circleci/circleci@next` before `brew bundle`
+# Requires a one-time `brew trust --cask circleci-public/circleci/circleci@next`
+# before `brew bundle`
 tap 'circleci-public/circleci'
 cask 'circleci-public/circleci/circleci@next' # CircleCI CLI (preview build)
 

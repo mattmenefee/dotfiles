@@ -121,9 +121,11 @@ set incsearch
 set hlsearch
 " Search ignoring case:
 set ignorecase
-" Search without considering ignorecase when both ignorecase and smartcase are set and the search pattern contains uppercase:
+" Search without considering ignorecase when both ignorecase and smartcase are set and the search
+" pattern contains uppercase:
 set smartcase
-" Prefer to have the cursor somewhere in the middle rather than on the first line - set the cursor position to the 7th row:
+" Prefer to have the cursor somewhere in the middle rather than on the first line - set the cursor
+" position to the 7th row:
 set scrolloff=7
 
 " Identify open and close brace positions when you traverse through the file:

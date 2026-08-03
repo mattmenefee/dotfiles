@@ -86,7 +86,8 @@
   ff = only
   tool = diffmerge
 
-  # Standard diff is two sets of final changes. This introduces the original text before each side's changes.
+  # Standard diff is two sets of final changes. This introduces the original text before each
+  # side's changes.
   # https://git-scm.com/docs/git-config#git-config-mergeconflictStyle
   # conflictstyle = diff3
 
@@ -97,7 +98,7 @@
   keepBackup = false
 [diff]
   tool = diffmerge
-	submodule = log
+  submodule = log
 [difftool "diffmerge"]
   cmd = diffmerge $LOCAL $REMOTE
 [fetch]
@@ -131,4 +132,4 @@
 [status]
   showUntrackedFiles = all
 [init]
-	defaultBranch = main
+  defaultBranch = main
