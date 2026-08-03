@@ -47,7 +47,8 @@ if cache_is_stale; then
 
     ahead=0
     behind=0
-    ahead_behind=$(git -C "$current_dir" rev-list --left-right --count HEAD...@{upstream} 2>/dev/null)
+    ahead_behind=$(git -C "$current_dir" \
+      rev-list --left-right --count HEAD...@{upstream} 2>/dev/null)
     if [ -n "$ahead_behind" ]; then
       ahead=$(echo "$ahead_behind" | cut -f1)
       behind=$(echo "$ahead_behind" | cut -f2)
@@ -70,7 +71,8 @@ if [ -n "$branch" ]; then
   [ "$ahead" -gt 0 ] 2>/dev/null && sync_status="${sync_status} \033[0;32m↑${ahead}\033[0m"
   [ "$behind" -gt 0 ] 2>/dev/null && sync_status="${sync_status} \033[0;31m↓${behind}\033[0m"
 
-  git_info=$(printf "%b%b \033[1;34mgit:(\033[0;31m%s\033[1;34m)\033[0m" "$dirty_indicator" "$sync_status" "$branch")
+  git_info=$(printf "%b%b \033[1;34mgit:(\033[0;31m%s\033[1;34m)\033[0m" \
+    "$dirty_indicator" "$sync_status" "$branch")
 fi
 
 # Rails server indicator (check PID file and verify process is running)
@@ -87,7 +89,8 @@ fi
 arrow=$(printf "\033[1;32m➜\033[0m")
 
 # --- Line 1: arrow + directory + rails + model + git ---
-printf "%s \033[0;36m%s\033[0m%b \033[1;35m%s\033[0m %b\n" "$arrow" "$dir_name" "$rails_indicator" "$model" "$git_info"
+printf "%s \033[0;36m%s\033[0m%b \033[1;35m%s\033[0m %b\n" \
+  "$arrow" "$dir_name" "$rails_indicator" "$model" "$git_info"
 
 # --- Line 2: context progress bar + cost + duration ---
 # Color thresholds: green (<70%), yellow (70-89%), red (>=90%)
