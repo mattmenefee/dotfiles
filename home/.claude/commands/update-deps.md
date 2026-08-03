@@ -24,7 +24,7 @@ Check whether any `update-dependencies-*` branches already exist for the
 current month:
 
 ```bash
-git branch -r --list "origin/update-dependencies-*-$(date +%B-%Y | tr '[:upper:]' '[:lower:]')"
+git branch -r --list "origin/update-dependencies-*$(date +%B-%Y | tr '[:upper:]' '[:lower:]')"
 ```
 
 **Naming rules:**
@@ -65,11 +65,10 @@ dependency changes:
 gem_update 2>&1 | tee /tmp/gem-update-output.txt
 ```
 
-`gem_update` is a custom gem (installed via `gem install gem_update`) that
-runs `bundle update` internally and outputs a formatted changelog with
-version diffs and changelog links. Capture this output — it will be the
-starting point for the commit message body. If `gem_update` is not
-available, run `bundle update` directly and manually build the changelog
+`gem_update` is the CLI provided by the `gem_updater` gem (installed via `gem install gem_updater`)
+that runs `bundle update` internally and outputs a formatted changelog with version diffs and
+changelog links. Capture this output — it will be the starting point for the commit message body.
+If `gem_update` is not available, run `bundle update` directly and manually build the changelog
 from the `Gemfile.lock` diff.
 
 A successful run prints a list of gem updates with version diffs. If
