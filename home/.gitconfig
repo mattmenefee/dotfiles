@@ -93,6 +93,38 @@
   # conflict resolution living only in one would read as merged and be deleted. Three branches are
   # never candidates: the base being compared against, the current one, and the repository's own
   # base branch — `git cleanup develop` would otherwise eat a main that develop contains.
+  #
+  # The cost is one `git cherry` per branch, and each one rebuilds a patch-id table covering every
+  # commit the branch is behind the base — so a repository with hundreds of stale branches spends
+  # tens of seconds here. The comparisons are independent, so they run `xargs -P` wide and only
+  # classify; deletion stays serial. Branches are handed over NUL-delimited because a ref name may
+  # contain quotes, which `xargs` would otherwise treat as syntax. The `cleanup-worker` argument
+  # after the `sh -c` script is what `$0` binds to; without it `xargs` binds the first branch of
+  # every batch there instead, where the loop over `$@` never reaches it — one branch in twenty
+  # would go silently uncompared, neither deleted nor reported. All verdicts are collected before
+  # the first deletion so no ref disappears while another process is still walking the ref table.
+  # Workers finish out of order, so the verdicts are sorted by ref name before anything is deleted:
+  # the list of deleted branches is this command's audit trail, and scanning it for a branch you did
+  # not expect to lose is far harder shuffled. An aborted fan-out leaves branches unclassified
+  # rather than unmerged, so a non-zero status there deletes nothing instead of deleting a subset.
+  # Judging every branch against one pre-deletion snapshot is also what makes a symbolic ref under
+  # refs/heads/ decidable at all. Serially its verdict depended on whether its target sorted ahead
+  # of it and had already been deleted, so the same repository kept or removed the alias purely on
+  # name order. They are skipped outright now: a symref is not a branch, and which of the two names
+  # `git branch -D` would take is exactly the kind of question this command should decline. The
+  # reader ignores any verdict whose ref is not under refs/heads/, so a torn or truncated line
+  # cannot reach `git branch -D` as a bare or half-formed name.
+  # The reader re-checks the three protected branches before deleting even though only the filtered
+  # list reaches a worker. Serially those two steps sat in one loop, where "a protected branch can
+  # never reach the delete" was there to read; split apart it becomes a claim about the whole
+  # pipeline, and the recheck costs nothing next to what restoring a wrongly deleted branch costs.
+  #
+  # A merged branch is one whose `git cherry` output holds no `+` line. That is tested by scanning
+  # output words for a bare `+` rather than piping to grep, which saves a process per branch and is
+  # exact only because the output is nothing but `+`/`-` markers and hex object names. Adding `-v`
+  # would put commit subjects in that stream and a subject containing a lone `+` would then read as
+  # unmerged. Keep `git cherry` unadorned. Globbing is off around the scan so that no marker or
+  # object name is expanded against the working tree.
   cleanup = "!f() { \
     base=$1; \
     if [ -z \"$base\" ]; then base=$(git base) || return 1; fi; \
@@ -102,13 +134,45 @@
     else echo \"cleanup: base branch '$base' not found locally or on origin; aborting\" >&2; return 1; fi; \
     cur=$(git symbolic-ref --quiet HEAD); \
     echo \"cleanup: comparing against $label\"; \
-    git for-each-ref --format='%(refname)' refs/heads/ | while read -r r; do \
-      if [ \"$r\" = \"refs/heads/$base\" ] || [ \"$r\" = \"refs/heads/$keep\" ] || [ \"$r\" = \"$cur\" ]; then continue; fi; \
+    jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null); \
+    case $jobs in ''|*[!0-9]*|0) jobs=4;; esac; \
+    if [ \"$jobs\" -gt 16 ]; then jobs=16; fi; \
+    verdicts=$( \
+      git for-each-ref --format='%(refname) %(symref)' refs/heads/ \
+      | while read -r r sym; do \
+          if [ \"$r\" = \"refs/heads/$base\" ] || [ \"$r\" = \"refs/heads/$keep\" ] || [ \"$r\" = \"$cur\" ]; then continue; fi; \
+          if [ -n \"$sym\" ]; then \
+            echo \"cleanup: skipping ${r#refs/heads/} (symbolic ref)\" >&2; continue; \
+          fi; \
+          echo \"$r\"; \
+        done \
+      | tr '\\n' '\\0' \
+      | CLEANUP_REF=\"$ref\" xargs -0 -P \"$jobs\" -n 20 sh -c ' \
+          for r in \"$@\"; do \
+            if ! out=$(git cherry \"$CLEANUP_REF\" \"$r\" 2>/dev/null); then \
+              echo \"S $r cannot compare\"; continue; \
+            fi; \
+            set -f; unmerged=; \
+            for t in $out; do if [ \"$t\" = + ]; then unmerged=1; break; fi; done; \
+            set +f; \
+            if [ -n \"$unmerged\" ]; then continue; fi; \
+            if [ \"$(git rev-list --count --min-parents=2 \"$CLEANUP_REF..$r\")\" != 0 ]; then \
+              echo \"S $r unique merge commits\"; continue; \
+            fi; \
+            echo \"D $r\"; \
+          done \
+        ' cleanup-worker \
+    ) || { echo 'cleanup: comparison failed; deleting nothing' >&2; return 1; }; \
+    [ -n \"$verdicts\" ] || return 0; \
+    printf '%s\\n' \"$verdicts\" | LC_ALL=C sort -k2,2 | while read -r verdict r reason; do \
+      case $r in refs/heads/?*) ;; \
+        *) echo \"cleanup: ignoring malformed verdict\" >&2; continue;; esac; \
       b=${r#refs/heads/}; \
-      if ! out=$(git cherry \"$ref\" \"$r\" 2>/dev/null); then echo \"cleanup: skipping $b (cannot compare)\" >&2; continue; fi; \
-      if printf '%s' \"$out\" | grep -q '^+'; then continue; fi; \
-      if [ \"$(git rev-list --count --min-parents=2 \"$ref..$r\")\" != 0 ]; then echo \"cleanup: skipping $b (unique merge commits)\" >&2; continue; fi; \
-      git branch -D -- \"$b\"; \
+      if [ \"$verdict\" != D ]; then echo \"cleanup: skipping $b ($reason)\" >&2; \
+      elif [ \"$r\" = \"refs/heads/$base\" ] || [ \"$r\" = \"refs/heads/$keep\" ] \
+        || [ \"$r\" = \"$cur\" ]; then \
+        echo \"cleanup: refusing to delete protected branch $b\" >&2; \
+      else git branch -D -- \"$b\"; fi; \
     done; \
   }; f"
   # Pull the current branch, then prune whatever that merged. Takes the same optional base.
