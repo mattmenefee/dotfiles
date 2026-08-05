@@ -1,12 +1,14 @@
 {
-  "Profiles": [
+  "Profiles" : [
     {
-      "Name": "Matt (dotfiles)",
-      "Guid": "15372224-9BD7-4C77-A9E3-5B19E73AE5F0",
-      "Dynamic Profile Parent Name": "Default",
-      "Title Components": 32,
-      "Custom Window Title": "\\(session.autoName) · \\(user.dir)",
-      "Allow Title Setting": true
+      "Title Components" : 32,
+      "Rewritable" : true,
+      "Custom Window Title" : "\\(session.autoName) · \\(user.dir)",
+      "Guid" : "15372224-9BD7-4C77-A9E3-5B19E73AE5F0",
+      "Name" : "Matt (dotfiles)",
+      "Dynamic Profile Parent Name" : "Default",
+      "Use Separate Colors for Light and Dark Mode" : false,
+      "Allow Title Setting" : true
     }
   ]
 }
