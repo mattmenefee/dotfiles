@@ -51,25 +51,57 @@ alias yo="yarn upgrade-interactive"
 # Git worktrees - navigate by number (e.g., wt 1, wt 2)
 # Run from any worktree to switch between them
 #
-# `git worktree list` sorts linked worktrees by directory name, which would interleave the throwaway
-# worktrees Claude Code creates for its subagents (`.claude/worktrees/agent-<id>`) with the
-# permanent ones and renumber them mid-session. Listing the temporary ones last keeps `wt 2`
+# `git worktree list` sorts linked worktrees by directory basename, which would interleave the
+# throwaway worktrees Claude Code creates for its subagents (`.claude/worktrees/agent-<id>`) with
+# the permanent ones and renumber them mid-session. Listing the temporary ones last keeps `wt 2`
 # pointing at the same checkout whether or not agents are running.
+#
+# `wtl` reorders git's own listing so it keeps the commit and branch columns, while `wt` reads
+# `--porcelain -z`, the only format that leaves a path containing spaces or newlines intact. Both
+# walk git's ordering and hold back the same entries, so the numbers you see and the directories
+# you land in stay in step.
 wtlist() {
-  git worktree list 2>/dev/null | awk '
-    index($1, "/.claude/worktrees/") { temporary[++count] = $0; next }
+  git worktree list | awk '
+    index($0, "/.claude/worktrees/") { temporary[++count] = $0; next }
     { print }
     END { for (i = 1; i <= count; i++) print temporary[i] }
   '
 }
 
+# Worktree paths in the same order `wtl` prints them, returned in $reply so that no delimiter has
+# to survive the trip back
+_wt_paths() {
+  local -a temporary
+  # `dir`, never `path`: zsh ties `path` to `PATH`, so a local of that name empties it and `git`
+  # stops resolving for the rest of the function
+  local record dir
+  reply=()
+  for record in ${(0)"$(git worktree list --porcelain -z 2>/dev/null)"}; do
+    [[ $record == 'worktree '* ]] || continue
+    dir=${record#worktree }
+    if [[ $dir == */.claude/worktrees/* ]]; then
+      temporary+=("$dir")
+    else
+      reply+=("$dir")
+    fi
+  done
+  reply+=("${temporary[@]}")
+}
+
 wt() {
+  if [[ $1 != <-> ]]; then
+    echo "Usage: wt <number>" >&2
+    return 1
+  fi
+  local -a reply
   local worktree_path
-  worktree_path=$(wtlist | sed -n "${1}p" | awk '{print $1}')
+  _wt_paths
+  worktree_path=${reply[$1]}
   if [[ -n "$worktree_path" ]]; then
     cd "$worktree_path" || return
   else
-    echo "Worktree $1 not found (are you in a git repo with worktrees?)"
+    echo "Worktree $1 not found (are you in a git repo with worktrees?)" >&2
+    return 1
   fi
 }
 
