@@ -50,9 +50,22 @@ alias yo="yarn upgrade-interactive"
 
 # Git worktrees - navigate by number (e.g., wt 1, wt 2)
 # Run from any worktree to switch between them
+#
+# `git worktree list` sorts linked worktrees by directory name, which would interleave the throwaway
+# worktrees Claude Code creates for its subagents (`.claude/worktrees/agent-<id>`) with the
+# permanent ones and renumber them mid-session. Listing the temporary ones last keeps `wt 2`
+# pointing at the same checkout whether or not agents are running.
+wtlist() {
+  git worktree list 2>/dev/null | awk '
+    index($1, "/.claude/worktrees/") { temporary[++count] = $0; next }
+    { print }
+    END { for (i = 1; i <= count; i++) print temporary[i] }
+  '
+}
+
 wt() {
   local worktree_path
-  worktree_path=$(git worktree list 2>/dev/null | sed -n "${1}p" | awk '{print $1}')
+  worktree_path=$(wtlist | sed -n "${1}p" | awk '{print $1}')
   if [[ -n "$worktree_path" ]]; then
     cd "$worktree_path" || return
   else
@@ -61,7 +74,7 @@ wt() {
 }
 
 # List all worktrees with numbers
-alias wtl='git worktree list | nl'
+alias wtl='wtlist | nl'
 
 # Docker
 alias dc='docker compose'
