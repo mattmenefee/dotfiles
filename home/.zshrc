@@ -14,6 +14,14 @@ ZSH=$HOME/.oh-my-zsh
 # time that oh-my-zsh is loaded.
 ZSH_THEME="robbyrussell"
 
+# Autoload functions from ~/.zsh/functions, ahead of the compinit that oh-my-zsh runs. Each is
+# named rather than globbed out of the directory: autoload takes the name from an absolute path's
+# basename, and zsh resolves functions before external commands, so a glob would make any file
+# landing in there a live command — one named `git` would shadow the real binary.
+typeset -U fpath
+fpath=(~/.zsh/functions $fpath)
+autoload -Uz ~/.zsh/functions/sysdoc
+
 alias e='exec'
 alias ta='tmux -2 attach || tn'
 alias be="bundle exec"
@@ -91,7 +99,6 @@ alias bubo="brew update && brew outdated"
 alias brewup="HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 brew upgrade && brew cleanup && brew autoremove && brew doctor"
 # Consider using `brew cleanup --prune=all --dry-run`
 # See https://mac.install.guide/homebrew/8
-
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
