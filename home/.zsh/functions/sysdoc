@@ -1,0 +1,36 @@
+# Report on the health of this machine's tooling. Every check runs regardless of how the last
+# fared, since a doctor exiting non-zero is routine — `brew doctor` calls its own warnings
+# ignorable.
+#
+# Autoloaded: the bare body with no `sysdoc() { ... }` wrapper is zsh's fpath convention.
+
+# Without this, a caller under KSH_ARRAYS runs only the first check and still returns 0.
+emulate -L zsh
+
+local -a checks=(
+  'brew doctor'
+  'claude doctor'
+  'npm doctor'
+  'mise doctor'
+  'gh auth status' # pr-conflicts depends on gh, and an expired token fails silently
+)
+local check tool
+local -i failed=0
+
+for check in $checks; do
+  tool=${check%% *}
+
+  # `commands` holds external binaries only, never shell functions — mise is both here, and it is
+  # the binary this finds.
+  if (( ! $+commands[$tool] )); then
+    echo "==> skipping $check ($tool not installed)"
+    continue
+  fi
+
+  echo "==> $check"
+  # zsh, unlike bash, does not word-split unquoted parameters; without the `=` this would look for
+  # a command named `gh auth status`.
+  ${=check} || failed=1
+done
+
+return $failed
