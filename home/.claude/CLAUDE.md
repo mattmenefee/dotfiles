@@ -91,6 +91,64 @@ After completing any coding task, run these commands in order:
 - When writing slash commands, agent files, or docs that prescribe shell commands, prescribe the
   non-interactive form — a command file that says to run an editor-opening command will be followed
 
+# Git Worktrees
+
+Subagents have Edit and Write access, and several of them often run against the same checkout at
+once — every reviewer in `/local-review`, for instance. An agent that edits files to test an
+assertion corrupts what its siblings are reading, and leaves changes in the working tree that
+nobody asked for. Worktrees are how that work gets isolated.
+
+## Isolating Subagents
+
+- Spawn any subagent that reviews, tests, or otherwise exercises code with `isolation: "worktree"`.
+  The harness gives it a throwaway checkout under `.claude/worktrees/agent-<id>/`, locks it while
+  the agent runs, and removes it afterward when nothing changed. Prose constraints in a prompt are
+  advisory; a worktree is structural
+- An agent that discovers mid-task that it needs to modify code uses the `EnterWorktree` tool
+  rather than `git worktree add`, so the harness tracks and cleans up the result. `ExitWorktree`
+  with `action: "remove"` tears it down
+- Do not put `isolation: worktree` in an agent's frontmatter. These agents are also invoked
+  directly to do real work, and frontmatter isolation would silently divert that work into a
+  worktree that later gets swept
+- `worktree.baseRef` is `head` in `~/.claude/settings.json` so an isolated agent branches from the
+  current `HEAD`. The default, `fresh`, branches from `origin/<default branch>` — a reviewer would
+  analyze the wrong code and never notice
+- Uncommitted changes do **not** follow an agent into its worktree, because `head` resolves to the
+  last commit. When the work under review is uncommitted, either commit it first or capture
+  `git diff HEAD` and pass it in the delegation prompt
+
+## Bootstrapping a Worktree
+
+A worktree is a fresh checkout: no `node_modules`, no `tmp/`, and none of the gitignored
+configuration an application needs to boot. A `.worktreeinclude` file at the project root lists the
+gitignored files to copy in — `.gitignore` syntax, and only files that both match a pattern and are
+gitignored are copied. Anything else (`bundle install`, `yarn install`, `bin/rails db:test:prepare`)
+the agent runs itself, inside the worktree.
+
+If a worktree still cannot be made to run, report the finding as unverified. Never fall back to
+running in the shared checkout — that failure path is exactly how an isolated agent ends up
+modifying the real working tree.
+
+## What a Worktree Does Not Isolate
+
+A worktree has its own files and index. Everything else is shared with the real repository:
+
+- **Refs and objects** — `git branch -D`, `git stash`, `git tag`, and `git reflog expire` all write
+  to the one shared `.git` directory. The `git cleanup` / `bclean` / `bdone` aliases in
+  `~/.gitconfig` delete real branches when run from inside a worktree. Exercise destructive git
+  tooling against disposable `git init` repositories under the scratchpad, never a worktree
+- **Databases and services** — the same PostgreSQL server, Redis instance, and Elasticsearch
+  cluster. Two agents running the suite will truncate each other's test database unless each points
+  at its own; see the project's own instructions for how
+- **Ports** — only one agent can bind a given port, so only one can run a server or a system spec
+
+## Cleaning Up
+
+Leave the shared checkout exactly as you found it: `git status --porcelain` in the main working
+tree must return what it returned before you started. Remove a worktree you created manually with
+`git worktree remove <path>`, adding `--force` when it holds uncommitted files, and follow up with
+`git worktree prune`. Scratch files belong in the session scratchpad, not in the repository.
+
 # Serena MCP Server
 
 - Serena must be activated at the start of each session before its tools can be used

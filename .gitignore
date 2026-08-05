@@ -1,0 +1,2 @@
+# Ignore the throwaway worktrees Claude Code creates for its subagents
+/.claude/worktrees/
