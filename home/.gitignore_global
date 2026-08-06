@@ -53,6 +53,9 @@ Thumbs.db
 /.serena/*
 **/.claude/agent-memory
 
+# Ignore the throwaway worktrees Claude Code creates for its subagents
+**/.claude/worktrees
+
 # Claude local settings (machine-specific)
 **/.claude/settings.local.json
 
