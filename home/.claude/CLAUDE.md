@@ -7,6 +7,7 @@
 ## Linear Issues
 
 When creating Linear issues, write descriptions for a non-technical audience:
+
 - Focus on user benefits, not implementation details
 - Use familiar references (e.g., "similar to Slack") to ground changes
 - Include a "Why This Matters" section connecting the change to business value
@@ -21,6 +22,7 @@ When creating Linear issues, write descriptions for a non-technical audience:
 - Reference related Linear issues if applicable
 - When posting review findings (local review, doc review, etc.) as a PR comment, wrap the full
   content in a `<details><summary>` block so only a summary line is visible by default:
+
   ```markdown
   ## [Review Type] — [status summary]
 

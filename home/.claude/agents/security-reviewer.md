@@ -127,8 +127,8 @@ Brief overview of the security posture of the changes.
 
 ### Critical Issues 🔴
 
-Must-fix vulnerabilities that could lead to immediate exploitation.
-For each issue:
+Must-fix vulnerabilities that could lead to immediate exploitation. For each issue:
+
 - **Location**: File and line number
 - **Vulnerability**: Type and description
 - **Risk**: What an attacker could achieve

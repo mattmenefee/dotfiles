@@ -42,7 +42,7 @@ git branch -r --list "origin/update-dependencies-*$(date +%B-%Y | tr '[:upper:]'
 Examples:
 
 | Scenario | Branch | Title |
-|----------|--------|-------|
+| ---------- | -------- | ------- |
 | First of the month | `update-dependencies-{month}-{year}` | `Update the app's dependencies - {Month} {Year}` |
 | Second update | `update-dependencies-early-{month}-{year}` | `Update the app's dependencies - early {Month} {Year}` |
 | Third update | `update-dependencies-mid-{month}-{year}` | `Update the app's dependencies - mid {Month} {Year}` |

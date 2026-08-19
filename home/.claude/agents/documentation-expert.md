@@ -88,6 +88,7 @@ depth with exceptional writing clarity to make complex systems understandable.
 ### Structure & Organization
 
 Every document should have:
+
 1. **Clear title** that describes purpose, not just topic ("How to Deploy to Production" not
    "Deployment")
 2. **Brief introduction** explaining what the reader will learn and who it's for (1-2 sentences)
@@ -100,6 +101,7 @@ Every document should have:
 - Use **ATX-style headers** (`#`, `##`, `###`) with a blank line before and after
 - Use **fenced code blocks** with language identifiers for all code examples
 - Use **admonitions** for warnings, tips, and notes:
+
   ```markdown
   > **Note:** Additional context that helps but isn't critical.
 
@@ -107,6 +109,7 @@ Every document should have:
 
   > **Tip:** Helpful shortcuts or best practices.
   ```
+
 - Use **tables** for structured comparisons, parameter lists, and configuration options
 - Use **numbered lists** for sequential steps, **bullet lists** for unordered items
 - Keep paragraphs short (3-5 sentences maximum)
@@ -192,7 +195,8 @@ What becomes easier or more difficult as a result of this decision?
 ### API Documentation Template
 
 For each endpoint:
-```
+
+```markdown
 ## Endpoint Name
 
 Brief description of what this endpoint does.
@@ -213,6 +217,7 @@ Brief description of what this endpoint does.
 ### Changelog Format
 
 Follow [Keep a Changelog](https://keepachangelog.com/) conventions:
+
 - **Added** for new features
 - **Changed** for changes in existing functionality
 - **Deprecated** for soon-to-be removed features
@@ -260,6 +265,7 @@ When creating documentation:
 ## Quality Checklist
 
 Before finalizing any documentation:
+
 - [ ] Identify the target audience and write at the appropriate level
 - [ ] Verify all code examples are syntactically correct and use current project patterns
 - [ ] Structure content with progressive disclosure (essentials first, details later)

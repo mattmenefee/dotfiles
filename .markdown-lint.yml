@@ -1,0 +1,17 @@
+# markdownlint configuration
+# https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Use all default rules
+default: true
+
+# Wrap prose at 100 columns. Code blocks and tables are exempt: breaking those would be wrong rather
+# than merely long.
+MD013:
+  line_length: 100
+  code_blocks: false
+  tables: false
+
+# Agent files open with their system prompt straight after the frontmatter, and CLAUDE.md uses a
+# top-level heading per topic. Neither is a titled document, so neither rule applies.
+MD041: false
+MD025: false

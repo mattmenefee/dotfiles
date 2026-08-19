@@ -114,6 +114,7 @@ When the review file already exists:
    they referenced has been deleted or rewritten) — do **not** remove them;
    apply strikethrough and add a brief explanation of why
 1. **Update the review date** at the top of the document:
+
    ```markdown
    ## Review History
    - **Initial review:** YYYY-MM-DD
@@ -230,7 +231,7 @@ At the end, provide:
 1. **Summary table** of all findings:
 
 | Finding | Priority | Category | Description | Location | Recommendation | Status |
-|---------|----------|----------|-------------|----------|----------------|--------|
+| --------- | ---------- | ---------- | ------------- | ---------- | ---------------- | -------- |
 | F1 | 🟡 Medium | Consistency | Example description | Section name | Implement | |
 
 1. **Overall assessment** - Brief summary of document quality
@@ -274,8 +275,8 @@ actionable findings have been addressed, lead with that:
 
 ### Interactive Finding Selection
 
-After displaying all review output, present the list of **actionable findings
-only** (🔴🟠🟡🟢 — not ℹ️ or 💡 observations), formatted as:
+After displaying all review output, present the list of **actionable findings only**
+(🔴🟠🟡🟢 — not ℹ️ or 💡 observations), formatted as:
 
 ```text
 F1 🔴 Critical - Description (location)

@@ -359,7 +359,7 @@ clobber it:
 1. Update **Status**, **Updated**, **Branch**, **Pull request**, **Issues**, **Captured by**, and
    **Current State** to current reality — leaving **Created** untouched
 1. Refresh **Verification** — re-run the recorded commands, or mark each result "not re-run since
-   <date>". This is the section most certain to be stale on a re-run and the one whose staleness
+   `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
 1. Re-check every working artifact this handoff points at — `local-review.md`, `*-DOC-REVIEW.md`,
    `PLAN.md`, and anything else untracked. If one is gone, say so where it is referenced and promote
