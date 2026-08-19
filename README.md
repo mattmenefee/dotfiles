@@ -1,15 +1,13 @@
 # dotfiles
 
-Personal macOS development environment managed with [Homesick][homesick_link].
-Configures Zsh (with [Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link],
-Ruby development tools via [rbenv][rbenv_link], and a curated set of
-[Homebrew][homebrew_link] packages for web development. Uses
-[mise][mise_link] for managing non-Ruby tool versions.
+Personal macOS development environment managed with [Homesick][homesick_link]. Configures Zsh (with
+[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], Ruby development tools via
+[rbenv][rbenv_link], and a curated set of [Homebrew][homebrew_link] packages for web development.
+Uses [mise][mise_link] for managing non-Ruby tool versions.
 
 ## Getting Started
 
-1. Install [Homebrew][homebrew_link] and
-   [homebrew-bundle][brew_bundle_link]
+1. Install [Homebrew][homebrew_link] and [homebrew-bundle][brew_bundle_link]
 
 1. Install Homesick and symlink dotfiles:
 
@@ -29,13 +27,11 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
     brew bundle
     ```
 
-1. Set up [rbenv][rbenv_link] and
-   [rbenv-default-gems][rbenv_default_gems_link] plugin
+1. Set up [rbenv][rbenv_link] and [rbenv-default-gems][rbenv_default_gems_link] plugin
 
-    Ruby versions are managed with rbenv (installed via Homebrew in step 3).
-    Other tool versions (e.g., Ansible, Terraform) are managed with
-    [mise][mise_link], which is also installed via Homebrew and activated
-    through the Oh My Zsh `mise` plugin.
+    Ruby versions are managed with rbenv (installed via Homebrew in step 3). Other tool versions
+    (e.g., Ansible, Terraform) are managed with [mise][mise_link], which is also installed via
+    Homebrew and activated through the Oh My Zsh `mise` plugin.
 
     ```shell
     rbenv init # See rbenv README for why this is necessary
@@ -74,8 +70,8 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
     | [gh][omz_gh] | built-in | GitHub CLI completions |
     | [bundler][omz_bundler] | built-in | Auto-prefixes gem commands with `bundle exec` |
 
-    Two additional Zsh plugins are installed via Homebrew (included in the
-    Brewfile) and sourced at the bottom of `.zshrc`:
+    Two additional Zsh plugins are installed via Homebrew (included in the Brewfile) and sourced at
+    the bottom of `.zshrc`:
 
     - **[zsh-syntax-highlighting][zsh_sh_link]** — highlights commands as you type
     - **[zsh-autosuggestions][zsh_as_link]** — suggests commands from history as you type
@@ -87,8 +83,8 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
     zsh init.zsh
     ```
 
-    This installs Vundle plugins for MacVim. Neovim (also in the Brewfile)
-    uses a separate configuration.
+    This installs Vundle plugins for MacVim. Neovim (also in the Brewfile) uses a separate
+    configuration.
 
 1. Set up Git config
 
