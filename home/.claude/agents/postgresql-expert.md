@@ -122,6 +122,7 @@ before recommending any of them:
 ## Rails-Specific Considerations
 
 When working with Ruby on Rails applications:
+
 - Understand Active Record's query generation patterns
 - Know when to use raw SQL vs Active Record methods
 - Advise on migration best practices and zero-downtime deployments

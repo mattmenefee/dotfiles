@@ -1,0 +1,45 @@
+name: Dotfiles CI
+
+on: # yamllint disable-line rule:truthy
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # super-linter resolves the default branch at startup and exits fatally if neither main
+          # nor origin/main is present. That check is unconditional, so the history is needed even
+          # though VALIDATE_ALL_CODEBASE means nothing is ever diffed against it.
+          fetch-depth: 0
+
+      - name: Run the linters
+        uses: super-linter/super-linter/slim@v8.7.0
+        env:
+          # To report GitHub Actions status checks
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: false
+          VALIDATE_ALL_CODEBASE: true # lint every file, not only the ones that changed
+          VALIDATE_BASH: true
+          VALIDATE_GITHUB_ACTIONS: true
+          VALIDATE_GITLEAKS: true
+          VALIDATE_GIT_MERGE_CONFLICT_MARKERS: true
+          VALIDATE_JSON: true
+          VALIDATE_MARKDOWN: true
+          VALIDATE_YAML: true
+
+          LINTER_RULES_PATH: /

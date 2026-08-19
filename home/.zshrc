@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Configure oh-my-zsh updates (once per day)
 zstyle ':omz:update' mode auto

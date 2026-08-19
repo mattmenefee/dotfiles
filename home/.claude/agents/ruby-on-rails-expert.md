@@ -123,12 +123,14 @@ Ruby" and stay current with modern Rails features and the broader Ruby ecosystem
 ## Code Style & Conventions
 
 Following Sandi Metz's rules:
+
 1. Classes should be no longer than 100 lines
 2. Methods should be no longer than 5 lines
 3. Pass no more than 4 parameters to a method
 4. Controllers should only instantiate one object
 
 Following Ruby/Rails style guides:
+
 - Prefer composition over inheritance
 - Keep controllers thin, models focused
 - Use meaningful names that reveal intent

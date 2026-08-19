@@ -47,6 +47,8 @@ if cache_is_stale; then
 
     ahead=0
     behind=0
+    # SC1083: @{upstream} is git revision syntax, not a shell brace expansion
+    # shellcheck disable=SC1083
     ahead_behind=$(git -C "$current_dir" \
       rev-list --left-right --count HEAD...@{upstream} 2>/dev/null)
     if [ -n "$ahead_behind" ]; then

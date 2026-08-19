@@ -117,7 +117,7 @@ developers and designers create exceptional user experiences.
 When asked to review a UI, systematically analyze these dimensions:
 
 | Dimension | Key Questions |
-|-----------|---------------|
+| ----------- | --------------- |
 | **Clarity** | Is the purpose immediately clear? Can users find what they need within 3 seconds? |
 | **Hierarchy** | What draws attention first? Is the visual weight distribution intentional? |
 | **Consistency** | Do similar elements look and behave similarly? Are spacing and sizing from a consistent scale? |
@@ -145,7 +145,8 @@ When asked to review a UI, systematically analyze these dimensions:
   the project uses
 - Reference specific line numbers, file paths, or component names when reviewing code
 - Provide structured mockup descriptions when suggesting new layouts:
-  ```
+
+  ```text
   [Component Name]
   ├── Header: 24px semibold, color: text-primary token
   ├── Body: 16px regular, max-width: 65ch
@@ -168,6 +169,7 @@ When asked to review a UI, systematically analyze these dimensions:
 ## Quality Checklist
 
 Before finalizing any recommendation, verify:
+
 - [ ] Suggestion is specific and actionable (not vague like "make it cleaner")
 - [ ] Accessibility implications are addressed
 - [ ] Implementation complexity is acknowledged

@@ -14,8 +14,8 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
 1. Install Homesick and symlink dotfiles:
 
     ```shell
-    $ homesick clone mattmenefee/dotfiles
-    $ homesick link dotfiles
+    homesick clone mattmenefee/dotfiles
+    homesick link dotfiles
     ```
 
 1. Install tools managed by Homebrew
@@ -24,9 +24,9 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
     blocks until it is explicitly trusted. Run the one-time `brew trust` first, then `brew bundle`:
 
     ```shell
-    $ cd ~/.homesick/repos/dotfiles/
-    $ brew trust --cask circleci-public/circleci/circleci@next
-    $ brew bundle
+    cd ~/.homesick/repos/dotfiles/
+    brew trust --cask circleci-public/circleci/circleci@next
+    brew bundle
     ```
 
 1. Set up [rbenv][rbenv_link] and
@@ -38,33 +38,33 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
     through the Oh My Zsh `mise` plugin.
 
     ```shell
-    $ rbenv init # See rbenv README for why this is necessary
+    rbenv init # See rbenv README for why this is necessary
 
     # Set up the rbenv-default-gems plugin
-    $ git clone https://github.com/rbenv/rbenv-default-gems.git $(rbenv root)/plugins/rbenv-default-gems
+    git clone https://github.com/rbenv/rbenv-default-gems.git $(rbenv root)/plugins/rbenv-default-gems
 
-    $ rbenv install -l # list all available versions
-    $ rbenv install [version]
+    rbenv install -l # list all available versions
+    rbenv install [version]
     # Restart shell for changes with $PATH to take effect
-    $ rbenv global [version] # set global Ruby version
+    rbenv global [version] # set global Ruby version
     ```
 
 1. Update RubyGems
 
     ```shell
-    $ gem update --system
+    gem update --system
     ```
 
 1. Install [Oh My Zsh][oh_my_zsh_link]
 
     ```shell
-    $ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     ```
 
     The following Oh My Zsh plugins are enabled in `.zshrc`:
 
     | Plugin | Source | Description |
-    |--------|--------|-------------|
+    | ------ | ------ | ----------- |
     | [git][omz_git] | built-in | Git aliases and completions |
     | [rails][omz_rails] | built-in | Rails command aliases |
     | [docker][omz_docker] | built-in | Docker completions |
@@ -83,8 +83,8 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
 1. Install [Vundle][vundle_link] and run the Vim plugin installer
 
     ```shell
-    $ cd ~/.homesick/repos/dotfiles
-    $ zsh init.zsh
+    cd ~/.homesick/repos/dotfiles
+    zsh init.zsh
     ```
 
     This installs Vundle plugins for MacVim. Neovim (also in the Brewfile)
@@ -94,28 +94,28 @@ Ruby development tools via [rbenv][rbenv_link], and a curated set of
 
     ```shell
     # Insert appropriate values
-    $ git config --global user.name "$GIT_AUTHOR_NAME"
-    $ git config --global user.email "$GIT_AUTHOR_EMAIL"
+    git config --global user.name "$GIT_AUTHOR_NAME"
+    git config --global user.email "$GIT_AUTHOR_EMAIL"
     ```
 
 ## Updating
 
 ```shell
 # Homebrew (or use the `brewup` alias defined in .zshrc)
-$ brew upgrade && brew cleanup && brew autoremove && brew doctor
+brew upgrade && brew cleanup && brew autoremove && brew doctor
 
 # RubyGems
-$ gem update --system
+gem update --system
 
 # Bundler
-$ gem update bundler
+gem update bundler
 
 # mise (non-Ruby tool versions)
-$ mise self-update
-$ mise upgrade
+mise self-update
+mise upgrade
 
 # Dotfiles via Homesick
-$ homesick pull --all
+homesick pull --all
 ```
 
 Oh My Zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
