@@ -1,7 +1,6 @@
 # Document Review
 
-Review the following document for quality, using the **documentation-expert**
-agent:
+Review the following document for quality, using the **documentation-expert** agent:
 
 **Document:** `$ARGUMENTS`
 
@@ -9,36 +8,30 @@ Instruct the documentation-expert to perform a thorough review covering:
 
 ## Formatting
 
-- **Markdown syntax** — Correct use of headings, lists, code blocks, tables,
-  and links
+- **Markdown syntax** — Correct use of headings, lists, code blocks, tables, and links
 - **Heading hierarchy** — Logical nesting (no skipped levels, consistent style)
-- **Whitespace and spacing** — Consistent blank lines, no trailing whitespace,
-  proper list indentation
+- **Whitespace and spacing** — Consistent blank lines, no trailing whitespace, proper list
+  indentation
 - **Code blocks** — Correct language tags, properly formatted inline code
 - **Tables** — Aligned columns, correct syntax, consistent formatting
 
 ## Consistency
 
-- **Terminology** — Same concepts use the same terms throughout (no mixing
-  synonyms inconsistently)
-- **Capitalization** — Consistent casing for product names, features, and
-  section titles
-- **Formatting patterns** — Consistent use of bold, italics, and code formatting
-  for similar elements
-- **Tone and voice** — Consistent level of formality and perspective (first vs
-  third person)
-- **List style** — Consistent use of ordered vs unordered lists, punctuation at
-  end of items
-- **Cross-section consistency** — Information stated in one section does not
-  contradict or conflict with information in another section (e.g., a summary
-  that doesn't match the details, or repeated instructions that diverge)
+- **Terminology** — Same concepts use the same terms throughout (no mixing synonyms inconsistently)
+- **Capitalization** — Consistent casing for product names, features, and section titles
+- **Formatting patterns** — Consistent use of bold, italics, and code formatting for similar
+  elements
+- **Tone and voice** — Consistent level of formality and perspective (first vs third person)
+- **List style** — Consistent use of ordered vs unordered lists, punctuation at end of items
+- **Cross-section consistency** — Information stated in one section does not contradict or conflict
+  with information in another section (e.g., a summary that doesn't match the details, or repeated
+  instructions that diverge)
 
 ## Accuracy
 
-- **File paths and references** — Verify referenced files, directories, and
-  commands exist in the codebase where possible
-- **Code examples** — Check that code snippets match the actual codebase
-  patterns and conventions
+- **File paths and references** — Verify referenced files, directories, and commands exist in the
+  codebase where possible
+- **Code examples** — Check that code snippets match the actual codebase patterns and conventions
 - **Cross-references** — Internal links and section references are valid
 - **Technical claims** — Flag any statements that appear incorrect or outdated
 
@@ -47,22 +40,19 @@ Instruct the documentation-expert to perform a thorough review covering:
 - **Organization** — Logical flow of information, appropriate use of sections
 - **Completeness** — No obvious gaps or missing context for the intended audience
 - **Conciseness** — Flag verbose or redundant sections
-- **Audience alignment** — Language and detail level appropriate for the target
-  reader
-- **Actionability** — For instructional or how-to content: are steps followable
-  in order? Are prerequisites stated? Are expected outcomes described so the
-  reader knows if they succeeded?
-- **Examples** — Flag complex concepts or procedures that lack concrete examples
-  to illustrate usage
+- **Audience alignment** — Language and detail level appropriate for the target reader
+- **Actionability** — For instructional or how-to content: are steps followable in order? Are
+  prerequisites stated? Are expected outcomes described so the reader knows if they succeeded?
+- **Examples** — Flag complex concepts or procedures that lack concrete examples to illustrate usage
 
 ## Sensitive Information
 
-- **Secrets and credentials** — Flag any API keys, tokens, passwords, or
-  connection strings that appear to be real (not placeholders)
-- **Internal URLs and IPs** — Flag internal hostnames, IP addresses, or URLs
-  that should not be in documentation
-- **PII** — Flag personally identifiable information (names, emails, phone
-  numbers) that may have been included accidentally
+- **Secrets and credentials** — Flag any API keys, tokens, passwords, or connection strings that
+  appear to be real (not placeholders)
+- **Internal URLs and IPs** — Flag internal hostnames, IP addresses, or URLs that should not be in
+  documentation
+- **PII** — Flag personally identifiable information (names, emails, phone numbers) that may have
+  been included accidentally
 
 ## Spelling and Grammar
 
@@ -73,46 +63,43 @@ Instruct the documentation-expert to perform a thorough review covering:
 ## Staleness
 
 - **Hardcoded dates** — Flag specific dates that may become outdated
-- **Version numbers** — Flag pinned versions of tools, languages, or frameworks
-  that may need updating
-- **Deprecated references** — Flag mentions of tools, APIs, libraries, or
-  practices that are known to be deprecated or superseded
+- **Version numbers** — Flag pinned versions of tools, languages, or frameworks that may need
+  updating
+- **Deprecated references** — Flag mentions of tools, APIs, libraries, or practices that are known
+  to be deprecated or superseded
 
 ## Output
 
 ### Review File
 
-Write the review to a **Markdown file in the project root**. Derive the filename
-from the document being reviewed: lowercase the name, convert spaces to dashes,
-drop the original extension, and append `-DOC-REVIEW.md` (e.g.,
-`San Rafael Loan Agreement.pdf` → `san-rafael-loan-agreement-DOC-REVIEW.md`).
-This file is the working artifact for the review — update it in place as
-findings are addressed during the conversation.
+Write the review to a **Markdown file in the project root**. Derive the filename from the document
+being reviewed: lowercase the name, convert spaces to dashes, drop the original extension, and
+append `-DOC-REVIEW.md` (e.g., `San Rafael Loan Agreement.pdf` →
+`san-rafael-loan-agreement-DOC-REVIEW.md`). This file is the working artifact for the review —
+update it in place as findings are addressed during the conversation.
 
 - **Create** the file if it doesn't exist
 - **Merge** with existing findings if the file already exists (see below)
 
-**IMPORTANT: Never delete findings.** Findings are a permanent record of what
-was reviewed. When a finding is addressed, mark it with strikethrough and a
-status icon (✅ Fixed, 🚫 Ignored, ⏸️ Deferred) — but preserve the original
-content. This follows the same convention as `/local-review` (a code review
-command available in project repositories).
+**IMPORTANT: Never delete findings.** Findings are a permanent record of what was reviewed. When a
+finding is addressed, mark it with strikethrough and a status icon (✅ Fixed, 🚫 Ignored, ⏸️ Deferred)
+— but preserve the original content. This follows the same convention as `/local-review` (a code
+review command available in project repositories).
 
 ### Merging with Existing Findings
 
 When the review file already exists:
 
-1. **Read the existing file first** to understand current findings and their
-   status
+1. **Read the existing file first** to understand current findings and their status
 1. **Preserve existing finding numbers** — don't renumber resolved findings
-1. **Preserve status markers** — keep ✅ Fixed, 🚫 Ignored, ⏸️ Deferred markers
-   and their associated content intact
-1. **Add new findings** with the next sequential number (e.g., if F1–F4 exist,
-   new findings start at F5)
+1. **Preserve status markers** — keep ✅ Fixed, 🚫 Ignored, ⏸️ Deferred markers and their associated
+   content intact
+1. **Add new findings** with the next sequential number (e.g., if F1–F4 exist, new findings start at
+   F5)
 1. **Update findings** if re-review shows they're now resolved or still present
-1. **Strike through findings** that are no longer applicable (e.g., the section
-   they referenced has been deleted or rewritten) — do **not** remove them;
-   apply strikethrough and add a brief explanation of why
+1. **Strike through findings** that are no longer applicable (e.g., the section they referenced has
+   been deleted or rewritten) — do **not** remove them; apply strikethrough and add a brief
+   explanation of why
 1. **Update the review date** at the top of the document:
 
    ```markdown
@@ -123,59 +110,52 @@ When the review file already exists:
 
 ### Severity Indicators
 
-Use the same severity conventions as `/local-review` (code review command) for
-quick visual scanning:
+Use the same severity conventions as `/local-review` (code review command) for quick visual
+scanning:
 
 **Actionable findings** (require attention):
 
-- 🔴 **Critical** — Must fix (sensitive information exposure, factual errors
-  that could cause harm, broken instructions that lead readers astray)
-- 🟠 **High Priority** — Should fix (inaccurate technical claims, missing
-  critical context, cross-section contradictions)
-- 🟡 **Medium Priority** — Should address (inconsistent terminology, formatting
-  issues, unclear instructions, staleness)
-- 🟢 **Low Priority / Nice-to-Have** — Can address later (minor typos, style
-  preferences, missing examples)
+- 🔴 **Critical** — Must fix (sensitive information exposure, factual errors that could cause harm,
+  broken instructions that lead readers astray)
+- 🟠 **High Priority** — Should fix (inaccurate technical claims, missing critical context,
+  cross-section contradictions)
+- 🟡 **Medium Priority** — Should address (inconsistent terminology, formatting issues, unclear
+  instructions, staleness)
+- 🟢 **Low Priority / Nice-to-Have** — Can address later (minor typos, style preferences, missing
+  examples)
 
-**Observations** (not required to resolve the review — never appear in the
-checklist):
+**Observations** (not required to resolve the review — never appear in the checklist):
 
-- ℹ️  **Observation** — Highlights a well-written section, good pattern, or
-  structural choice worth noting
-- 💡 **Observation (optional action)** — Something reads correctly but a small,
-  optional improvement is available; state the action inline. Keep genuine
-  praise (ℹ️) distinct from latent suggestions (💡) so neither drowns out the
-  other.
+- ℹ️ **Observation** — Highlights a well-written section, good pattern, or structural choice worth
+  noting
+- 💡 **Observation (optional action)** — Something reads correctly but a small, optional improvement
+  is available; state the action inline. Keep genuine praise (ℹ️) distinct from latent suggestions
+  (💡) so neither drowns out the other.
 
 ### Recommendations
 
-Severity and recommendation are different axes: severity measures how much the
-issue matters; the recommendation measures whether acting on it *now* is worth
-the cost. A finding can be valid yet not worth implementing — rewriting a
-section that is about to be superseded, a terminology sweep through a document
-nobody reads, a stylistic preference with no effect on the reader. Say so
-plainly rather than implying every finding must be fixed. Use one of:
+Severity and recommendation are different axes: severity measures how much the issue matters; the
+recommendation measures whether acting on it *now* is worth the cost. A finding can be valid yet not
+worth implementing — rewriting a section that is about to be superseded, a terminology sweep through
+a document nobody reads, a stylistic preference with no effect on the reader. Say so plainly rather
+than implying every finding must be fixed. Use one of:
 
-- **Implement** — worth doing in this revision; benefit clearly exceeds cost.
-- **Defer** — legitimate, but better as a follow-up (out of scope, needs a
-  broader rewrite, or not urgent).
-- **Skip** — not worth doing; the cost (churn, review time, risk of introducing
-  new errors) outweighs the gain. Prefer this over a half-hearted "could fix"
-  when the value is marginal.
+- **Implement** — worth doing in this revision; benefit clearly exceeds cost
+- **Defer** — legitimate, but better as a follow-up (out of scope, needs a broader rewrite, or not
+  urgent)
+- **Skip** — not worth doing; the cost (churn, review time, risk of introducing new errors)
+  outweighs the gain. Prefer this over a half-hearted "could fix" when the value is marginal
 
-State the recommendation with a one-line rationale. Every actionable finding
-(🔴🟠🟡🟢) must carry one. ℹ️ observations carry no recommendation; 💡
-observations state the optional action inline. When severity and recommendation
-diverge — a 🟢 Low recommended **Implement**, or a 🟠 High recommended
-**Defer** — that divergence is the useful signal; surface it rather than
-smoothing it over.
+State the recommendation with a one-line rationale. Every actionable finding (🔴🟠🟡🟢) must carry one.
+ℹ️ observations carry no recommendation; 💡 observations state the optional action inline. When
+severity and recommendation diverge — a 🟢 Low recommended **Implement**, or a 🟠 High recommended
+**Defer** — that divergence is the useful signal; surface it rather than smoothing it over.
 
 ### Numbered Findings
 
-Number all findings sequentially (F1, F2, F3, ...) across all categories.
-Present findings grouped by category (Formatting, Consistency, Accuracy,
-Clarity, Sensitive Information, Spelling/Grammar, Staleness). Omit categories
-with no findings.
+Number all findings sequentially (F1, F2, F3, ...) across all categories. Present findings grouped
+by category (Formatting, Consistency, Accuracy, Clarity, Sensitive Information, Spelling/Grammar,
+Staleness). Omit categories with no findings.
 
 Use the format: `### F1 🟡 Medium Priority - Description`
 
@@ -184,27 +164,26 @@ For each finding, include:
 - **Location** — Section heading or line reference
 - **Issue** — Clear description of the problem
 - **Suggestion** — Concrete fix or improvement
-- **Recommendation** — Implement / Defer / Skip, plus a one-line rationale
-  (actionable findings only)
+- **Recommendation** — Implement / Defer / Skip, plus a one-line rationale (actionable findings
+  only)
 
 ### Tracking Finding Status
 
-When a finding has been addressed (either by fixing, ignoring, or deferring),
-mark it visually while preserving the original content for reference. ℹ️ and 💡
-Observation findings do not require status tracking.
+When a finding has been addressed (either by fixing, ignoring, or deferring), mark it visually while
+preserving the original content for reference. ℹ️ and 💡 Observation findings do not require status
+tracking.
 
 **Status indicators:**
 
 - ✅ **Fixed** — The issue has been resolved
-- 🚫 **Ignored** — Explicitly decided not to address, including any finding
-  recommended **Skip** (include reason)
+- 🚫 **Ignored** — Explicitly decided not to address, including any finding recommended **Skip**
+  (include reason)
 - ⏸️ **Deferred** — Will address later
 
 **How to mark findings:**
 
-Apply strikethrough to the finding heading (excluding the finding number) and
-add the status icon to the right. Do **not** delete the finding content —
-preserve it for reference.
+Apply strikethrough to the finding heading (excluding the finding number) and add the status icon to
+the right. Do **not** delete the finding content — preserve it for reference.
 
 ```markdown
 ### F1 ~~🟡 Medium Priority - Inconsistent terminology~~ ✅ Fixed
@@ -214,8 +193,8 @@ preserve it for reference.
 ...original finding content preserved...
 ```
 
-In the checklist, use the leading column as a pre-cognitive status indicator:
-`- [ ]` open, `- [x] … ✅` fixed, `- 🚫 …` ignored, `- ⏸️ …` deferred.
+In the checklist, use the leading column as a pre-cognitive status indicator: `- [ ]` open,
+`- [x] … ✅` fixed, `- 🚫 …` ignored, `- ⏸️ …` deferred.
 
 ```markdown
 - [x] F1 - Standardize terminology ✅
@@ -236,9 +215,8 @@ At the end, provide:
 
 1. **Overall assessment** - Brief summary of document quality
 
-1. **Checklist** - Convert actionable findings (🔴🟠🟡🟢) into a checklist.
-   Do not include ℹ️ or 💡 Observation findings in the checklist — neither
-   requires action.
+1. **Checklist** - Convert actionable findings (🔴🟠🟡🟢) into a checklist. Do not include ℹ️ or 💡
+   Observation findings in the checklist — neither requires action.
 
 ```markdown
 - [ ] F1 - Fix description
@@ -247,10 +225,9 @@ At the end, provide:
 
 ### PR Comment Format
 
-When posting review findings as a PR comment (e.g., during `/ship-it` or when
-explicitly asked), build a temporary file with a collapsible
-`<details><summary>` wrapper and post it with `--body-file` to avoid heredoc
-quoting issues:
+When posting review findings as a PR comment (e.g., during `/ship-it` or when explicitly asked),
+build a temporary file with a collapsible `<details><summary>` wrapper and post it with
+`--body-file` to avoid heredoc quoting issues:
 
 ```bash
 {
@@ -268,10 +245,9 @@ quoting issues:
 gh pr comment --body-file /tmp/pr-comment.md
 ```
 
-The `<summary>` line should include the total finding count and a breakdown
-(e.g., "24 findings — 14 fixed, 2 ignored, 8 observations"). When all
-actionable findings have been addressed, lead with that:
-"24 findings — 16 fixed, 8 observations — all clear".
+The `<summary>` line should include the total finding count and a breakdown (e.g., "24 findings — 14
+fixed, 2 ignored, 8 observations"). When all actionable findings have been addressed, lead with
+that: "24 findings — 16 fixed, 8 observations — all clear".
 
 ### Interactive Finding Selection
 
@@ -284,6 +260,5 @@ F3 🟡 Medium - Description (location)
 F5 🟢 Low - Description (location)
 ```
 
-Ask the user which findings to fix. Accept finding numbers (e.g., "F1, F3"),
-"all", or "skip". If the user selects one or more findings, edit the document
-directly to resolve them in order.
+Ask the user which findings to fix. Accept finding numbers (e.g., "F1, F3"), "all", or "skip". If
+the user selects one or more findings, edit the document directly to resolve them in order.

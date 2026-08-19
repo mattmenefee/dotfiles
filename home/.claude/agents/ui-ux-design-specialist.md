@@ -175,4 +175,4 @@ Before finalizing any recommendation, verify:
 - [ ] Implementation complexity is acknowledged
 - [ ] Reasoning is explained with design principles
 - [ ] Code examples follow the project's actual conventions (its stylesheet language, template
-      language, and lint rules)
+  language, and lint rules)

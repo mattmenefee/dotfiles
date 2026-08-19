@@ -128,12 +128,13 @@ H2** — `## Start Here`, `## Objective`, `## Next Steps`, and so on.
 ```
 
 Give **full URLs**, not bare identifiers: `ENG-412` and `#88` are not clickable and are ambiguous
-across projects and repositories. Put the identifier and the URL together — `ENG-412
-(https://linear.app/…)`. Find them rather than assuming there are none: check the pull request body
-and the branch's commit messages for issue references, and read `closingIssuesReferences` from the
-`gh pr view` output gathered above — a bare `gh issue list` returns the repository's recent open
-issues, which have no relationship to this branch. If the work tracks no issue at all, say "none"
-explicitly so the reader knows it was checked rather than skipped.
+across projects and repositories. Put the identifier and the URL together —
+`ENG-412 (https://linear.app/…)`. Find them rather than assuming there are none: check the pull
+request body and the branch's commit messages for issue references, and read
+`closingIssuesReferences` from the `gh pr view` output gathered above — a bare `gh issue list`
+returns the repository's recent open issues, which have no relationship to this branch. If the work
+tracks no issue at all, say "none" explicitly so the reader knows it was checked rather than
+skipped.
 
 On the first pass **Updated** matches **Created**; every later pass advances **Updated** and leaves
 **Created** alone, so the gap between the two shows at a glance how long the work has been running

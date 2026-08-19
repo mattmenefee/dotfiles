@@ -86,8 +86,8 @@ After completing any coding task, run these commands in order:
 
 - No TTY is available, so any command that opens an editor or waits for input will hang — supply
   input via flags instead (`git commit -F <file>`, `gh pr create --title --body`). Common offenders:
-  bare `git commit`, `git commit --squash`, `git add -i`/`-p`, `docker`/`kubectl -it`, REPLs
-  (`psql`, `rails console`), and `yarn upgrade-interactive`.
+  bare `git commit`, `git commit --squash`, `git add -i`/`-p`, `docker`/`kubectl -it`,
+  REPLs (`psql`, `rails console`), and `yarn upgrade-interactive`.
 - `-i` is not itself the hazard: `git rebase -i` runs fine when its editors are neutralized
   (`GIT_SEQUENCE_EDITOR=true`), which some commands prescribe
 - When writing slash commands, agent files, or docs that prescribe shell commands, prescribe the
