@@ -326,9 +326,15 @@ When a new version is available:
 ### sass-embedded
 
 The `sass-embedded` Ruby gem wraps the Dart Sass compiler but does not maintain its own changelog or
-GitHub releases. For changelog details, use the sister repository's changelog at
-[sass/embedded-host-node](https://github.com/sass/embedded-host-node/blob/main/CHANGELOG.md) —
-versions are released in lockstep across both hosts.
+GitHub releases. Its version number tracks the compiler, so use the Dart Sass changelog at
+[sass/dart-sass](https://github.com/sass/dart-sass/blob/main/CHANGELOG.md) and anchor to the
+matching version heading (e.g. `#11030` for 1.103.0).
+
+Do **not** treat the sister host
+[sass/embedded-host-node](https://github.com/sass/embedded-host-node/blob/main/CHANGELOG.md) as a
+lockstep source. It is a separate release train whose changelog can lag the compiler by one or more
+versions, so the entry for the version being shipped may simply not exist there yet. Reach for it
+only for host-specific notes that the Dart Sass changelog does not cover.
 
 ## Important Notes
 
