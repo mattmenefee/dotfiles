@@ -68,6 +68,22 @@ Instruct the documentation-expert to perform a thorough review covering:
 - **Deprecated references** — Flag mentions of tools, APIs, libraries, or practices that are known
   to be deprecated or superseded
 
+## Reviewing Without Editing
+
+The documentation-expert can write files, and the only file it should write is the review. Report
+every problem as a finding; do not correct the document in place. A silent fix removes the finding
+from the review record and grows a diff nobody approved, and it defeats the point of a review the
+human acts on.
+
+Checking an **Accuracy** claim often means running something — a documented command, a code sample,
+a configuration snippet. Anything that would modify the repository to do so belongs in an isolated
+worktree: call `EnterWorktree`, verify there, then `ExitWorktree` with `action: "remove"`. Read-only
+checks need no worktree. If a claim cannot be checked without changing the shared checkout, report
+it as unverified and say what would settle it. See Git Worktrees in `~/.claude/CLAUDE.md`.
+
+When the review spawns parallel subagents to read disjoint page ranges, those subagents read only —
+page ranges do not need worktrees.
+
 ## Output
 
 ### Review File
