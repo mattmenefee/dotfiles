@@ -94,6 +94,31 @@ Uses [mise][mise_link] for managing non-Ruby tool versions.
     git config --global user.email "$GIT_AUTHOR_EMAIL"
     ```
 
+1. Store secrets in the macOS Keychain
+
+    `.zshrc` is committed to this public repository, so secrets are never exported inline. Each one
+    is stored in the Keychain and read back at shell startup, which keeps the lookup safe to publish
+    while the value stays on the machine.
+
+    ```shell
+    # Insert appropriate values
+    security add-generic-password -s "$KEYCHAIN_SERVICE" -a "$USER" -w "$SECRET"
+    ```
+
+    The matching export in `.zshrc` names the service literally, and redirects stderr so that a
+    machine which has not stored the secret yet still opens shells without an error:
+
+    ```shell
+    export ROLLBAR_ACCESS_TOKEN="$(security find-generic-password -s rollbar-mcp -w 2>/dev/null)"
+    ```
+
+    | Variable | Keychain service | Used by |
+    | -------- | ---------------- | ------- |
+    | `ROLLBAR_ACCESS_TOKEN` | `rollbar-mcp` | Rollbar MCP server in Claude Code |
+
+    These lookups run only for interactive shells, because `.zshrc` is where they live. An
+    application launched from the Dock rather than a terminal does not inherit them.
+
 ## Updating
 
 ```shell
