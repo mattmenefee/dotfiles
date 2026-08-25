@@ -226,6 +226,9 @@ export PATH="$HOME/.local/bin:$PATH"
 # Fix Ruby Debug from hanging when using save_and_open_screenshot
 export RUBY_DEBUG_FORK_MODE="parent"
 
+# Rollbar MCP server, read from the Keychain so the token stays out of this repo
+export ROLLBAR_ACCESS_TOKEN="$(security find-generic-password -s rollbar-mcp -w 2>/dev/null)"
+
 # iTerm2 tab title: publish shell state (dir) as an iTerm2 user variable and
 # seed session.autoName with the current git branch so idle tabs show the
 # branch; child processes (Claude Code, vim, ssh) overwrite autoName with
