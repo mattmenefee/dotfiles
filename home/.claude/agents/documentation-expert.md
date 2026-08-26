@@ -39,8 +39,9 @@ description: |-
   </commentary>
   </example>
 tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSearch, mcp__serena__*
-model: sonnet
+model: opus
 memory: project
+effort: high
 skills:
   - doc-review
   - local-review
