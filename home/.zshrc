@@ -137,7 +137,10 @@ wtl() {
   wtlist | nl
 }
 
-# Docker
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ******* Docker *******
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 alias dc='docker compose'
 alias dcb='docker compose build'
 # docker compose build --progress=plain --no-cache # to view output of RUN commands
@@ -151,7 +154,10 @@ alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
 alias dc-es="docker compose up -d docker_elasticsearch"
 
-# GitHub
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ******* GitHub *******
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # List open PRs with merge conflicts. PR numbers are OSC 8 hyperlinks
 # (clickable in modern terminals). Optional first arg overrides the default
 # fetch limit of 500.
@@ -167,12 +173,25 @@ pr-conflicts() {
       '
 }
 
-# Homebrew
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ******* Homebrew *******
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 alias bdi="brew deps --tree --installed"
 alias bubo="brew update && HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 brew outdated"
 alias brewup="brew update && HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS=1 brew upgrade && brew cleanup && brew autoremove && brew doctor"
+
+# Run occasionally: --greedy compares the Caskroom version stamp rather than the installed app
+# bundle, so most of what it lists is stamp drift on apps that are already current. Read it and
+# upgrade individually; it is not a work queue.
+alias bubog="brew update && brew outdated --greedy"
+
 # Consider using `brew cleanup --prune=all --dry-run`
 # See https://mac.install.guide/homebrew/8
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ******* Settings *******
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
