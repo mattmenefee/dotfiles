@@ -1,4 +1,5 @@
 .rbenv
 .claude
+.local/bin
 .config/gh
 Library/Application Support/iTerm2/DynamicProfiles
