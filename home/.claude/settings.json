@@ -180,7 +180,7 @@
     ]
   },
   "worktree": {
-    "baseRef": "head"
+    "baseRef": "fresh"
   },
   "statusLine": {
     "type": "command",
