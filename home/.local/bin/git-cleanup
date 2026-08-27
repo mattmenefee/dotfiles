@@ -1,0 +1,253 @@
+#!/bin/sh
+#
+# git-cleanup — delete local branches whose changes already reached the base branch.
+#
+# Usually reached as `git cleanup`: this directory is on PATH, and git resolves a `git-cleanup`
+# executable before it consults its aliases, so the `cleanup` entry in ~/.gitconfig is a fallback
+# for contexts without that PATH rather than the normal route. Either way the working directory
+# differs — the alias runs from the repository top level, a dashed external from wherever it was
+# invoked — and nothing here depends on it: every command addresses the repository, not the cwd.
+# Called by `git bclean` and `git bdone`, and indirectly by `git pc`.
+#
+# Remove branches whose changes are already in the base branch, including ones merged via
+# "Rebase and merge" (which rewrites SHAs, so `git branch --merged` misses them). `git cherry`
+# compares by patch-id. Takes an optional base, resolving it with `git base` otherwise.
+#
+# Squash merges are only caught when the branch held a single commit; delete the rest by hand.
+#
+# Every way a comparison can fail has to skip the branch rather than delete it. `git cherry`
+# prints nothing to stdout when its upstream does not resolve, so an emptiness test alone reads a
+# failed comparison as "fully merged" and force-deletes unmerged work — this once wiped every
+# branch in a master-based repository. Hence the exit-code check, the abort when no base resolves,
+# and the fully qualified refs: a bare `main` resolves to `refs/tags/main` before `refs/heads/`,
+# so a same-named tag makes `git cherry` answer about the tag's history — exiting 0 and reporting
+# a branch as merged when it is not. Do not collapse any of it back into a pipe to grep.
+#
+# Nothing is compared by ref name. `for-each-ref` reads the ref table itself and reports the
+# object each name points at; every other porcelain resolves a name through the filesystem, and on
+# a case-insensitive volume a loose `refs/heads/Feature` therefore answers for a packed
+# `refs/heads/feature`. That is one `git gc` plus one `git checkout -b` away in any repository
+# whose branch names differ only in case, and it makes `git cherry` report one branch's history
+# under another's name — merged, when the branch actually holding the work is not. So the base and
+# every candidate travel as object ids and the comparisons run on those. Names are used only for
+# the verdict line, the sort key, the protected-branch checks, the staleness re-read before a
+# deletion, and the deletion itself.
+#
+# Those last two are a matched pair. The re-read uses `git rev-parse`, which resolves a name
+# through the filesystem exactly as `git branch -D` does, so the ref the guard inspects is the ref
+# the deletion takes. Making the re-read exact with `git for-each-ref` looks like an obvious
+# correction — it has been proposed repeatedly — and it destroys unmerged work: under the case
+# shadowing above it approves deleting the merged packed `feature`, and `git branch -D` then
+# resolves that name to the loose unmerged `Feature` and takes both. A guard is only sound when it
+# resolves its subject the way the operation it guards does. The false skip the current pairing
+# can produce leaves a merged branch undeletable, which is the safe direction to fail in.
+#
+# Reading the ref table is not the same as matching a name exactly, though. `for-each-ref`'s
+# arguments are patterns that match at `/` boundaries, so `refs/heads/foo` also reports
+# `refs/heads/foo/bar`. That is why resolving the base compares the output against the full ref
+# name rather than testing it for non-emptiness: in a repository holding `refs/heads/main/old` and
+# no `main`, an emptiness test would accept `refs/heads/main`, and the object id lookup below
+# would then answer with `refs/heads/main/old`'s commit — every branch silently compared against
+# a different branch's history. Keep the comparison; `[ -n ... ]` is not a simplification of it.
+#
+# Branches carrying merge commits are skipped as well, since `git cherry` ignores merges and a
+# conflict resolution living only in one would read as merged and be deleted. Three branches are
+# never candidates: the base being compared against, the current one, and the repository's own
+# base branch — `git cleanup develop` would otherwise eat a main that develop contains.
+#
+# The cost is one `git cherry` per branch, and each one rebuilds a patch-id table covering every
+# commit the branch is behind the base — so a repository with hundreds of stale branches spends
+# tens of seconds here. The comparisons are independent, so they run `xargs -P` wide and only
+# classify; deletion stays serial. Worker count follows the CPU count, falling back to 4 when it
+# cannot be read or comes back as `0`, and capped at 16, since the workers contend on one object
+# store rather than on cores. Keep the batch size small: `-n` caps achievable concurrency at
+# ceil(branches / n) no matter what `-P` says, so a batch size of 20 would give a repository of
+# 19 branches no parallelism whatsoever — the entire fan-out in one process, timing identically to
+# the serial version this replaced. `-n 4` still amortizes the few milliseconds of shell spawn
+# against `git cherry`'s tens to hundreds.
+#
+# Branches are handed over NUL-delimited because a ref name may contain quotes, which `xargs`
+# would otherwise treat as syntax. The `cleanup-worker` argument after the `sh -c` script is what
+# `$0` binds to; without it `xargs` binds the first branch of every batch there instead, where the
+# loop over `$@` never reaches it, and that branch goes uncompared — neither deleted nor reported,
+# and nothing says so. The base does not travel that way: its object id crosses into the workers
+# as `CLEANUP_BASE`, set once on the `xargs` invocation rather than repeated per branch, and
+# anything else a worker needs that does not vary per branch belongs there too.
+#
+# Candidates travel into the fan-out as `<refname> <oid>` pairs and come back as at most one
+# verdict line each: `D <refname> <oid>` to delete, `S <refname> <reason>` to skip, and nothing at
+# all when the branch is unmerged. Silence is the common case, which is why no count check is
+# possible here — a lost line and an unmerged branch look identical. A ref name can hold neither a
+# space nor a newline, so a three-field read splits either form exactly and a reason can be free
+# prose. The ref sits in field 2 because that is the sort key.
+#
+# Collecting every verdict before the first deletion keeps a ref from disappearing while another
+# process is still walking the ref table. It also opens a gap between judging a branch and
+# deleting it that the serial version did not have — one as wide as the entire comparison phase,
+# and widest in the repositories where that phase is slowest. `git branch -D` re-checks nothing,
+# so a commit landing on a branch inside that gap would be destroyed without ever being compared.
+# Hence the object id carried through every `D` verdict, read from the same `for-each-ref` that
+# listed the branches: the reader re-reads the ref and skips a branch that moved since it was
+# judged. That narrows the window to the single `git branch -D` process rather than closing it —
+# `git branch -D` submits an old value of all-zeros, so it re-resolves the name and deletes
+# whatever it finds. Closing it outright would mean `git update-ref -d <ref> <oid>`, which is
+# atomic but will delete a branch checked out in another worktree that `git branch -D` refuses. Do
+# not drop the check as redundant. An empty object id is rejected before the comparison runs,
+# because a truncated verdict and an unresolvable name would otherwise compare equal as two empty
+# strings and let the delete through: the guard has to refuse a verdict it cannot verify rather
+# than pass one whose two sides happen to be blank.
+#
+# Workers finish out of order, so the verdicts are sorted by ref name before anything is deleted:
+# the list of deleted branches is this command's audit trail, and scanning a shuffled one for a
+# branch you did not expect to lose is far harder. An aborted fan-out leaves branches unclassified
+# rather than unmerged, so a non-zero status there deletes nothing instead of deleting a subset.
+# The branch listing is read before the fan-out rather than piped into it, because a pipeline
+# reports only its last command's status — enumeration failing mid-pipe would leave `xargs` with
+# no input and exiting 0, which is indistinguishable from a repository with nothing to clean up.
+#
+# Asking `for-each-ref` for `%(symref)` is what makes a symbolic ref under refs/heads/ decidable
+# at all. Without that field a symref is just another branch, and serially its verdict depended on
+# whether its target sorted ahead of it and had already been deleted, so the same repository kept
+# or removed the alias purely on name order. Symrefs are skipped outright now, though not because
+# `git branch -D` is ambiguous about them — it is not, it removes the symref and leaves the target
+# alone. The reason is that a symref's verdict is not about the symref: `git cherry` follows it
+# and answers about the target's history, so acting on that verdict would delete an alias for what
+# some other ref contains. And if the target goes first the symref is left dangling, at which
+# point `for-each-ref` warns and drops it from the listing altogether — this command can never see
+# it again, and the stale ref file stays behind.
+#
+# The reader re-checks the three protected branches before deleting even though only the filtered
+# list reaches a worker. Serially those two steps sat in one loop, where "a protected branch can
+# never reach the delete" was there to read; split apart it becomes a claim about the whole
+# pipeline, and the recheck costs nothing next to what restoring a wrongly deleted branch costs.
+# It ignores any verdict whose ref is not under refs/heads/ as well. Parallel workers write into
+# one pipe, and a write there is atomic only up to `PIPE_BUF` — 512 bytes here — rather than up to
+# the shell's stdio buffer. A verdict line runs len(refname) + 44, so two workers can begin to
+# splice past a ref name of roughly 468 characters, which takes a multi-component name: the files
+# backend caps one path component at 250 bytes once the `.lock` suffix is counted, and the whole
+# loose-ref path at `PATH_MAX`. The threshold is shell-dependent as well — a `/bin/sh` that
+# block-buffers flushes an entire `-n 4` batch as one write, cutting it by four. A splice can only
+# ever cost a deletion, never cause one: the guard rejects the bare and half-formed names one
+# produces, and the object id check rejects any that lands on a real branch's name.
+#
+# A merged branch is one whose `git cherry` output holds no `+` line. That is tested by scanning
+# output words for a bare `+` rather than piping to grep, which saves a process per branch and is
+# exact only because the output is nothing but `+`/`-` markers and hex object names. Adding `-v`
+# would put commit subjects in that stream and a subject containing a lone `+` would then read as
+# unmerged. Keep `git cherry` unadorned. Globbing is off around the scan so that no marker or
+# object name is expanded against the working tree.
+
+base=$1
+if [ -z "$base" ]; then
+  base=$(git base) || exit 1
+fi
+keep=$(git base 2>/dev/null)
+
+if [ "$(git for-each-ref --format='%(refname)' "refs/heads/$base")" = "refs/heads/$base" ]; then
+  ref=refs/heads/$base
+  label=$base
+elif [ "$(git for-each-ref --format='%(refname)' "refs/remotes/origin/$base")" \
+  = "refs/remotes/origin/$base" ]; then
+  ref=refs/remotes/origin/$base
+  label=origin/$base
+else
+  echo "cleanup: base branch '$base' not found locally or on origin; aborting" >&2
+  exit 1
+fi
+
+baseoid=$(git for-each-ref --format='%(objectname)' "$ref")
+if [ -z "$baseoid" ]; then
+  echo "cleanup: cannot resolve $label; aborting" >&2
+  exit 1
+fi
+
+cur=$(git symbolic-ref --quiet HEAD)
+echo "cleanup: comparing against $label"
+
+jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null)
+case $jobs in
+  '' | *[!0-9]* | 0) jobs=4 ;;
+esac
+if [ "$jobs" -gt 16 ]; then
+  jobs=16
+fi
+
+refs=$(git for-each-ref --format='%(refname) %(objectname) %(symref)' refs/heads/) || {
+  echo 'cleanup: cannot list branches; deleting nothing' >&2
+  exit 1
+}
+[ -n "$refs" ] || exit 0
+
+# shellcheck disable=SC2016  # the `sh -c` worker below is quoted on purpose; see the note inside
+verdicts=$(
+  printf '%s\n' "$refs" |
+    while read -r r oid sym; do
+      if [ "$r" = "refs/heads/$base" ] || [ "$r" = "refs/heads/$keep" ] || [ "$r" = "$cur" ]; then
+        continue
+      fi
+      if [ -n "$sym" ]; then
+        echo "cleanup: skipping ${r#refs/heads/} (symbolic ref)" >&2
+        continue
+      fi
+      echo "$r $oid"
+    done |
+    tr '\n' '\0' |
+    # The worker below is a program handed to `sh -c`, not a string this shell expands. Its `$`
+    # references belong to that shell and must survive quoting intact, so the single quotes are
+    # load-bearing and SC2016 does not apply.
+    CLEANUP_BASE="$baseoid" xargs -0 -P "$jobs" -n 4 sh -c '
+      for a in "$@"; do
+        r=${a%% *}
+        oid=${a##* }
+        if ! out=$(git cherry "$CLEANUP_BASE" "$oid" 2>/dev/null); then
+          echo "S $r cannot compare"
+          continue
+        fi
+        set -f
+        unmerged=
+        for t in $out; do
+          if [ "$t" = + ]; then
+            unmerged=1
+            break
+          fi
+        done
+        set +f
+        if [ -n "$unmerged" ]; then
+          continue
+        fi
+        if ! m=$(git rev-list --count --min-parents=2 "$CLEANUP_BASE..$oid" 2>/dev/null); then
+          echo "S $r cannot compare"
+          continue
+        fi
+        if [ "$m" != 0 ]; then
+          echo "S $r unique merge commits"
+          continue
+        fi
+        echo "D $r $oid"
+      done
+    ' cleanup-worker
+) || {
+  echo 'cleanup: comparison failed; deleting nothing' >&2
+  exit 1
+}
+[ -n "$verdicts" ] || exit 0
+
+printf '%s\n' "$verdicts" | LC_ALL=C sort -k2,2 | while read -r verdict r extra; do
+  case $r in
+    refs/heads/?*) ;;
+    *)
+      printf 'cleanup: ignoring malformed verdict: %.60s\n' "$verdict $r" >&2
+      continue
+      ;;
+  esac
+  b=${r#refs/heads/}
+  if [ "$verdict" != D ]; then
+    echo "cleanup: skipping $b ($extra)" >&2
+  elif [ "$r" = "refs/heads/$base" ] || [ "$r" = "refs/heads/$keep" ] || [ "$r" = "$cur" ]; then
+    echo "cleanup: refusing to delete protected branch $b" >&2
+  elif [ -z "$extra" ] || [ "$(git rev-parse --verify --quiet "$r")" != "$extra" ]; then
+    echo "cleanup: skipping $b (no longer matches the object it was compared as)" >&2
+  else
+    git branch -D -- "$b"
+  fi
+done
