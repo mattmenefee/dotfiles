@@ -26,6 +26,44 @@ jobs:
           # though VALIDATE_ALL_CODEBASE means nothing is ever diffed against it.
           fetch-depth: 0
 
+      - name: Check zsh syntax
+        # Nothing else here checks this shell code. ShellCheck has no zsh dialect, and
+        # super-linter never hands it these files anyway: a .zsh extension is routed to the
+        # bash-exec and shfmt arrays but never to the one ShellCheck reads, .zshrc classifies as a
+        # "zsh script" and reaches the same dead end, and the extensionless autoload functions
+        # under home/.zsh/functions look like plain text and join no linter's list at all. So
+        # `zsh -n` is the only syntax gate these files have. It parses without executing, which
+        # also means it catches parse errors only, not undefined variables or missing commands.
+        # ubuntu-latest does not ship zsh, hence the install.
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes zsh
+
+          # Discovered rather than listed: everything under home/.zsh is zsh by construction,
+          # so a file added there is covered without anyone remembering to come back here. The
+          # anti-glob reasoning on the autoload line in home/.zshrc does not apply — there a glob
+          # is dangerous because every fpath entry becomes a live command name, so over-coverage
+          # is the hazard. For a syntax check it is under-coverage that hurts, and parsing a file
+          # that did not need it costs nothing.
+          files=(home/.zshrc)
+          while IFS= read -r file; do files+=("${file}"); done < <(find home/.zsh -type f | sort)
+
+          # An empty result would run the loop zero times and pass green while checking nothing —
+          # the exact shape of the gap this step exists to close. Fail loudly instead.
+          if [ "${#files[@]}" -lt 2 ]; then
+            echo "Found no zsh files under home/.zsh; has the directory moved?" >&2
+            exit 1
+          fi
+
+          failed=0
+          for file in "${files[@]}"; do
+            echo "::group::zsh -n ${file}"
+            zsh -n "${file}" || failed=1
+            echo "::endgroup::"
+          done
+
+          exit "${failed}"
+
       - name: Run the linters
         uses: super-linter/super-linter/slim@v8.7.0
         env:
