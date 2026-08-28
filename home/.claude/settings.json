@@ -6,7 +6,8 @@
   },
   "attribution": {
     "commit": "",
-    "pr": ""
+    "pr": "",
+    "sessionUrl": false
   },
   "permissions": {
     "allow": [
@@ -85,12 +86,6 @@
       "mcp__serena__think_about_whether_you_are_done",
       "mcp__serena__write_memory"
     ],
-    "ask": [
-      "Bash(git clean:*)",
-      "Bash(heroku config*)",
-      "Bash(heroku pg*)"
-    ],
-    "defaultMode": "auto",
     "deny": [
       "Bash(aws configure get*)",
       "Bash(bin/cap production*)",
@@ -140,7 +135,13 @@
       "mcp__heroku__ps_restart",
       "mcp__heroku__ps_scale",
       "mcp__heroku__rename_app"
-    ]
+    ],
+    "ask": [
+      "Bash(git clean:*)",
+      "Bash(heroku config*)",
+      "Bash(heroku pg*)"
+    ],
+    "defaultMode": "auto"
   },
   "hooks": {
     "Notification": [
@@ -237,6 +238,7 @@
   "worktree": {
     "baseRef": "fresh"
   },
+  "workflowSizeGuideline": "medium",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh"
@@ -253,12 +255,12 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "askUserQuestionTimeout": "never",
   "tui": "fullscreen",
   "theme": "dark-daltonized",
   "editorMode": "vim",
   "preferredNotifChannel": "auto",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "voiceEnabled": true,
-  "workflowSizeGuideline": "medium"
+  "voiceEnabled": true
 }
