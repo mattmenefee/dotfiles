@@ -1,7 +1,7 @@
 # Shell
 alias e='exec'
 alias ta='tmux -2 attach || tn'
-alias vim='mvim -v'
+alias vim='nvim'
 
 # Ruby
 alias be="bundle exec"
