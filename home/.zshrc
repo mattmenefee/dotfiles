@@ -103,9 +103,6 @@ alias bubog="brew update && brew outdated --greedy"
 # Uncomment following line if you want to disable colors in ls
 # DISABLE_LS_COLORS="true"
 
-# Disable oh-my-zsh's default auto-title so our precmd/preexec hooks own it
-DISABLE_AUTO_TITLE="true"
-
 # Uncomment following line if you want red dots to be displayed while waiting for completion
 # COMPLETION_WAITING_DOTS="true"
 
@@ -146,37 +143,7 @@ export RUBY_DEBUG_FORK_MODE="parent"
 # Rollbar MCP server, read from the Keychain so the token stays out of this repo
 export ROLLBAR_ACCESS_TOKEN="$(security find-generic-password -s rollbar-mcp -w 2>/dev/null)"
 
-# iTerm2 tab title: publish shell state (dir) as an iTerm2 user variable and
-# seed session.autoName with the current git branch so idle tabs show the
-# branch; child processes (Claude Code, vim, ssh) overwrite autoName with
-# their own titles while running. Configure iTerm2 profile Title → Custom:
-#   \(session.autoName) · \(user.dir)
-# Ordering matters because iTerm2 truncates from the right — the leftmost
-# token carries the most distinguishing info when many tabs are open.
-_set_iterm2_user_var() {
-  local b64
-  b64=$(printf '%s' "$2" | base64 | tr -d '\n')
-  printf '\e]1337;SetUserVar=%s=%s\a' "$1" "$b64"
-}
-
-_tab_title_idle() {
-  local branch dir
-  branch=$(git branch --show-current 2>/dev/null)
-  [[ -z $branch ]] && branch=$(git rev-parse --short HEAD 2>/dev/null)
-  [[ -z $branch ]] && branch="no-git"
-  dir=${${PWD/#$HOME/~}:t}
-  _set_iterm2_user_var dir "$dir"
-  printf '\e]1;%s\a' "$branch"
-}
-
-# Fallback title for processes that don't emit their own OSC title.
-# Claude Code, vim with titlestring, ssh, tmux, etc. will overwrite this
-# almost immediately, which is what we want.
-_tab_title_running() { printf '\e]1;▶ %s\a' "$1" }
-
-autoload -Uz add-zsh-hook
-add-zsh-hook precmd _tab_title_idle
-add-zsh-hook preexec _tab_title_running
+source ~/.zsh/iterm2-tab-title.zsh
 
 # Note: these must be placed at the bottom of .zshrc
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
