@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# git-bdone — post-PR tidy-up: switch to the base branch, pull it, then prune what that merged.
+#
+# Usually reached as `git bdone`; see git-base for why the ~/.gitconfig entry is a fallback rather
+# than the normal route.
+#
+# Takes an optional base to switch to and compare against (e.g. `git bdone develop`), resolving
+# the repository's own with `git base` when given none. Never assume a name here — git-cleanup's
+# comment block records what a guessed one destroyed. The `-*` guard rejects an option-shaped
+# argument before it can reach `git checkout` as a flag; git-base applies the same guard to the
+# name it resolves, so both routes into `$base` are covered.
+#
+# This is the one command in the set whose working directory is not irrelevant, because
+# `git checkout` is the one command here that writes to the working tree. Invoked from a directory
+# that exists on the current branch but not on the base branch, the two routes were measured to
+# diverge — in the dashed external's favor. The alias runs from the repository top level, so the
+# checkout prunes the emptied directory tree and the shell that invoked it is left standing in a
+# directory that no longer exists, where the next command fails with "Unable to read current
+# working directory". A dashed external runs from inside that tree, and git will not remove the
+# directory it is standing in, so the cwd stays valid at the cost of leaving an empty directory
+# behind. Both routes finish this command's own chain identically either way, since the checkout
+# is what moves the cwd out from under the caller, not anything after it.
+#
+# The `&&` chain is what keeps a failure from being half-applied: nothing is pulled into the wrong
+# branch, and nothing is pruned against a base that was never updated.
+
+base=$1
+
+case $base in
+  -*)
+    echo "bdone: invalid base '$base'" >&2
+    exit 1
+    ;;
+esac
+
+if [ -z "$base" ]; then
+  base=$(git base) || exit 1
+fi
+
+git checkout "$base" -- && git up && git cleanup "$base"

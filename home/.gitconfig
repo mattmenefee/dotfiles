@@ -3,6 +3,11 @@
   autocrlf = input
   editor = /opt/homebrew/bin/mvim -v
 [alias]
+  # base, bdone, com and cleanup are stubs; their bodies are scripts in ~/.local/bin, which is on
+  # PATH. Git finds those executables before it reads these entries, so these are the fallback for
+  # contexts without that PATH — launch agents, cron, GUI clients — and naming the full path is what
+  # makes it work.
+
   a = commit --amend
   aa = add --all
   ap = add --patch
@@ -11,11 +16,8 @@
   remote-branches = for-each-ref --sort=-committerdate --format=\"%(color:blue)%(authordate:relative)\t%(color:red)%(authorname)\t%(color:white)%(color:bold)%(refname:short)\" refs/remotes
   ci = commit -v
   co = checkout
-  com = "!f() { \
-    [ $# -eq 0 ] || { echo 'com: takes no arguments' >&2; return 1; }; \
-    base=$(git base) || return 1; \
-    git checkout \"$base\" --; \
-  }; f"
+  # Switch to the repository's base branch. Takes no arguments.
+  com = "!~/.local/bin/git-com"
   cob = checkout -b
   cp = cherry-pick
   dc = diff --cached
@@ -30,62 +32,30 @@
   up = pull --rebase --prune
   wip = !git add -A && git commit -m "WIP"
   wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
-
-  # Delete local branches whose patches are all merged into the base branch. A wrapper around
-  # `cleanup`, kept for muscle memory. Both take an optional base to compare against
-  # (e.g. `git bclean develop`) and resolve the repository's own when given none — never assume a
-  # name here, see `cleanup`.
-  bclean = !git cleanup
-
-  # Post-PR tidy-up: switch to the base branch, pull latest, then prune any local branches that are
-  # now merged into it. Takes the same optional base.
-  bdone = "!f() { \
-    base=$1; \
-    case $base in -*) echo \"bdone: invalid base '$base'\" >&2; return 1;; esac; \
-    if [ -z \"$base\" ]; then base=$(git base) || return 1; fi; \
-    git checkout \"$base\" -- && git up && git cleanup \"$base\"; \
-  }; f"
-
-  # List all refs (local + remote branches, tags) sorted by most-recent commit. Scan the bottom of
-  # the output to spot stale branches to prune.
-  springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
-
   stash-all = stash save --include-untracked
   grog = log --graph --abbrev-commit --decorate --all --format=format:\"%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(dim white) - %an%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n %C(white)%s%C(reset)\"
   recent = for-each-ref --count=10 --sort=-committerdate refs/heads/ --format="%(refname:short)"
   rc = rebase --continue
 
-  # Print the repository's base branch: origin/HEAD when it still points at a ref that exists, else
-  # whichever of main or master exists locally or on origin. Prints nothing and fails when none
-  # resolves, so callers can abort instead of guessing a name.
-  base = "!f() { \
-    b=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||'); \
-    if [ -n \"$b\" ] \
-    && [ \"$(git for-each-ref --format='%(refname)' \"refs/heads/$b\")\" != \"refs/heads/$b\" ] \
-    && [ \"$(git for-each-ref --format='%(refname)' \"refs/remotes/origin/$b\")\" != \"refs/remotes/origin/$b\" ]; then b=; fi; \
-    if [ -z \"$b\" ]; then for c in main master; do \
-      if [ \"$(git for-each-ref --format='%(refname)' \"refs/heads/$c\")\" = \"refs/heads/$c\" ] \
-      || [ \"$(git for-each-ref --format='%(refname)' \"refs/remotes/origin/$c\")\" = \"refs/remotes/origin/$c\" ]; then b=$c; break; fi; \
-    done; fi; \
-    if [ -z \"$b\" ]; then echo 'base: cannot determine the base branch' >&2; return 1; fi; \
-    case $b in -*) echo \"base: refusing option-shaped base '$b'\" >&2; return 1;; esac; \
-    echo \"$b\"; \
-  }; f"
+  # A wrapper around `cleanup`, kept for muscle memory. Arguments forward, so `git bclean develop`
+  # runs `git cleanup develop`.
+  bclean = !git cleanup
 
-  # Delete local branches whose changes already reached the base branch, including ones merged
-  # via "Rebase and merge". Takes an optional base, resolving it with `git base` otherwise.
-  #
-  # The implementation lives in ~/.local/bin/git-cleanup, together with the hundred-odd lines
-  # explaining why the simpler versions of it are wrong. This command force-deletes branches and
-  # has wiped unmerged work before; read that file before changing it or anything that calls it.
-  #
-  # That directory is on PATH, and git looks for a `git-cleanup` executable before it consults its
-  # aliases — so in an interactive shell the script runs as a dashed external and this entry is
-  # never reached. It is kept for the contexts that do not get that PATH: launch agents, cron, GUI
-  # clients. Both routes were checked against the same fixtures and agree on every surviving ref,
-  # so which one wins does not matter. Naming the path rather than the bare command is what makes
-  # the fallback work at all.
+  # Post-PR tidy-up: switch to the base branch, pull, then prune what that merged. Optional base.
+  bdone = "!~/.local/bin/git-bdone"
+
+  # All refs by most-recent commit; the stale branches are at the bottom of the output.
+  springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
+
+  # Print the repository's base branch. Prints nothing and fails when none resolves, so that callers
+  # abort rather than guess a name.
+  base = "!~/.local/bin/git-base"
+
+  # Delete local branches whose changes already reached the base branch, including ones merged via
+  # "Rebase and merge". Optional base. Force-deletes, and has wiped unmerged work before — read the
+  # script before changing it, or anything that calls it.
   cleanup = "!~/.local/bin/git-cleanup"
+
   # Pull the current branch, then prune whatever that merged. Takes the same optional base.
   pc = "!f() { git pull && git cleanup \"$@\"; }; f"
 
