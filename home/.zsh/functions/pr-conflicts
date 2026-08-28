@@ -1,0 +1,16 @@
+# List open PRs with merge conflicts. PR numbers are OSC 8 hyperlinks (clickable in modern
+# terminals). Optional first arg overrides the default fetch limit of 500.
+#
+# Autoloaded: the bare body with no `pr-conflicts() { ... }` wrapper is zsh's fpath convention.
+
+emulate -L zsh
+
+local limit=${1:-500}
+local esc=$'\033'
+gh pr list --limit "$limit" \
+    --json number,title,headRefName,mergeStateStatus,url \
+  | jq -r --arg esc "$esc" '
+      .[]
+      | select(.mergeStateStatus == "DIRTY")
+      | "\($esc)]8;;\(.url)\($esc)\\#\(.number)\($esc)]8;;\($esc)\\\t\(.headRefName)\t\(.title)"
+    '
