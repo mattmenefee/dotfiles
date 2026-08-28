@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# git-com — switch to the repository's base branch.
+#
+# Usually reached as `git com`; see git-base for why the ~/.gitconfig entry is a fallback rather
+# than the normal route, and git-bdone for what running as a dashed external changes about the
+# checkout — this command shares that behavior, since it makes the same one.
+#
+# Takes no arguments, and says so rather than ignoring them. `git com develop` reads like it would
+# check out develop, and quietly checking out main instead is the kind of surprise that costs a
+# stash. Use `git checkout` for anything but the base branch.
+#
+# The `--` ends option parsing so that a base branch sharing a name with a path cannot be read as
+# one; git-base refuses option-shaped names before they reach here.
+
+if [ $# -ne 0 ]; then
+  echo 'com: takes no arguments' >&2
+  exit 1
+fi
+
+base=$(git base) || exit 1
+
+git checkout "$base" --

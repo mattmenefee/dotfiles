@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# git-base — print the repository's base branch.
+#
+# origin/HEAD when it still points at a ref that exists, else whichever of main or master exists
+# locally or on origin. Read as `$(git base) || exit 1` by git-com, git-bdone, and git-cleanup.
+#
+# Usually reached as `git base`: this directory is on PATH, and git resolves a `git-base`
+# executable before it consults its aliases, so the `base` entry in ~/.gitconfig is a fallback for
+# contexts without that PATH rather than the normal route. The two differ in working directory —
+# the alias runs from the repository top level, a dashed external from wherever it was invoked —
+# and nothing here depends on it: every command addresses the ref store, not the cwd.
+#
+# The contract is that it prints nothing and exits non-zero when nothing resolves, so callers can
+# abort instead of guessing a name. Both halves are load-bearing: a caller reading only the exit
+# status would still be handed a name to act on, and one reading only stdout would act on an empty
+# one. Guessing is not a hypothetical failure — git-cleanup's comment block records a guessed name
+# force-deleting every branch in a master-based repository. Keep the guards below as aborts.
+#
+# Existence is decided by comparing `for-each-ref`'s output against the full ref name rather than
+# by testing it for non-emptiness. Its arguments are patterns matching at `/` boundaries, so
+# `refs/heads/main` also reports a `refs/heads/main/old`, and an emptiness test would answer "main
+# exists" in a repository holding only the latter — handing every caller a branch that is not
+# there. git-cleanup explains the same trap at length. `[ -n ... ]` is not a simplification of it.
+#
+# The option-shaped check is the last guard before the name reaches a caller's command line: a
+# branch named `-f` would otherwise be interpolated into `git checkout "$base" --` as a flag. The
+# `--` at those call sites stops a name that looks like a path; this stops the rest.
+
+b=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+if [ -n "$b" ] &&
+  [ "$(git for-each-ref --format='%(refname)' "refs/heads/$b")" != "refs/heads/$b" ] &&
+  [ "$(git for-each-ref --format='%(refname)' "refs/remotes/origin/$b")" \
+    != "refs/remotes/origin/$b" ]; then
+  b=
+fi
+
+if [ -z "$b" ]; then
+  for c in main master; do
+    if [ "$(git for-each-ref --format='%(refname)' "refs/heads/$c")" = "refs/heads/$c" ] ||
+      [ "$(git for-each-ref --format='%(refname)' "refs/remotes/origin/$c")" \
+        = "refs/remotes/origin/$c" ]; then
+      b=$c
+      break
+    fi
+  done
+fi
+
+if [ -z "$b" ]; then
+  echo 'base: cannot determine the base branch' >&2
+  exit 1
+fi
+
+case $b in
+  -*)
+    echo "base: refusing option-shaped base '$b'" >&2
+    exit 1
+    ;;
+esac
+
+echo "$b"
