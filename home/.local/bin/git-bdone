@@ -23,7 +23,9 @@
 # is what moves the cwd out from under the caller, not anything after it.
 #
 # The `&&` chain is what keeps a failure from being half-applied: nothing is pulled into the wrong
-# branch, and nothing is pruned against a base that was never updated.
+# branch, and nothing is pruned against a base that was never updated. It also leaves this command's
+# exit status as `git cleanup`'s, which reports whether every branch that command decided to delete
+# was deleted, so `git bdone && ...` is a chain worth writing.
 
 base=$1
 
