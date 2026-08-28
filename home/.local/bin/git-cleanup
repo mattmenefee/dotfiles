@@ -105,6 +105,19 @@
 # reports only its last command's status — enumeration failing mid-pipe would leave `xargs` with
 # no input and exiting 0, which is indistinguishable from a repository with nothing to clean up.
 #
+# The exit status says whether every deletion this command decided on actually happened: 0 when all
+# of them did, 1 when a `git branch -D` refused — a branch checked out in a linked worktree, say.
+# Skips leave it alone, because a branch spared for being unmerged, for failing its comparison, or
+# for having moved since it was judged is this command working rather than failing. That contract
+# is what the here-document under the deletion loop is for. The loop used to sit at the end of the
+# sort's pipe, where it ran in a subshell: a flag raised inside it died with that subshell, so the
+# status fell through to whatever the final iteration returned, and a refused deletion was reported
+# only when its branch happened to sort last — the same failure in the same repository exited 0 as
+# soon as any merged branch sorted after it. Reading from a here-document keeps the loop in this
+# shell, where a flag survives. The sort lands in a variable first for the reason the branch
+# listing does, so that one failing mid-stream deletes nothing rather than deleting whichever
+# verdicts reached the loop before it died. Do not pipe into the loop again.
+#
 # Asking `for-each-ref` for `%(symref)` is what makes a symbolic ref under refs/heads/ decidable
 # at all. Without that field a symref is just another branch, and serially its verdict depended on
 # whether its target sorted ahead of it and had already been deleted, so the same repository kept
@@ -232,7 +245,13 @@ verdicts=$(
 }
 [ -n "$verdicts" ] || exit 0
 
-printf '%s\n' "$verdicts" | LC_ALL=C sort -k2,2 | while read -r verdict r extra; do
+sorted=$(printf '%s\n' "$verdicts" | LC_ALL=C sort -k2,2) || {
+  echo 'cleanup: cannot sort verdicts; deleting nothing' >&2
+  exit 1
+}
+
+status=0
+while read -r verdict r extra; do
   case $r in
     refs/heads/?*) ;;
     *)
@@ -247,7 +266,11 @@ printf '%s\n' "$verdicts" | LC_ALL=C sort -k2,2 | while read -r verdict r extra;
     echo "cleanup: refusing to delete protected branch $b" >&2
   elif [ -z "$extra" ] || [ "$(git rev-parse --verify --quiet "$r")" != "$extra" ]; then
     echo "cleanup: skipping $b (no longer matches the object it was compared as)" >&2
-  else
-    git branch -D -- "$b"
+  elif ! git branch -D -- "$b"; then
+    status=1
   fi
-done
+done <<EOF
+$sorted
+EOF
+
+exit $status
