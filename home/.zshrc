@@ -20,7 +20,9 @@ ZSH_THEME="robbyrussell"
 # landing in there a live command — one named `git` would shadow the real binary.
 typeset -U fpath
 fpath=(~/.zsh/functions $fpath)
-autoload -Uz ~/.zsh/functions/sysdoc
+# Note the braces: zsh leaves a single-element `{sysdoc}` literal and the autoload silently fails,
+# so if this list ever shrinks back to one name the braces have to come off
+autoload -Uz ~/.zsh/functions/{pr-conflicts,sysdoc}
 
 alias e='exec'
 alias ta='tmux -2 attach || tn'
@@ -153,25 +155,6 @@ alias dockercleanimages="docker images -aq -f dangling=true | xargs docker rmi"
 alias dockerclean="dockercleancontainers && dockercleanimages"
 alias docker-killall="docker ps -q | xargs docker kill"
 alias dc-es="docker compose up -d docker_elasticsearch"
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# ******* GitHub *******
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# List open PRs with merge conflicts. PR numbers are OSC 8 hyperlinks
-# (clickable in modern terminals). Optional first arg overrides the default
-# fetch limit of 500.
-pr-conflicts() {
-  local limit=${1:-500}
-  local esc=$'\033'
-  gh pr list --limit "$limit" \
-      --json number,title,headRefName,mergeStateStatus,url \
-    | jq -r --arg esc "$esc" '
-        .[]
-        | select(.mergeStateStatus == "DIRTY")
-        | "\($esc)]8;;\(.url)\($esc)\\#\(.number)\($esc)]8;;\($esc)\\\t\(.headRefName)\t\(.title)"
-      '
-}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ******* Homebrew *******
