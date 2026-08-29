@@ -1,9 +1,11 @@
 # dotfiles
 
 Personal macOS development environment managed with [Homesick][homesick_link]. Configures Zsh (with
-[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], Ruby development tools via
-[rbenv][rbenv_link], and a curated set of [Homebrew][homebrew_link] packages for web development.
-Uses [mise][mise_link] for managing non-Ruby tool versions.
+[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], [tmux][tmux_link], Ruby development
+tools via [rbenv][rbenv_link], and a curated set of [Homebrew][homebrew_link] packages for web
+development. Uses [mise][mise_link] for managing non-Ruby tool versions.
+
+tmux key bindings and options are documented inline in `home/.tmux.conf`.
 
 ## Getting Started
 
@@ -266,7 +268,15 @@ mise upgrade
 
 # Dotfiles via Homesick
 homesick pull --all
+homesick link --force dotfiles
 ```
+
+`homesick pull` only fetches; it does not relink. A file added inside a directory that is already
+symlinked, such as `home/.zsh`, appears with no further action — but a new top-level file does not,
+and until the `link` run it is simply absent, with nothing to say why. `--force` is what makes the
+run unattended: without it homesick prompts for every path that already exists. Those paths are
+normally correct symlinks that it removes and recreates, but a real file left at a managed path
+would be overwritten the same way.
 
 Oh My Zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
 
@@ -300,6 +310,7 @@ self-update with System already selected.
 [rbenv_link]: https://github.com/rbenv/rbenv
 [rbenv_default_gems_link]: https://github.com/rbenv/rbenv-default-gems
 [vundle_link]: https://github.com/VundleVim/Vundle.vim
+[tmux_link]: https://github.com/tmux/tmux
 [mise_link]: https://mise.jdx.dev/
 [docker_settings_link]: https://docs.docker.com/desktop/settings-and-maintenance/settings/
 [omz_bundler]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/bundler
