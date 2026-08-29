@@ -8,7 +8,8 @@
       "Name" : "Matt (dotfiles)",
       "Dynamic Profile Parent Name" : "Default",
       "Use Separate Colors for Light and Dark Mode" : false,
-      "Allow Title Setting" : true
+      "Allow Title Setting" : true,
+      "Allow Title Reporting" : false
     }
   ]
 }

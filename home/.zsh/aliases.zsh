@@ -1,5 +1,15 @@
 # Shell
 alias e='exec'
+# `ta` falls back to the `tn` alias when there is no session to attach to. zsh expands an alias in
+# command position after `||`, so `tn` has to stay an alias defined here — turning it into a
+# function or renaming it breaks `ta` with no warning. `-2` asserts that the outer terminal does 256
+# colors, which does nothing for iTerm2 and real work for a phone SSH client that under-reports.
+alias ta='tmux -2 attach || tn'
+alias tn='tmux -2 new'
+# `tm` attaches to the `mobile` session if it exists and creates it otherwise: one command for
+# starting and for resuming after a dropped connection, which is the whole point of the session
+# surviving on the far end
+alias tm='tmux -2 new -A -s mobile'
 alias vim='mvim -v'
 
 # Ruby
