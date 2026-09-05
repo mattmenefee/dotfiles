@@ -172,8 +172,15 @@ When the review file already exists:
 1. **Update findings** if re-review shows they're now resolved or still present
 1. **Strike through findings** that are no longer applicable (e.g., the section they referenced has
    been deleted or rewritten) — do **not** remove them; apply strikethrough and add a brief
-   explanation of why
-1. **Update the review date** at the top of the document:
+   explanation of why. Because strikethrough marks a finding as decided, it must carry a status
+   glyph so the finding stays countable: strike it as ✅ Fixed only when the condition it describes
+   is verifiably gone. A rewrite that merely moved the text is not evidence of a fix — leave it
+   ❓ Open and say so in the explanation
+1. **Append a Review History entry** — one entry per review run, newest last, each recording the
+   date and what the run changed. Leave earlier entries untouched: they record the state that
+   produced those findings, and rewriting one destroys the only evidence of what an earlier review
+   actually saw. Update the header's **Commit**, **Reviewed** and **Reviewed by** fields to the
+   current run:
 
    ```markdown
    ## Review History
