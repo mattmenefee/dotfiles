@@ -125,6 +125,7 @@ fields.
 | **Branch** | `feature-branch-name` |
 | **Commit** | `abc1234` |
 | **Reviewed** | YYYY-MM-DD |
+| **Reviewed by** | Opus 5 (`claude-opus-5[1m]`) |
 
 ## Review History
 
@@ -135,6 +136,23 @@ When re-reviewing, update the **Commit** and **Reviewed** fields to reflect the 
 append to the Review History. The commit field is what makes a stale finding diagnosable later: it
 records the revision the reviewer actually read, so a reference that no longer resolves can be
 traced to a change in the document rather than an error in the review.
+
+### Recording the Reviewing Model
+
+The review record captures **which Claude model produced it**, so a reader can later judge how much
+weight it deserves. The `model:` alias in the documentation-expert's frontmatter is not sufficient
+evidence: an alias such as `opus` resolves to a different model as new models ship, and can resolve
+downward at runtime if the preferred model is unavailable. Only the resolved model identifies the
+review's actual capability.
+
+Instruct the documentation-expert to take the model from its own environment context, which states
+both the display name and the exact model ID, and to record it verbatim in the header's
+**Reviewed by** field — including any context-window or snapshot suffix. Do not infer it from
+frontmatter and never guess: if it cannot determine its own model it must record `unknown`, because
+a wrong entry in the record is worse than a missing one.
+
+On a re-review, note the model in the Review History entry as well. A document reviewed by
+different models at different times is exactly the case this field exists to expose.
 
 ### Merging with Existing Findings
 
@@ -181,6 +199,14 @@ scanning:
 - 🟢 **Low Priority / Nice-to-Have** — Can address later (minor typos, style preferences, missing
   examples)
 
+**A choice only the user can make:**
+
+- ⚖️ **Decision** — The document is not wrong, but a choice between defensible alternatives is open
+  and only the user can settle it (which of two conventions to standardize on, which audience a
+  section is written for). A ⚖️ carries no Recommendation: there is nothing to advise until the
+  choice is made. A re-review never resolves one on its own — re-reading a document cannot
+  establish a decision that was never taken — so it stays ❓ Open until the user rules on it.
+
 **Observations** (not required to resolve the review — never appear in the checklist):
 
 - ℹ️ **Observation** — Highlights a well-written section, good pattern, or structural choice worth
@@ -203,6 +229,9 @@ than implying every finding must be fixed. Use one of:
 - **Skip** — not worth doing; the cost (churn, review time, risk of introducing new errors)
   outweighs the gain. Prefer this over a half-hearted "could fix" when the value is marginal
 
+A ⚖️ Decision is the one actionable finding that takes no recommendation — the reviewer has no
+advice to give until the user settles the choice.
+
 State the recommendation with a one-line rationale. Every actionable finding (🔴🟠🟡🟢) must carry one.
 ℹ️ observations carry no recommendation; 💡 observations state the optional action inline. When
 severity and recommendation diverge — a 🟢 Low recommended **Implement**, or a 🟠 High recommended
@@ -223,6 +252,19 @@ For each finding, include:
 - **Suggestion** — Concrete fix or improvement
 - **Recommendation** — Implement / Defer / Skip, plus a one-line rationale (actionable findings
   only)
+
+When a suggestion quotes Markdown that itself contains a fenced code block, open and close the
+outer fence with **four** backticks. A three-backtick outer fence is closed by the inner block's
+closing fence, which silently swallows every following finding into a code block until the next
+fence. The damage lands on the findings *after* the one that caused it, so it is easy to
+misattribute — and a document review quotes Markdown far more often than a code review does.
+
+Redact rather than quote when the evidence is itself sensitive — a credential, token, connection
+string, internal hostname or customer datum. Name the section and line and describe the value's
+shape; do not reproduce it. This file is published verbatim into a pull request comment and the
+local copy is then deleted, so a quoted secret outlives both the file and the fix. The scrub in PR
+Comment Format is the backstop at publishing time; this rule keeps the value out of the artifact in
+the first place.
 
 ### Tracking Finding Status
 
@@ -402,8 +444,10 @@ at any status other than ✅ Fixed.
 ### Interactive Finding Selection
 
 After displaying all review output, present the list of **actionable findings still marked ❓ Open**
-(🔴🟠🟡🟢 — not ℹ️ or 💡 observations, and not findings already ✅ Fixed, ⏸️ Deferred or 🚫 Ignored).
-A finding the user has already ruled on must not be re-offered: putting it back in the list reopens
+(🔴🟠🟡🟢 and ⚖️ Decisions — not ℹ️ or 💡 observations, and not findings already ✅ Fixed,
+⏸️ Deferred or 🚫 Ignored). A ⚖️ belongs in this list above all others: it is the one finding type
+that cannot be resolved any other way. A finding the user has already ruled on must not be
+re-offered: putting it back in the list reopens
 a decision they made. Format the list as:
 
 ```text
