@@ -4,6 +4,19 @@ Review the following document for quality, using the **documentation-expert** ag
 
 **Document:** `$ARGUMENTS`
 
+## Reading the Document
+
+For large documents — especially PDFs — choose a reading strategy before reviewing:
+
+- **Text-heavy PDFs:** convert first with `pdftotext document.pdf document.txt` (add `-layout` to
+  preserve columns), then `Grep` the text for navigation. No page limit, fast to search, but loses
+  table/visual formatting.
+- **Table- or form-heavy PDFs:** use the `Read` tool's `pages` parameter (max 20 pages per request;
+  required for PDFs over 10 pages). It renders pages as images, so it captures tables and diagrams
+  accurately.
+- **Very large documents:** read disjoint page ranges in parallel subagents (e.g. `1-20`, `21-40`)
+  to cut wall-clock time at the cost of more context.
+
 The documentation-expert originates every finding and writes the review file itself, and it does not
 read this command — it reads the prompt you compose from it. Silence about the status rule is
 therefore not neutral: restate in the prompt that every actionable finding enters at **❓ Open**
@@ -97,6 +110,32 @@ finding is addressed, mark it with strikethrough and a status icon (✅ Fixed, �
 ⏸️ Deferred only after the user confirms that specific finding. This follows the same convention as
 `/local-review` (a code review command available in project repositories).
 
+### Document Header
+
+Include a metadata header at the top of the review file with context about the review. Run
+`git branch --show-current` and `git rev-parse --short HEAD` to populate the branch and commit
+fields.
+
+```markdown
+# Document Review: [document name]
+
+| | |
+|---|---|
+| **Document** | `path/to/document.md` |
+| **Branch** | `feature-branch-name` |
+| **Commit** | `abc1234` |
+| **Reviewed** | YYYY-MM-DD |
+
+## Review History
+
+### YYYY-MM-DD — Initial review
+```
+
+When re-reviewing, update the **Commit** and **Reviewed** fields to reflect the current state, and
+append to the Review History. The commit field is what makes a stale finding diagnosable later: it
+records the revision the reviewer actually read, so a reference that no longer resolves can be
+traced to a change in the document rather than an error in the review.
+
 ### Merging with Existing Findings
 
 When the review file already exists:
@@ -108,6 +147,10 @@ When the review file already exists:
    a re-review is not a decision
 1. **Add new findings** with the next sequential number (e.g., if F1–F4 exist, new findings start at
    F5)
+1. **Refresh citations** — every reference was written against an earlier revision of the document
+   and may have moved. Re-locate each open finding's reference against the current document and
+   correct it in place before judging whether the finding still holds; a citation that no longer
+   resolves is evidence the document changed, not that the finding was addressed
 1. **Update findings** if re-review shows they're now resolved or still present
 1. **Strike through findings** that are no longer applicable (e.g., the section they referenced has
    been deleted or rewritten) — do **not** remove them; apply strikethrough and add a brief
@@ -116,8 +159,10 @@ When the review file already exists:
 
    ```markdown
    ## Review History
-   - **Initial review:** YYYY-MM-DD
-   - **Re-review:** YYYY-MM-DD (findings F1, F2 fixed; F5–F6 added)
+
+   ### YYYY-MM-DD — Initial review
+
+   ### YYYY-MM-DD — Re-review (findings F1, F2 fixed; F5–F6 added)
    ```
 
 ### Severity Indicators
@@ -351,7 +396,8 @@ The `<summary>` line should include the total finding count and a breakdown (e.g
 fixed, 2 ignored, 8 observations"). Deferred and ignored findings are off the pre-merge path but
 they are not resolved, so they never fold into the fixed count, and neither do findings still
 ❓ Open. Reserve "all clear" for a review in which every actionable finding is ✅ Fixed: "24 findings
-— 16 fixed, 8 observations — all clear".
+— 16 fixed, 8 observations — all clear". Never write it while a 🔴 Critical or 🟠 High sits
+at any status other than ✅ Fixed.
 
 ### Interactive Finding Selection
 
