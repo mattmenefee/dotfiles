@@ -1,7 +1,7 @@
 # dotfiles
 
 Personal macOS development environment managed with [Homesick][homesick_link]. Configures Zsh (with
-[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], Ruby development tools via
+[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], tmux, Ruby development tools via
 [rbenv][rbenv_link], and a curated set of [Homebrew][homebrew_link] packages for web development.
 Uses [mise][mise_link] for managing non-Ruby tool versions.
 

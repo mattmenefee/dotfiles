@@ -1,6 +1,10 @@
 # Shell
 alias e='exec'
 alias ta='tmux -2 attach || tn'
+alias tn='tmux -2 new'
+# Attach if it exists, create it otherwise: one command for starting and for resuming after a
+# dropped connection, which is the whole point of the session surviving on the far end
+alias tm='tmux -2 new -A -s mobile'
 alias vim='mvim -v'
 
 # Ruby
