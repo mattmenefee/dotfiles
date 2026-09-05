@@ -41,9 +41,13 @@ lowercase it, convert spaces to dashes, and append `-HANDOFF.md` (e.g. `Payment 
 not part of the change. Leave it untracked; do not add it to `.gitignore` on your own initiative
 either.
 
-Unlike `local-review.md`, `*-DOC-REVIEW.md`, and `PLAN.md`, a handoff is **not** an artifact
-`/ship-it` posts and deletes, and it should not be added to that sweep: a review artifact dies with
-the pull request it reviews, while a handoff outlives it.
+`/ship-it` treats a handoff differently from `local-review.md`, `*-DOC-REVIEW.md` and `PLAN.md`,
+which it posts whole and deletes. It posts only the durable sections — **Decisions & Rationale**,
+**Insights & Learnings**, **Dead Ends**, still-open **Open Questions** and **References** — as a
+collapsible pull request comment, then asks whether to delete the file. The rest of a handoff
+describes a working tree that merging makes obsolete, and a handoff for work that continues past
+the pull request outlives it. Write the durable sections knowing they are the part that will be
+read after merge.
 
 ## Gathering State
 
