@@ -17,21 +17,48 @@ For large documents — especially PDFs — choose a reading strategy before rev
 - **Very large documents:** read disjoint page ranges in parallel subagents (e.g. `1-20`, `21-40`)
   to cut wall-clock time at the cost of more context.
 
-The documentation-expert originates every finding and writes the review file itself, and it does not
-read this command — it reads the prompt you compose from it. Silence about the status rule is
-therefore not neutral: restate in the prompt that every actionable finding enters at **❓ Open**
-whatever its recommendation, that ⏸️ and 🚫 may be written only after the user confirms that
-specific finding, and that the summary table's Status column carries ❓ rather than a blank cell or
-an em dash. On a re-review, also restate the preservation half: existing statuses carry over
-unchanged, and a finding still marked ❓ Open stays ❓ Open unless the re-review shows it fixed. A
-cross-reference to a section of this file reaches nobody. See Status Records a Decision, Not a
-Recommendation.
+## Who Does What
 
-Carry the same way the four implementation-group rules — Membership, Identifiers, Order and
-Completion — together with the worked checklist example beneath them, since that example carries the
-checkbox-plus-glyph shape the four rules do not state on their own. Carry the ⚖️ Decision's
-**Options** line as well: it replaces the Recommendation, and a reviewer that never learns of it
-either omits the alternatives or invents a recommendation the finding is not allowed to have.
+Two parties run this command, with different tool access and different views of the conversation, so
+every instruction in this file belongs to one of them:
+
+- **The orchestrator** — the session that runs `/doc-review`. Composes the prompt, dispatches the
+  documentation-expert, resolves the header's `git` fields, runs Interactive Finding Selection,
+  applies the fixes the user selects, writes the resulting statuses back into the review file, runs
+  the scrub and posts the comment.
+- **The documentation-expert** — reads the document, originates every finding, and writes the review
+  file.
+
+The division matters most after the review returns. The file is written by the subagent, but the
+interactive step and every fix that follows happen in the orchestrator's session, so the
+orchestrator owns the ✅ statuses those fixes produce. Left unassigned they are written by nobody,
+and the file reports findings open that were fixed in the same session.
+
+## Composing the Prompt
+
+**Paste the whole `## Output` section into the prompt verbatim**, together with the review criteria
+headings below. That is the composition contract, and it is deliberately one rule rather than a list
+of exceptions: every rule addressed to the finding author lives under `## Output`, so a rule added
+there is routed by construction and no future edit has to remember to add itself to a summary. Its
+two orchestrator-facing subsections — PR Comment Format and Interactive Finding Selection — are
+harmless surplus in the prompt, and curating them out is how a verbatim paste decays back into a
+summary.
+
+Do not rely on the agent reading this file. It declares `skills: [doc-review, local-review]`, so the
+harness **may** load this command's full text into its context — and "may" is the point: a skill can
+fail to load, a harness changes, and a rule that holds only when it does not is a rule that holds by
+luck. Restating it in the prompt makes it hold either way. Treat a cross-reference to a section of
+this file as something that may reach nobody, and never as the only place a rule is stated.
+
+The rules most often lost when a prompt is summarized rather than pasted — worth checking for
+explicitly, though the list is a symptom check and not a substitute for the paste — are: that every
+actionable finding enters at **❓ Open** whatever its recommendation, with ⏸️ and 🚫 written only
+after the user confirms that specific finding and the Status column carrying ❓ rather than a blank
+cell or an em dash; that on a re-review existing statuses carry over unchanged and a finding still
+marked ❓ Open stays ❓ Open unless the re-review shows it fixed; the four implementation-group rules
+together with the worked checklist example beneath them, which carries the checkbox-plus-glyph shape
+the rules do not state on their own; and the ⚖️ Decision's **Options** line, which replaces the
+Recommendation.
 
 Instruct the documentation-expert to perform a thorough review covering:
 
