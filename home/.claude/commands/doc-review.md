@@ -540,16 +540,31 @@ shell glob, and match `local-review*.md` rather than the exact name:
 
 ```bash
 root="$(git rev-parse --show-toplevel)"
-scanned="$(find "$root" -maxdepth 1 \
-  \( -name 'local-review*.md' -o -name '*-DOC-REVIEW.md' -o -name 'PLAN.md' \) -print)"
+me="$(id -un)"
+
+# One pattern set, used by every pass, so the passes cannot drift apart.
+paths='/users/|/home/|/tmp/|/var/folders/|/volumes/|/root/|-users-'
+paths="$paths"'|[a-z]:\\users|\\wsl|\$\{?home|~[a-z_][a-z0-9_-]*/|\.(internal|local|corp|lan)'
+hosts='(^|[^0-9.])(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.0\.0\.1)'
+ident="$paths|$hosts|$me|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
+secrets='-----begin [a-z ]*private key-----'
+secrets="$secrets"'|(api[_-]?key|secret|token|password|bearer)[[:space:]]*[:=]'
+secrets="$secrets"'|[a-z][a-z0-9+.-]*://[^[:space:]/]+:[^[:space:]@]+@'
+
+artifacts() {
+  find "$root" -maxdepth 1 \
+    \( -name 'local-review*.md' -o -name '*-DOC-REVIEW*.md' \
+       -o -name '*-HANDOFF.md' -o -name 'PLAN.md' \) "$@"
+}
+
+# A hit is exempt only when the segment is angle-bracketed: /Users/<name>/…
+scan() { artifacts -exec grep -inE "$ident|$secrets" /dev/null {} + \
+         | grep -viE '/(users|home)/<[^>]+>/'; }
+
+scanned="$(artifacts -print)"
 [ -n "$scanned" ] || { echo "scrub: no artifacts under $root — nothing was scanned" >&2; exit 1; }
 printf 'scrub: scanned these files\n%s\n' "$scanned"
-
-find "$root" -maxdepth 1 \
-  \( -name 'local-review*.md' -o -name '*-DOC-REVIEW.md' -o -name 'PLAN.md' \) \
-  -exec grep -nE '/Users/|/home/|/private/tmp/|/var/folders/' /dev/null {} +
-rc=$?
-[ "$rc" -le 1 ] || { echo "scrub FAILED (grep exit $rc) — do not post" >&2; exit 1; }
+scan
 ```
 
 `find` does the matching so the shell never expands the glob. An unmatched `*-DOC-REVIEW.md` inside
@@ -574,14 +589,42 @@ does not undo the disclosure: GitHub keeps the pre-edit revision in the comment'
 readable by anyone with repo access, and the only complete remedy is to delete the comment and
 repost it under a new URL.
 
-A hit that is an illustrative placeholder carrying no real username — `/Users/<name>/…` quoted from
-the rule itself — is already redacted; leave it and move on. Any review of these command files will
-carry one, and rewriting it turns a quoted rule into something that no longer says what the rule
-says.
+Replace **every occurrence of the username**, not just the leading path prefix, with `<user>`. A
+prefix rewrite is not sufficient: usernames also appear dash-encoded inside paths — Claude Code's
+own per-project directories take the form `-Users-<name>--some-repo` — and a line carrying one is
+caught by the scan, then passes clean after a `~`-prefix rewrite while still naming the user twice.
+A remediation its own verifier certifies as safe is worse than none, because it ends the reviewer's
+attention. `$me` is in the pattern set for exactly this reason.
 
-While rewriting the hits, read what surrounds them. The patterns match paths, not secrets, so a
-credential reaches this step only by sharing a line with one. If anything credential-shaped is
-there, stop before posting anything and tell the user.
+**Re-run `scan` after rewriting, and treat any remaining output as blocking.** The rewrite step is
+performed by the same agent that is judging whether it worked, so without a second pass its belief
+that the document is clean is never tested against the document as it now stands. A detect-and-fix
+step with no re-detect is a fix nobody checked.
+
+The placeholder exemption is **syntactic, not a judgment call**: a hit is exempt only when the
+segment after `/Users/` or `/home/` is enclosed in angle brackets, as `/Users/<name>/…` quoted from
+the rule itself is. Any other value is treated as real, however generic it looks. This is what the
+`grep -viE '/(users|home)/<[^>]+>/'` filter in `scan` implements, so the exemption is applied by the
+command rather than decided by the reader.
+
+The reason it is mechanical is that the failure is asymmetric. `/Users/<name>/…` and
+`/Users/dev/work/thing` produce identical adjacent hit lines, and nothing tells an agent whether
+`dev`, `admin`, `ubuntu`, `runner` or `user` is a placeholder or a real account. A wrong "that's a
+placeholder" publishes a real home path; the reverse merely garbles a quoted rule. Any review of
+these command files carries such a quotation, which makes the exemption routine — and routine is
+where habituation sets in.
+
+`scan` matches secret-shaped content as well as paths, and those hits are **reported to the user and
+block the post — never rewritten.** Rewriting a credential in the artifact hides the evidence
+without rotating the secret, which leaves the reader believing a disclosure was handled when only
+its trace was removed.
+
+The earlier claim that a credential reaches this step only by sharing a line with a path was wrong,
+and load-bearing while it stood: it was the justification for matching paths only. A bare
+token-shaped line matches no path pattern at all. Worse, it created a mutual-assumption gap — the
+authoring rule calls this scrub "the backstop at publishing time" while this step assumed
+credentials always arrive escorted by a path, so a secret the authoring agent failed to redact had
+no second check and both stages had a documented reason not to look.
 
 This section is the **normative definition** of the scrub, and every other command that publishes
 these artifacts carries its own copy of it — notably a project's `/ship-it`, which posts
@@ -608,17 +651,28 @@ whole, so a rule applied to the finished comment has already published what it m
 This is the one finding category where succeeding at the job is what creates the exposure: the
 command is most dangerous exactly when it works.
 
-Then build the comment:
+Then build and post the comment. **The gate lives inside this block, not before it.** Order was
+previously carried only by prose position and the words "Then build the comment", while the final
+fenced block was self-contained — it opened with `{`, ended with `gh pr comment`, and contained no
+scrub. An agent that scrolls to the executable block, which is the normal way a command file gets
+used, published without ever running the scrub and nothing signalled that a step had been skipped. A
+control a reader can skip by copying the obvious block is not a control, so the re-verification and
+the post now share one block and one exit path:
 
 ```bash
 comment_file="$(mktemp -t pr-comment)"
 trap 'rm -f "$comment_file"' EXIT
 
+# Gate 1 — the artifacts, after any rewrites. Nothing may remain.
+remaining="$(scan)"
+[ -z "$remaining" ] || { echo "scrub: unresolved hits — do not post" >&2
+                         printf '%s\n' "$remaining" >&2; exit 1; }
+
 body="$(cat "$review_file")" || { echo "cannot read $review_file" >&2; exit 1; }
 [ -n "$body" ] || { echo "review body is empty — refusing to post" >&2; exit 1; }
 
 {
-  echo "## Document Review: [document name] — [status summary]"
+  echo "## Document Review: $(basename "$document") — [status summary]"
   echo ""
   echo "**[N findings — X actionable, Y observations]**"
   echo ""
@@ -629,8 +683,23 @@ body="$(cat "$review_file")" || { echo "cannot read $review_file" >&2; exit 1; }
   echo ""
   echo "</details>"
 } > "$comment_file"
+
+# Gate 2 — what is actually posted, which is a superset of the file scanned above.
+posted="$(grep -inE "$ident|$secrets" /dev/null "$comment_file" \
+          | grep -viE '/(users|home)/<[^>]+>/')"
+[ -z "$posted" ] || { echo "scrub: assembled comment still has hits — do not post" >&2
+                      printf '%s\n' "$posted" >&2; exit 1; }
+
 gh pr comment --body-file "$comment_file"
 ```
+
+The comment is scrubbed twice, and the second pass is the one that matters. The first covers the
+artifacts; the posted body is those *plus* everything added at assembly — and the heading
+interpolates the document name from `$ARGUMENTS`, which for a document outside the repository is
+routinely an absolute path. That line never passed the gate and is the **first visible line of the
+public comment**. Use `basename`, never the path, and re-scan the assembled file: the section's own
+principle is to check at the step that publishes, and checking only the source is one step short of
+it.
 
 Read the body into a variable and assert it before wrapping it. Inside the group, a failing `cat`
 sends its error to stderr and the group's exit status is the trailing `echo`'s, so an unreadable
