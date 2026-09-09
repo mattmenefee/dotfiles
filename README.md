@@ -141,6 +141,30 @@ homesick pull --all
 
 Oh My Zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
 
+### Docker Desktop's `PATH` block
+
+A Docker Desktop update may append this to `.zprofile`, `.bash_profile`, and `.profile` — all three
+of which are tracked here:
+
+```shell
+# The following lines were added by Docker Desktop to add commands to your PATH.
+export PATH="$PATH:/Users/matt/.docker/bin"
+# End of Docker Desktop section.
+```
+
+Delete it whenever it shows up in a diff. The block is inert, and it is wrong in this repository:
+
+- The CLI tools are installed in **System** mode (see [Settings → Advanced][docker_settings_link]),
+  which symlinks them into `/usr/local/bin`. Everything in `$HOME/.docker/bin` duplicates those
+  symlinks.
+- `/usr/local/bin` is the first entry in `/etc/paths`, and the block *appends* to `PATH`, so it
+  could never win a lookup anyway — `command -v docker` resolves to `/usr/local/bin/docker`.
+- The path is hardcoded to one absolute home directory, so it is wrong on any other machine these
+  dotfiles are linked into.
+
+Selecting **System** does not reliably prevent this: version 4.90.0 wrote the block during a
+self-update with System already selected.
+
 [homesick_link]: https://github.com/technicalpickles/homesick
 [homebrew_link]: https://brew.sh/
 [brew_bundle_link]: https://docs.brew.sh/Brew-Bundle-and-Brewfile
@@ -148,6 +172,7 @@ Oh My Zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
 [rbenv_default_gems_link]: https://github.com/rbenv/rbenv-default-gems
 [vundle_link]: https://github.com/VundleVim/Vundle.vim
 [mise_link]: https://mise.jdx.dev/
+[docker_settings_link]: https://docs.docker.com/desktop/settings-and-maintenance/settings/
 [omz_bundler]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/bundler
 [omz_docker]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/docker
 [omz_gh]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/gh
