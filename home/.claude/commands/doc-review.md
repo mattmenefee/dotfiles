@@ -183,6 +183,46 @@ fields.
 ### YYYY-MM-DD — Initial review
 ```
 
+The file as a whole takes this shape. Heading levels are part of the specification, not a
+preference: the merge rules, the Completion rule's `### G3 ✅ — …` form and every cross-reference in
+this command assume it.
+
+````markdown
+# Document Review: <document name>
+
+<the metadata table above>
+
+## Review History
+
+### <date> — <what this run did>
+
+## Overall Assessment
+
+## <Category>
+
+### F1 🟡 Medium Priority - <description>
+
+### F2 🟠 High Priority - <description>
+
+## Observations
+
+## Consolidated Summary
+
+## Pre-Merge Checklist
+
+### G1 — <title>
+
+### Not recommended for this revision
+````
+
+One `##` per criteria category that has findings — Formatting, Consistency, Accuracy, Clarity and
+Structure, Sensitive Information, Spelling and Grammar, Staleness — in the order those criteria
+appear above, with empty categories omitted and findings as `###` beneath them. `## Pre-Merge
+Checklist` is a section of the review file in its own right, not a subsection of the summary, and
+its groups are `###`. That is what makes the Completion rule writable: a group heading has to be one
+level below the checklist that contains it, and until the enclosing level was fixed, `### G3 ✅` had
+no defined meaning.
+
 When re-reviewing, update the **Commit** and **Reviewed** fields to reflect the current state, and
 append to the Review History. The commit field is what makes a stale finding diagnosable later: it
 records the revision the reviewer actually read, so a reference that no longer resolves can be
@@ -373,40 +413,6 @@ require status tracking.
 - 🚫 **Ignored** — Explicitly decided not to address (include reason)
 - ⏸️ **Deferred** — Will address later
 
-### Status Records a Decision, Not a Recommendation
-
-A finding's **Recommendation** is the reviewer's advice about whether acting now is worth the cost.
-Its **Status** records what the user decided. **Never derive the second from the first.**
-
-- New actionable findings always enter at **❓ Open**, however minor the finding or however
-  dismissive its recommendation
-- **⏸️** and **🚫** may be written only after the user confirms that specific finding. Never infer
-  the decision from a **Defer** or **Skip** recommendation, and never prompt for it — the reader
-  raises it unprompted and you record it
-- **✅** may be applied without asking — it asserts a verifiable fact about the document, not a
-  decision
-- Leave no Status cell blank or `—` for an actionable finding; either reads as "nothing to decide
-  here" and quietly closes the finding. The em dash is reserved for ℹ️ and 💡 observations, where no
-  status applies
-
-The two columns are meant to be read together. **Skip** with ❓ says "the reviewer thinks this is not
-worth doing, and nobody has agreed yet". **Skip** with 🚫 says "that call has been made". Collapsing
-them loses the distinction between advice and consent. The vocabulary is deliberate and not an
-inconsistency to resolve: **Skip** is a Recommendation value, **🚫 Ignored** is a Status value, and
-there is no "Skipped" status. Prose that calls a finding "skipped" is naming a recommendation, never
-a decision — rewrite it to say "ignored" rather than adding Skip to the status glossary.
-
-A ⚖️ Decision follows the same rule with one difference: for it, the decision *is* the fix. It
-enters at ❓ and stays there until the user rules. Once they do it is ✅, with the outcome in the
-parenthetical — "kept as-is" or "changed to …" — and if the ruling requires an edit, ✅ waits until
-that edit is in the document. ⏸️ records that the user pushed the decision to a follow-up. 🚫 is
-never written for a ⚖️: a decision cannot be ignored, only made or deferred. Because ✅ on a ⚖️
-records the user's ruling rather than a verifiable fact about the document, it is the one ✅ that may
-not be applied without asking.
-
-This binds the summary table and the checklist equally. Pre-populating either silently closes
-findings the user never saw.
-
 **How to mark findings:**
 
 Apply strikethrough to the finding heading (excluding the finding number) and add the status icon to
@@ -445,6 +451,40 @@ Never use a bare glyph bullet (`- 🚫 F4 …`) and never trail the glyph at the
 Markdown renders `- [ ]` flush left but an ordinary `-` bullet with extra indent, so a list mixing
 the two forms gets two left margins, destroying the very column the glyphs exist to create.
 
+### Status Records a Decision, Not a Recommendation
+
+A finding's **Recommendation** is the reviewer's advice about whether acting now is worth the cost.
+Its **Status** records what the user decided. **Never derive the second from the first.**
+
+- New actionable findings always enter at **❓ Open**, however minor the finding or however
+  dismissive its recommendation
+- **⏸️** and **🚫** may be written only after the user confirms that specific finding. Never infer
+  the decision from a **Defer** or **Skip** recommendation, and never prompt for it — the reader
+  raises it unprompted and you record it
+- **✅** may be applied without asking — it asserts a verifiable fact about the document, not a
+  decision
+- Leave no Status cell blank or `—` for an actionable finding; either reads as "nothing to decide
+  here" and quietly closes the finding. The em dash is reserved for ℹ️ and 💡 observations, where no
+  status applies
+
+The two columns are meant to be read together. **Skip** with ❓ says "the reviewer thinks this is not
+worth doing, and nobody has agreed yet". **Skip** with 🚫 says "that call has been made". Collapsing
+them loses the distinction between advice and consent. The vocabulary is deliberate and not an
+inconsistency to resolve: **Skip** is a Recommendation value, **🚫 Ignored** is a Status value, and
+there is no "Skipped" status. Prose that calls a finding "skipped" is naming a recommendation, never
+a decision — rewrite it to say "ignored" rather than adding Skip to the status glossary.
+
+A ⚖️ Decision follows the same rule with one difference: for it, the decision *is* the fix. It
+enters at ❓ and stays there until the user rules. Once they do it is ✅, with the outcome in the
+parenthetical — "kept as-is" or "changed to …" — and if the ruling requires an edit, ✅ waits until
+that edit is in the document. ⏸️ records that the user pushed the decision to a follow-up. 🚫 is
+never written for a ⚖️: a decision cannot be ignored, only made or deferred. Because ✅ on a ⚖️
+records the user's ruling rather than a verifiable fact about the document, it is the one ✅ that may
+not be applied without asking.
+
+This binds the summary table and the checklist equally. Pre-populating either silently closes
+findings the user never saw.
+
 ### Consolidated Summary
 
 At the end, provide:
@@ -466,8 +506,10 @@ about status: F6 is ungrouped and still ❓, because Skip is advice and nobody h
 
 1. **Overall assessment** - Brief summary of document quality
 
-1. **Checklist** - Convert every actionable finding into a checklist organized into implementation
-   groups — see Pre-Merge Checklist below.
+The checklist is **not** part of this section. It is a sibling section of the review file — see the
+skeleton under Document Header — so that its groups sit one level below it. Listing it here as a
+third item made a `###` group heading a child of an ordered-list item, which is not a structure
+Markdown can express.
 
 ### Pre-Merge Checklist
 
