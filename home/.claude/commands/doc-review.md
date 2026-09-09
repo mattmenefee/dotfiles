@@ -83,6 +83,10 @@ Instruct the documentation-expert to perform a thorough review covering:
 - **PII** — Flag personally identifiable information (names, emails, phone numbers) that may have
   been included accidentally
 
+Findings in this category are reported to the user in conversation and **withheld from any published
+comment** — see PR Comment Format. Flag them fully in the local artifact; the published record
+carries only a count.
+
 ## Spelling and Grammar
 
 - **Typos and misspellings** — Flag spelling errors in prose (not code/commands)
@@ -297,9 +301,20 @@ fence. The damage lands on the findings *after* the one that caused it, so it is
 misattribute — and a document review quotes Markdown far more often than a code review does.
 
 Redact rather than quote when the evidence is itself sensitive — a credential, token, connection
-string, internal hostname or customer datum. Name the section and line and describe the value's
-shape; do not reproduce it. This file is published verbatim into a pull request comment and the
-local copy is then deleted, so a quoted secret outlives both the file and the fix. The scrub in PR
+string, internal hostname, IP address, email address, personal name, customer datum, or the name or
+URL of a private repository. Name the section and line and describe the value's shape; do not
+reproduce it. The list is deliberately wider than the scrub's patterns, which match paths only: an
+authoring rule that stops at credentials leaves every other category to a backstop that was never
+built to catch it.
+
+This rule governs every artifact `/ship-it` publishes, not just the one this command writes — it
+posts `local-review.md` and `PLAN.md` whole as well, and the scrub's own filename list in PR Comment
+Format is the proof that an authoring rule scoped to a single file is scoped too narrowly.
+
+The artifact **may** be published verbatim into a pull request comment — PR Comment Format says when
+— and `/ship-it` deletes the local copy once it has posted it, so a quoted secret outlives both the
+file and the fix. Neither step is unconditional, and neither is performed by this command; state the
+rationale that way rather than asserting a publication this file cannot promise. The scrub in PR
 Comment Format is the backstop at publishing time; this rule keeps the value out of the artifact in
 the first place.
 
@@ -540,6 +555,22 @@ cross-reference this section. A cross-reference between command files reaches no
 reason the status rule is restated in the prompt at the top of this file — and the agent running
 `/ship-it` never reads this one. Duplication costs a few lines; a missing scrub costs a disclosure
 that cannot be undone once posted.
+
+**Withhold the body of every `## Sensitive Information` finding from the comment.** The redaction
+rule keeps the *value* out of the artifact but it does not remove the *pointer*, and the pointer is
+enough: a published finding reading "the connection string at line 42 of `deploy.md` is live" is a
+targeting instruction for anyone with repository access, and it survives in the comment's edit
+history even if the comment is deleted. Report those findings to the user in conversation, and
+represent them in the comment as a neutral count only:
+
+```text
+1 Sensitive Information finding — withheld from this comment; see the local artifact
+```
+
+Excise the section before the body is assembled, not after — the block below pipes the artifact in
+whole, so a rule applied to the finished comment has already published what it meant to withhold.
+This is the one finding category where succeeding at the job is what creates the exposure: the
+command is most dangerous exactly when it works.
 
 Then build the comment:
 
