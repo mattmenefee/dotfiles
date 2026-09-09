@@ -27,6 +27,12 @@ unchanged, and a finding still marked ❓ Open stays ❓ Open unless the re-revi
 cross-reference to a section of this file reaches nobody. See Status Records a Decision, Not a
 Recommendation.
 
+Carry the same way the four implementation-group rules — Membership, Identifiers, Order and
+Completion — together with the worked checklist example beneath them, since that example carries the
+checkbox-plus-glyph shape the four rules do not state on their own. Carry the ⚖️ Decision's
+**Options** line as well: it replaces the Recommendation, and a reviewer that never learns of it
+either omits the alternatives or invents a recommendation the finding is not allowed to have.
+
 Instruct the documentation-expert to perform a thorough review covering:
 
 ## Formatting
@@ -165,6 +171,13 @@ When the review file already exists:
    a re-review is not a decision
 1. **Add new findings** with the next sequential number (e.g., if F1–F4 exist, new findings start at
    F5)
+1. **Keep the implementation groups current** — a new finding recommended Implement joins the
+   existing group whose edit it shares, or opens a new group with the next free identifier. Never
+   renumber a group; re-sort the groups only when a dependency changed, and say so in the Review
+   History entry. Check off a group whose members are all off the pre-merge path, in the
+   `### G3 ✅ — …` form defined under Implementation groups, and un-check one that was checked and
+   has since gained an open member — a completed group that a later round reopens reads as done to
+   anyone scanning the headings for what is left
 1. **Refresh citations** — every reference was written against an earlier revision of the document
    and may have moved. Re-locate each open finding's reference against the current document and
    correct it in place before judging whether the finding still holds; a citation that no longer
@@ -206,13 +219,14 @@ scanning:
 - 🟢 **Low Priority / Nice-to-Have** — Can address later (minor typos, style preferences, missing
   examples)
 
-**A choice only the user can make:**
+**Decisions** (need the user before anyone acts — appear in the checklist):
 
 - ⚖️ **Decision** — The document is not wrong, but a choice between defensible alternatives is open
   and only the user can settle it (which of two conventions to standardize on, which audience a
-  section is written for). A ⚖️ carries no Recommendation: there is nothing to advise until the
-  choice is made. A re-review never resolves one on its own — re-reading a document cannot
-  establish a decision that was never taken — so it stays ❓ Open until the user rules on it.
+  section is written for). The finding states the choices and what each costs in an **Options** line
+  in place of a Recommendation, because the decision is the user's rather than the reviewer's. A
+  re-review never resolves one on its own — re-reading a document cannot establish a decision that
+  was never taken — so it stays ❓ Open until the user rules on it.
 
 **Observations** (not required to resolve the review — never appear in the checklist):
 
@@ -221,6 +235,12 @@ scanning:
 - 💡 **Observation (optional action)** — Something reads correctly but a small, optional improvement
   is available; state the action inline. Keep genuine praise (ℹ️) distinct from latent suggestions
   (💡) so neither drowns out the other.
+
+**Actionable** means 🔴🟠🟡🟢 *and* ⚖️ — everything that needs someone to act or to rule, as against
+the ℹ️ and 💡 observations that need neither. Use the word rather than repeating the glyph list: the
+list was written before ⚖️ existed, so every copy of it silently excludes decisions and drops them
+out of the checklist. Where a rule genuinely applies to fixable findings but not to decisions, say
+"actionable finding other than a ⚖️ Decision" rather than falling back to the four glyphs.
 
 ### Recommendations
 
@@ -237,10 +257,13 @@ than implying every finding must be fixed. Use one of:
   outweighs the gain. Prefer this over a half-hearted "could fix" when the value is marginal
 
 A ⚖️ Decision is the one actionable finding that takes no recommendation — the reviewer has no
-advice to give until the user settles the choice.
+advice to give until the user settles the choice. It carries an **Options** line in place of the
+Recommendation, laying out the alternatives and what each costs, and its Recommendation cell in the
+summary table reads `Options`.
 
-State the recommendation with a one-line rationale. Every actionable finding (🔴🟠🟡🟢) must carry one.
-ℹ️ observations carry no recommendation; 💡 observations state the optional action inline. When
+State the recommendation with a one-line rationale. Every actionable finding other than a ⚖️
+Decision must carry one. ℹ️ observations carry no recommendation; 💡 observations state the optional
+action inline. When
 severity and recommendation diverge — a 🟢 Low recommended **Implement**, or a 🟠 High recommended
 **Defer** — that divergence is the useful signal; surface it rather than smoothing it over.
 
@@ -257,8 +280,10 @@ For each finding, include:
 - **Location** — Section heading or line reference
 - **Issue** — Clear description of the problem
 - **Suggestion** — Concrete fix or improvement
-- **Recommendation** — Implement / Defer / Skip, plus a one-line rationale (actionable findings
-  only)
+- **Recommendation** — Implement / Defer / Skip, plus a one-line rationale (every actionable
+  finding other than a ⚖️ Decision)
+- **Options** — For a ⚖️ Decision only, in place of the Recommendation: the alternatives and what
+  each costs
 
 When a suggestion quotes Markdown that itself contains a fenced code block, open and close the
 outer fence with **four** backticks. A three-backtick outer fence is closed by the inner block's
@@ -310,6 +335,14 @@ inconsistency to resolve: **Skip** is a Recommendation value, **🚫 Ignored** i
 there is no "Skipped" status. Prose that calls a finding "skipped" is naming a recommendation, never
 a decision — rewrite it to say "ignored" rather than adding Skip to the status glossary.
 
+A ⚖️ Decision follows the same rule with one difference: for it, the decision *is* the fix. It
+enters at ❓ and stays there until the user rules. Once they do it is ✅, with the outcome in the
+parenthetical — "kept as-is" or "changed to …" — and if the ruling requires an edit, ✅ waits until
+that edit is in the document. ⏸️ records that the user pushed the decision to a follow-up. 🚫 is
+never written for a ⚖️: a decision cannot be ignored, only made or deferred. Because ✅ on a ⚖️
+records the user's ruling rather than a verifiable fact about the document, it is the one ✅ that may
+not be applied without asking.
+
 This binds the summary table and the checklist equally. Pre-populating either silently closes
 findings the user never saw.
 
@@ -334,20 +367,20 @@ pre-merge path — fixed, deferred and ignored all qualify — and let the glyph
 On entry every actionable finding is unchecked and ❓ Open, whatever the review recommended:
 
 ```markdown
-- [ ] ❓ F1 - Standardize terminology
-- [ ] ❓ F2 - Add Oxford commas
-- [ ] ❓ F3 - Rewrite the API section
+- [ ] ❓ F2 - Add the missing prerequisite
+- [ ] ❓ F3 - Rewrite the API table
+- [ ] ❓ F4 - Add Oxford commas
 ```
 
 Once a finding is decided, check the box and swap ❓ for the status glyph:
 
 ```markdown
-- [x] ✅ F1 - Standardize terminology (fixed)
-- [x] 🚫 F2 - Add Oxford commas (ignored — house style omits them)
-- [x] ⏸️ F3 - Rewrite the API section (deferred to the next revision)
+- [x] ✅ F2 - Add the missing prerequisite (fixed)
+- [x] ⏸️ F3 - Rewrite the API table (deferred to the next revision)
+- [x] 🚫 F4 - Add Oxford commas (ignored — house style omits them)
 ```
 
-Never use a bare glyph bullet (`- 🚫 F2 …`) and never trail the glyph at the end of the line.
+Never use a bare glyph bullet (`- 🚫 F4 …`) and never trail the glyph at the end of the line.
 Markdown renders `- [ ]` flush left but an ordinary `-` bullet with extra indent, so a list mixing
 the two forms gets two left margins, destroying the very column the glyphs exist to create.
 
@@ -357,21 +390,92 @@ At the end, provide:
 
 1. **Summary table** of all findings:
 
-| Finding | Priority | Category | Description | Location | Recommendation | Status |
-| --------- | ---------- | ---------- | ------------- | ---------- | ---------------- | -------- |
-| F1 | 🟡 Medium | Consistency | Example description | Section name | Implement | ❓ |
-| F2 | 🟢 Low | Clarity | Example description | Section name | Skip | ❓ |
-| F3 | ℹ️ Observation | Clarity | Example description | Section name | — | — |
+| Finding | Priority | Category | Description | Location | Recommendation | Group | Status |
+| --------- | ---------- | ---------- | ------------- | ---------- | ---------------- | ------- | -------- |
+| F1 | 🔴 Critical | Accuracy | Flag order in the install command | Installation | Implement | G2 | ❓ |
+| F2 | 🟡 Medium | Accuracy | Missing prerequisite | Installation | Implement | G2 | ✅ |
+| F5 | ⚖️ Decision | Clarity | Whether Quick Start covers the Docker path | Quick Start | Options | G1 | ❓ |
+| F6 | 🟢 Low | Clarity | Troubleshooting section is thin | Troubleshooting | Skip | — | ❓ |
+| F10 | ℹ️ Observation | Clarity | Quick Start's worked example is clear | Quick Start | — | — | — |
+
+This is the same finding set the Pre-Merge Checklist below uses, so the two views can be read against
+each other. The **Group** column carries the finding's implementation group, or `—` when it is
+ungrouped — a finding recommended Defer or Skip, or an observation. An em dash there says nothing
+about status: F6 is ungrouped and still ❓, because Skip is advice and nobody has agreed to it yet.
 
 1. **Overall assessment** - Brief summary of document quality
 
-1. **Checklist** - Convert actionable findings (🔴🟠🟡🟢) into a checklist. Do not include ℹ️ or 💡
-   Observation findings in the checklist — neither requires action. Items enter at `- [ ] ❓` — see
-   Status Records a Decision, Not a Recommendation.
+1. **Checklist** - Convert every actionable finding into a checklist organized into implementation
+   groups — see Pre-Merge Checklist below.
+
+### Pre-Merge Checklist
+
+Convert every **actionable** finding into a concrete checklist, organized into **implementation
+groups**. Do not include ℹ️ or 💡 Observation findings in the checklist — neither requires action.
+Items enter at `- [ ] ❓` — see Status Records a Decision, Not a Recommendation.
+
+#### Implementation groups
+
+A group is a set of findings that are revised together: the same edit, the same section, the same
+root cause, or a dependency chain ("settle F5 first, then re-evaluate F9"). A flat list leaves the
+batches to be reconstructed from status lines after the fact — "folded into the F7 edit", "same edit
+fixes F1 and F2". The checklist states them up front instead.
+
+- **Membership.** Every finding recommended **Implement** belongs to exactly one group, as does
+  every ⚖️ Decision and every finding whose fix depends on one. Findings recommended **Defer** or
+  **Skip** are listed after the groups under **Not recommended for this revision**, still at ❓,
+  because the recommendation is advice and the user may take them anyway.
+- **Identifiers.** Groups are numbered `G1`, `G2`, … and the number is permanent: a group is never
+  renumbered, and a later round that adds a group takes the next free number even if it sorts
+  earlier. Work the groups in the order they appear in the checklist, not in numeric order — after a
+  re-review the two can differ, and a checklist that reads G1, G4, G2, G3 is correct. Refer to a
+  group by its identifier in the summary table's Group column, in conversation ("do G2 next") and in
+  commit messages.
+- **Order.** Sort the groups by, in turn: any ⚖️ Decision, and whatever depends on it, first, since
+  nobody can act until the user rules; then a group that other groups build on — a terminology
+  choice, a section others cross-reference — ahead of its dependents; then by the highest severity in
+  the group; then smallest first, so quick wins land before larger edits of equal weight. Write the
+  reason for each group's position in one line under its heading. A reader should never have to guess
+  why one group precedes another.
+- **Completion.** A group whose members are all off the pre-merge path is checked off at its heading
+  by placing a ✅ between the identifier and the em dash — `### G3 ✅ — Tidy the appendix`. The members
+  keep their own boxes and glyphs. Do not reach for task-list syntax here: GFM renders `- [ ]` and
+  `- [x]` only on list items, so `### [x] G3 — …` prints a literal `[x]`, and promoting the group to
+  a list item is ruled out by the mixed-form rule under Tracking Finding Status.
+
+Every item is a checkbox followed immediately by its status glyph, exactly as Tracking Finding
+Status requires, so the leading columns read as one scannable strip:
 
 ```markdown
-- [ ] ❓ F1 - Fix description
-- [ ] ❓ F2 - Fix description
+### G1 — Settle the Quick Start's scope
+
+Decide first: F7 and F9 both change shape depending on the ruling.
+
+- [ ] ❓ F5 - Whether Quick Start covers the Docker path (options: document both / native only)
+- [ ] ❓ F7 - Add or drop the Docker prerequisites, per F5
+- [ ] ❓ F9 - Rewrite the Quick Start intro to match F5's scope
+
+### G2 — Correct the installation steps
+
+Highest severity outside G1; one section, two adjacent paragraphs.
+
+- [ ] ❓ F1 - Fix the flag order in the install command
+- [x] ✅ F2 - Add the missing prerequisite (fixed)
+
+### G3 ✅ — Tidy the appendix
+
+Lowest severity of the three, and it touches nothing the others do. Both members were recommended
+Implement and the user then ruled on each, which is why they sit in a group rather than under Not
+recommended —
+Membership routes by the recommendation, not by where the status later lands.
+
+- [x] ⏸️ F3 - Rewrite the API table (deferred to the next revision)
+- [x] 🚫 F4 - Add Oxford commas (ignored — house style omits them)
+
+### Not recommended for this revision
+
+- [ ] ❓ F6 - Expand the troubleshooting section (Skip — no reader has reported hitting it)
+- [ ] ❓ F8 - Split the reference page (Defer — the sibling page is not in this branch)
 ```
 
 ### PR Comment Format
@@ -441,30 +545,59 @@ Then build the comment:
 gh pr comment --body-file /tmp/pr-comment.md
 ```
 
-The `<summary>` line should include the total finding count and a breakdown (e.g., "24 findings — 14
-fixed, 2 ignored, 8 observations"). Deferred and ignored findings are off the pre-merge path but
-they are not resolved, so they never fold into the fixed count, and neither do findings still
-❓ Open. Reserve "all clear" for a review in which every actionable finding is ✅ Fixed: "24 findings
-— 16 fixed, 8 observations — all clear". Never write it while a 🔴 Critical or 🟠 High sits
-at any status other than ✅ Fixed.
+The `<summary>` line should include the total finding count and a breakdown that names every bucket
+separately (e.g., "24 findings — 14 fixed, 2 ignored, 2 open, 8 observations"). A ⚖️ Decision still
+awaiting the user is named on its own — "2 open (1 decision)" — because it needs a person, not a
+fix. Deferred and ignored findings are off the pre-merge path but they are not resolved, so they
+never fold into the fixed count, and neither do findings still ❓ Open. Reserve "all clear" for a
+review in which every actionable finding is ✅ Fixed: "24 findings — 16 fixed, 8 observations — all
+clear". Never write it while a 🔴 Critical, a 🟠 High or a ⚖️ Decision sits at any status other
+than ✅ Fixed.
 
 ### Interactive Finding Selection
 
 After displaying all review output, present the list of **actionable findings still marked ❓ Open**
-(🔴🟠🟡🟢 and ⚖️ Decisions — not ℹ️ or 💡 observations, and not findings already ✅ Fixed,
-⏸️ Deferred or 🚫 Ignored). A ⚖️ belongs in this list above all others: it is the one finding type
-that cannot be resolved any other way. A finding the user has already ruled on must not be
-re-offered: putting it back in the list reopens
-a decision they made. Format the list as:
+(actionable, so including any open ⚖️ Decision — but not ℹ️ or 💡 observations, and not findings
+already ✅ Fixed, ⏸️ Deferred or 🚫 Ignored), grouped as the checklist groups them, with any open
+⚖️ Decision listed first under its own heading. A finding the user has already ruled on must not be
+re-offered: putting it back in the list reopens a decision they made. Format the list as:
 
 ```text
-F1 🔴 Critical - Description (location)
-F3 🟡 Medium - Description (location)
-F5 🟢 Low - Description (location)
+Decisions needed:
+F5 ⚖️ Decision - Whether Quick Start covers the Docker path (document both / native only)
+
+G1 — Settle the Quick Start's scope
+F7 🟡 Medium - Add or drop the Docker prerequisites (Quick Start)
+F9 🟡 Medium - Rewrite the Quick Start intro (Quick Start)
+
+G2 — Correct the installation steps
+F1 🔴 Critical - Fix the flag order in the install command (Installation)
+
+Not recommended for this revision
+F6 🟢 Low - Expand the troubleshooting section (Troubleshooting)
+F8 🟢 Low - Split the reference page (Reference)
 ```
 
-Ask the user which findings to fix. Accept finding numbers (e.g., "F1, F3"), "all", or "skip". If
-the user selects one or more findings, edit the document directly to resolve them in order.
+This is the same finding set the Pre-Merge Checklist example uses, and the differences between the
+two views are the rule at work rather than drift. F5 moves out of G1 to the Decisions heading while
+G1 keeps its other members; F2 is gone because it is ✅ Fixed; and G3 has no heading at all because
+both of its members are decided, one ⏸️ and one 🚫. Re-offering either would reopen a ruling the
+user already made.
+
+Ask the user which findings to fix. Accept finding numbers (e.g., "F1, F3"), group identifiers
+(e.g., "G2"), "all", or "skip". A group identifier selects every open finding in that group; a ⚖️
+Decision is never selected by "all" or by its group — it is answered, in the user's words, and the
+answer is recorded.
+
+While an unanswered ⚖️ sits in a group, that group's identifier selects nothing. Put the decision
+first, ask it, record the ruling, and only then begin the member edits. Membership deliberately
+co-locates a decision with the findings whose fix depends on it, and Order puts such a group first
+because nobody can act until the user rules — so editing the members against an unmade ruling is
+exactly the sequence the grouping exists to prevent, and it earns a rework of every member once the
+ruling lands.
+
+If the user selects one or more findings, edit the document directly to resolve them in group
+order.
 
 Answering "skip" here means "not fixing any of these right now" — it is **not** a decision to mark
 anything 🚫 Ignored. Unselected findings stay ❓ Open in both the summary table and the checklist.
