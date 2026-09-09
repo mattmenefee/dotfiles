@@ -27,6 +27,9 @@ silently skip **Merging with an Existing Handoff**:
 find . -maxdepth 1 -name '*-HANDOFF.md'
 ```
 
+`find` rather than `ls *-HANDOFF.md 2>/dev/null`: the redirect hides a real error on a name
+beginning with `-`, and under zsh an unmatched glob is a shell error that prints regardless.
+
 - **Exactly one exists and it covers this work** — merge into it, whatever name the topic would have
   derived. Do not rename it.
 - **Several exist** — ask the user which to update rather than guessing.
@@ -41,13 +44,14 @@ lowercase it, convert spaces to dashes, and append `-HANDOFF.md` (e.g. `Payment 
 not part of the change. Leave it untracked; do not add it to `.gitignore` on your own initiative
 either.
 
-`/ship-it` treats a handoff differently from `local-review.md`, `*-DOC-REVIEW.md` and `*-PLAN.md`,
-which it posts whole and deletes. It posts only the durable sections — **Decisions & Rationale**,
-**Insights & Learnings**, **Dead Ends**, still-open **Open Questions** and **References** — as a
-collapsible pull request comment, then asks whether to delete the file. The rest of a handoff
-describes a working tree that merging makes obsolete, and a handoff for work that continues past
-the pull request outlives it. Write the durable sections knowing they are the part that will be
-read after merge.
+`/ship-it` treats a handoff differently from `*local-review*.md` (the name may carry an identifier
+on either side, such as `payments-local-review.md` or `local-review-2.md`), `*-DOC-REVIEW.md` and
+`*-PLAN.md`, which it posts whole and deletes. It posts only the durable sections — **Decisions &
+Rationale**, **Insights & Learnings**, **Dead Ends**, still-open **Open Questions** and
+**References** — as a collapsible pull request comment, then asks whether to delete the file. The
+rest of a handoff describes a working tree that merging makes obsolete, and a handoff for work that
+continues past the pull request outlives it. Write the durable sections knowing they are the part
+that will be read after merge.
 
 ## Gathering State
 
@@ -199,6 +203,12 @@ The state of the working tree and the world around it:
 - Pull request state: number, review decision, CI status, unresolved comments
 - Anything left in a knowingly broken or half-migrated state, stated plainly
 
+Every bullet that states a fact about the branch, the pull request, CI or an issue names the command
+whose output it summarizes, in the bullet or beside the section — `git --no-pager status --short
+--branch`, `gh pr view --json …`, `mcp__linear-server__get_issue` — and states nothing the session
+did not read from such a command in this pass. A claim written from recollection is the kind that
+gets retracted a session later.
+
 ### Environment & Setup
 
 Only what the reader could not infer: services that must be running, migrations pending, seed data
@@ -212,13 +222,13 @@ reference and one line on why it matters. Reference code; do not paste it. The e
 that exists nowhere on disk — a snippet the user supplied, or a command output being reasoned about
 — which must be included verbatim or it is lost.
 
-**Do not lean on another working artifact without saying it may be gone.** `local-review.md`,
-`*-DOC-REVIEW.md` and `*-PLAN.md` (or a legacy `PLAN.md`) are branch-local, and `/ship-it` deletes
-them once it has posted them to the pull request — so a handoff that names one as its authoritative
-record is describing a file that shipping will remove. Mark any such reference as branch-local and
-deletable, and carry the load-bearing parts into this file: the conclusions, the open items, and the
-reasoning the next agent would otherwise lose. Point at the artifact for the detail; never depend on
-it for the substance.
+**Do not lean on another working artifact without saying it may be gone.** `*local-review*.md` and
+`*-DOC-REVIEW.md` are untracked, `*-PLAN.md` (or a legacy `PLAN.md`) is tracked but stripped from
+the branch history at ship time, and `/ship-it` deletes all three once it has posted them to the
+pull request — so a handoff that names one as its authoritative record is describing a file that
+shipping will remove. Mark any such reference as branch-local and deletable, and carry the
+load-bearing parts into this file: the conclusions, the open items, and the reasoning the next agent
+would otherwise lose. Point at the artifact for the detail; never depend on it for the substance.
 
 ### Decisions & Rationale
 
@@ -367,12 +377,13 @@ clobber it:
 1. Refresh **Verification** — re-run the recorded commands, or mark each result "not re-run since
    `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
-1. Re-check every working artifact this handoff points at — `local-review.md`, `*-DOC-REVIEW.md`,
-   `*-PLAN.md` (or a legacy `PLAN.md`) and anything else branch-local. If one is gone, say so where
-   it is referenced and promote what it was carrying. If one is still there but the handoff leans on
-   it for substance, promote the load-bearing parts now and mark the reference deletable. An earlier
-   pass may have been written before this rule existed, and shipping deletes these files — so the
-   check is on the reference, not on whether a previous pass thought it was fine
+1. Re-check every working artifact this handoff points at — `*local-review*.md`, `*-DOC-REVIEW.md`,
+   `*-PLAN.md` or a legacy `PLAN.md` (tracked, but stripped by `/ship-it`) and anything else
+   untracked. If one is gone, say so where it is referenced and promote what it was carrying. If one
+   is still there but the handoff leans on it for substance, promote the load-bearing parts now and
+   mark the reference deletable. An earlier pass may have been written before this rule existed, and
+   shipping deletes these files — so the check is on the reference, not on whether a previous pass
+   thought it was fine
 1. Resolve **Open Questions** that have since been answered — record the answer in **Decisions &
    Rationale** rather than deleting the question
 1. Preserve **Dead Ends**, **Decisions & Rationale**, and **Insights & Learnings** in full; these
@@ -402,8 +413,8 @@ clobber it:
 ## Process
 
 1. Determine the topic and target path from `$ARGUMENTS` (or from the session's work), checking for
-   an existing handoff with `find . -maxdepth 1 -name '*-HANDOFF.md'` first; if one covers this work,
-   read it and follow **Merging with an Existing Handoff**
+   an existing handoff with `find . -maxdepth 1 -name '*-HANDOFF.md'` first; if one covers this
+   work, read it and follow **Merging with an Existing Handoff**
 1. Gather repository, pull request, issue, and check state using the commands above, recording your
    own model from your environment context
 1. Re-run verification commands whose recorded results would otherwise be stale
