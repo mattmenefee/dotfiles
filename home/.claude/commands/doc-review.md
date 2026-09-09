@@ -510,20 +510,46 @@ from will cite an absolute path under the home directory. Check here rather than
 stage, because this is the step that publishes:
 
 ```bash
-grep -nE '/Users/|/home/|/private/tmp/|/var/folders/' /dev/null "$review_file" || true
+review_file="$(git rev-parse --show-toplevel)/<name>-DOC-REVIEW.md"
+[ -r "$review_file" ] || { echo "scrub: cannot read $review_file" >&2; exit 1; }
+
+grep -nE '/Users/|/home/|/private/tmp/|/var/folders/' /dev/null "$review_file"
+rc=$?
+[ "$rc" -le 1 ] || { echo "scrub FAILED (grep exit $rc) — do not post" >&2; exit 1; }
 ```
 
-The `/dev/null` argument keeps `grep` printing the filename. The trailing `|| true` keeps a clean
-run from looking like a failure: `grep` exits 1 when it matches nothing, so without it the good
-outcome — nothing to scrub — returns a failing status. No output means nothing to scrub.
+Define `$review_file` in the same block and make its absence fatal. Left undefined it is not an
+error: `grep` warns on stderr, prints no match lines and — under a trailing `|| true` — exits 0, so
+the scrub certifies a document it never opened. A block in a command file gets copied verbatim, so
+it has to carry its own preconditions.
+
+The `/dev/null` argument keeps `grep` printing the filename. Branch on the exit code rather than
+swallowing it: `grep` exits 1 when it matches nothing, which is the benign case the scrub is written
+around, but 2 when it cannot read the file. `|| true` collapses both to success, rewriting a read
+failure into a clean bill of health — the exact fail-open this section exists to prevent, and a
+warning on stderr is easy for an agent scanning for `file:line:` output to disregard.
+
+**Empty output means nothing matched only if `grep` actually ran.** At least four paths produce no
+output: nothing matched, which is the intended one; the file could not be read; `find` matched zero
+files; and the wrong directory was scanned. Only the first is clean. Treat the others as a failed
+scrub and do not post — which is what the readability check, the exit-code branch and the echoed
+file list below are each there to make visible.
 
 When scrubbing a set of artifacts rather than one named file, match them with `find` rather than a
 shell glob, and match `local-review*.md` rather than the exact name:
 
 ```bash
-find . -maxdepth 1 \
+root="$(git rev-parse --show-toplevel)"
+scanned="$(find "$root" -maxdepth 1 \
+  \( -name 'local-review*.md' -o -name '*-DOC-REVIEW.md' -o -name 'PLAN.md' \) -print)"
+[ -n "$scanned" ] || { echo "scrub: no artifacts under $root — nothing was scanned" >&2; exit 1; }
+printf 'scrub: scanned these files\n%s\n' "$scanned"
+
+find "$root" -maxdepth 1 \
   \( -name 'local-review*.md' -o -name '*-DOC-REVIEW.md' -o -name 'PLAN.md' \) \
-  -exec grep -nE '/Users/|/home/|/private/tmp/|/var/folders/' /dev/null {} + || true
+  -exec grep -nE '/Users/|/home/|/private/tmp/|/var/folders/' /dev/null {} +
+rc=$?
+[ "$rc" -le 1 ] || { echo "scrub FAILED (grep exit $rc) — do not post" >&2; exit 1; }
 ```
 
 `find` does the matching so the shell never expands the glob. An unmatched `*-DOC-REVIEW.md` inside
@@ -531,6 +557,16 @@ a single `grep` command aborts that command outright under zsh, and `2>/dev/null
 it, because the shell reports the failed expansion before the redirection applies — the scrub then
 silently does not run at all. A branch-suffixed review document is a deliberate convention, so
 matching the exact name would leave the artifact unopened, printing nothing and reading as clean.
+
+Anchor the scan to `git rev-parse --show-toplevel`, not to `.`. The artifact is written to the
+project root while `find .` scans wherever the agent happens to be, and `-maxdepth 1` makes that
+miss total rather than partial — one `cd`, a subdirectory, or a review agent running in an isolated
+worktree is enough to scan an empty set. Capture the file list and fail loudly when it is empty,
+then echo what was scanned: `find … -exec … +` never invokes `grep` when it matches nothing, so it
+prints nothing and exits 0, byte-identical to a genuinely clean scan. The `find` form was adopted to
+stop the scrub silently not running, and without these two lines it reintroduces the same silence
+through a different door. Listing the files scanned is what makes the verdict checkable rather than
+merely quiet.
 
 Rewrite each hit **in the review document** before building the comment — `~`-prefixed when the path
 genuinely lies outside the repository, repo-relative when it does not. Fixing the comment afterwards
@@ -575,6 +611,12 @@ command is most dangerous exactly when it works.
 Then build the comment:
 
 ```bash
+comment_file="$(mktemp -t pr-comment)"
+trap 'rm -f "$comment_file"' EXIT
+
+body="$(cat "$review_file")" || { echo "cannot read $review_file" >&2; exit 1; }
+[ -n "$body" ] || { echo "review body is empty — refusing to post" >&2; exit 1; }
+
 {
   echo "## Document Review: [document name] — [status summary]"
   echo ""
@@ -583,12 +625,27 @@ Then build the comment:
   echo "<details>"
   echo "<summary>Click to expand full review details</summary>"
   echo ""
-  cat "$review_file"
+  printf '%s\n' "$body"
   echo ""
   echo "</details>"
-} > /tmp/pr-comment.md
-gh pr comment --body-file /tmp/pr-comment.md
+} > "$comment_file"
+gh pr comment --body-file "$comment_file"
 ```
+
+Read the body into a variable and assert it before wrapping it. Inside the group, a failing `cat`
+sends its error to stderr and the group's exit status is the trailing `echo`'s, so an unreadable
+`$review_file` still produces a well-formed comment with a complete `<details>` scaffold, an empty
+body, and a heading confidently claiming N findings — posted with no failure signal in stdout or
+exit status. Checking the finished file with `[ -s ]` does not help, because the scaffold is
+non-empty; the body itself is what has to be non-empty.
+
+Use `mktemp`, not a fixed path. `> /tmp/pr-comment.md` follows a pre-existing symlink and clobbers
+its target, so a stale or hostile link redirects the write and `--body-file` posts whatever the
+target holds. Under the usual umask the file is created world-readable, nothing removes it, and two
+concurrent reviews race on one name — so if the scrub failed, the unredacted body persists under a
+guessable name after the artifact it came from was deleted, which is the one copy the threat model
+assumes is gone. `mktemp` creates the file 0600 and will not follow a symlink; the `trap` removes it
+on exit.
 
 The `<summary>` line should include the total finding count and a breakdown that names every bucket
 separately (e.g., "24 findings — 14 fixed, 2 ignored, 2 open, 8 observations"). A ⚖️ Decision still
