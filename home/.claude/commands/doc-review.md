@@ -6,16 +6,30 @@ Review the following document for quality, using the **documentation-expert** ag
 
 ## Reading the Document
 
-For large documents — especially PDFs — choose a reading strategy before reviewing:
+Instruct the documentation-expert to choose a reading strategy before reviewing. It is the party
+that reads the document, so the choice is its to make and the strategy has to reach it — see
+Composing the Prompt.
 
-- **Text-heavy PDFs:** convert first with `pdftotext document.pdf document.txt` (add `-layout` to
-  preserve columns), then `Grep` the text for navigation. No page limit, fast to search, but loses
-  table/visual formatting.
+- **Text-heavy PDFs:** convert first with
+  `pdftotext -q "$doc" "${TMPDIR:-/tmp}/$(basename "${doc%.pdf}").txt"` (add `-layout` to preserve
+  columns), then `Grep` the converted text for navigation. No page limit and fast to search, but it
+  loses table and visual formatting. Write the conversion **outside the repository** and delete it
+  when the review is done: it is a plaintext copy of a document that may hold exactly the
+  credentials and PII the Sensitive Information criteria are looking for, and nothing downstream
+  covers it — the scrub matches four filename patterns, `/ship-it` deletes only the artifacts it
+  posts, and a stray `document.txt` left in the working tree can be committed.
 - **Table- or form-heavy PDFs:** use the `Read` tool's `pages` parameter (max 20 pages per request;
   required for PDFs over 10 pages). It renders pages as images, so it captures tables and diagrams
   accurately.
-- **Very large documents:** read disjoint page ranges in parallel subagents (e.g. `1-20`, `21-40`)
-  to cut wall-clock time at the cost of more context.
+- **Very large PDFs:** read disjoint page ranges in successive `Read` calls (`1-20`, `21-40`),
+  keeping notes as you go. Do not plan to fan those ranges out across parallel subagents: the
+  documentation-expert is granted no Task tool and cannot spawn one, and having the orchestrator fan
+  out instead would mean findings originated by agents other than the one Who Does What names as
+  their author.
+- **Very large text documents** — Markdown, plain text, source: `Grep` for structure first
+  (headings, section markers) to build a map, then `Read` with `offset` and `limit` to pull the
+  spans that matter rather than the whole file. This command is used on Markdown far more often than
+  on PDFs, so this is the common case rather than the fallback.
 
 ## Who Does What
 
