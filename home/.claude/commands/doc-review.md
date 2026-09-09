@@ -256,6 +256,11 @@ than implying every finding must be fixed. Use one of:
 - **Skip** — not worth doing; the cost (churn, review time, risk of introducing new errors)
   outweighs the gain. Prefer this over a half-hearted "could fix" when the value is marginal
 
+The Recommendation value **Skip** is unrelated to the `skip` keyword the interactive prompt accepts.
+That keyword is a fix selection meaning "fix none of these right now": answering it never writes a
+Recommendation onto a finding and never changes one already recorded. The two words coincide and
+nothing more — see Interactive Finding Selection.
+
 A ⚖️ Decision is the one actionable finding that takes no recommendation — the reviewer has no
 advice to give until the user settles the choice. It carries an **Options** line in place of the
 Recommendation, laying out the alternatives and what each costs, and its Recommendation cell in the
@@ -526,6 +531,15 @@ says.
 While rewriting the hits, read what surrounds them. The patterns match paths, not secrets, so a
 credential reaches this step only by sharing a line with one. If anything credential-shaped is
 there, stop before posting anything and tell the user.
+
+This section is the **normative definition** of the scrub, and every other command that publishes
+these artifacts carries its own copy of it — notably a project's `/ship-it`, which posts
+`local-review.md`, `*-DOC-REVIEW.md` and `PLAN.md` together and then deletes them, so it publishes
+two artifacts this command never writes. Duplicate the check into each publisher; do not
+cross-reference this section. A cross-reference between command files reaches nobody — the same
+reason the status rule is restated in the prompt at the top of this file — and the agent running
+`/ship-it` never reads this one. Duplication costs a few lines; a missing scrub costs a disclosure
+that cannot be undone once posted.
 
 Then build the comment:
 
