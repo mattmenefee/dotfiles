@@ -3,10 +3,10 @@
   autocrlf = input
   editor = /opt/homebrew/bin/mvim -v
 [alias]
-  # base, bdone, com and cleanup are stubs; their bodies are scripts in ~/.local/bin, which is on
-  # PATH. Git finds those executables before it reads these entries, so these are the fallback for
-  # contexts without that PATH — launch agents, cron, GUI clients — and naming the full path is what
-  # makes it work.
+  # base, bdone, com, cleanup and touching are stubs; their bodies are scripts in ~/.local/bin,
+  # which is on PATH. Git finds those executables before it reads these entries, so these are the
+  # fallback for contexts without that PATH — launch agents, cron, GUI clients — and naming the full
+  # path is what makes it work.
 
   a = commit --amend
   aa = add --all
@@ -44,11 +44,11 @@
   # Post-PR tidy-up: switch to the base branch, pull, then prune what that merged. Optional base.
   bdone = "!~/.local/bin/git-bdone"
 
-  # All refs by most-recent commit; the stale branches are at the bottom of the output.
+  # All refs by most-recent commit; the stale branches are at the bottom of the output
   springcleaning = for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:short)'
 
   # Print the repository's base branch. Prints nothing and fails when none resolves, so that callers
-  # abort rather than guess a name.
+  # abort rather than guess a name
   base = "!~/.local/bin/git-base"
 
   # Delete local branches whose changes already reached the base branch, including ones merged via
@@ -56,8 +56,12 @@
   # script before changing it, or anything that calls it.
   cleanup = "!~/.local/bin/git-cleanup"
 
-  # Pull the current branch, then prune whatever that merged. Takes the same optional base.
+  # Pull the current branch, then prune whatever that merged. Takes the same optional base
   pc = "!f() { git pull && git cleanup \"$@\"; }; f"
+
+  # List the local and origin branches with commits, not yet on the base branch, that change the
+  # given paths
+  touching = "!~/.local/bin/git-touching"
 
   # list of deleted files:
   # git log --diff-filter=D --summary | grep delete
