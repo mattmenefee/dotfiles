@@ -152,6 +152,23 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
     Dynamic profiles are read-only in iTerm2's UI. Changing one means editing `main.json` in this
     repository, which is the point of keeping it here rather than in iTerm2's own preferences.
 
+    The profile already carries its colors, so a new machine needs nothing more here. Whatever it
+    does not set is inherited from the profile named **Default** (iTerm2's original profile, not
+    whichever one is set as default), which on a new machine is iTerm2's stock look. To change the
+    colors, select the profile whose colors are right on a machine that has them, export them —
+    **Settings → Profiles → Colors → Color Presets… → Export…** — and merge the saved file in
+    (here `~/Desktop/mine.itermcolors`):
+
+    ```shell
+    iterm-colors-import ~/Desktop/mine.itermcolors
+    ```
+
+    The profile keeps one set of colors whatever the macOS appearance, so when the preset carries
+    separate light and dark colors, the import takes the dark ones. Commit the `main.json` it
+    rewrites. A color preset holds no font, so carrying the font means setting `Normal Font` in
+    `main.json` by hand, as a name and size such as `"Monaco 12"`. For a separate non-ASCII font,
+    also set `Non Ascii Font` and `"Use Non-ASCII Font" : true`.
+
 1. Install [Vundle][vundle_link] and run the Vim plugin installer
 
     Vundle is not itself installed by Vundle: `.vimrc` adds `~/.vim/bundle/Vundle.vim` to the
@@ -290,10 +307,11 @@ homesick link --force dotfiles
 
 `homesick pull` only fetches; it does not relink. A file added inside a directory that is already
 symlinked, such as `home/.zsh`, appears with no further action — but a new top-level file does not,
-and until the `link` run it is simply absent, with nothing to say why. `--force` is what makes the
-run unattended: without it homesick prompts for every path that already exists. Those paths are
-normally correct symlinks that it removes and recreates, but a real file left at a managed path
-would be overwritten the same way.
+and neither does a new file in a directory listed in `.homesick_subdir`, such as `home/.local/bin`,
+whose files are linked one by one. Until the `link` run either is simply absent, with nothing to say
+why. `--force` is what makes the run unattended: without it homesick prompts for every path that
+already exists. Those paths are normally correct symlinks that it removes and recreates, but a real
+file left at a managed path would be overwritten the same way.
 
 Oh My Zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
 
