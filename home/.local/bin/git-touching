@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# git-touching — list the local and origin branches that change a path, relative to the base branch.
+#
+# Usage: git touching <path>...
+#
+# A branch is listed when a commit on it that is not on the base branch modifies one of the paths.
+# They are pathspecs, so a directory or glob works too, and a path that no longer exists in the
+# working tree still matches the commits that deleted or renamed it. Origin branches print as
+# `origin/<name>` and are as current as the last fetch; nothing here fetches.
+#
+# "Not on the base branch" means on neither the local base nor origin's copy of it, whichever of the
+# two exist. git-base can name a branch that exists only on origin, and excluding both keeps a
+# branch merged upstream from being listed just because the local base has not been pulled since.
+# Ref names cannot contain whitespace or glob characters, which is what makes `$exclude` safe to
+# leave unquoted.
+#
+# Usually reached as `git touching`; see git-base for why the ~/.gitconfig entry is a fallback.
+# Unlike the other commands here, this one depends on the working directory, because relative paths
+# resolve against it. A dashed external keeps the directory it was invoked from, but the alias runs
+# from the repository top level and records the directory it left in GIT_PREFIX — the `cd` returns
+# there. Outside an alias GIT_PREFIX is unset, and the `cd` is a no-op.
+#
+# Branches are walked by full ref name and printed with the refs/heads/ or refs/remotes/ prefix
+# stripped, so a branch sharing its name with a tag prints as itself rather than as `heads/<name>`,
+# the disambiguated form `%(refname:short)` would give. origin/HEAD is skipped because it only
+# points at another origin branch. A failing walk, such as
+# for a path outside the repository, ends the loop rather than repeating the error once per branch.
+
+if [ $# -eq 0 ]; then
+  echo 'usage: git touching <path>...' >&2
+  exit 1
+fi
+
+cd -- "${GIT_PREFIX:-.}" || exit 1
+base=$(git base) || exit 1
+
+exclude=
+for ref in "refs/heads/$base" "refs/remotes/origin/$base"; do
+  if git rev-parse --verify --quiet "$ref" >/dev/null; then
+    exclude="$exclude $ref"
+  fi
+done
+
+git for-each-ref --format='%(refname)' refs/heads refs/remotes/origin | while read -r ref; do
+  case $ref in
+    refs/remotes/origin/HEAD) continue ;;
+  esac
+
+  # shellcheck disable=SC2086  # $exclude splits into refs on purpose; see the header
+  commit=$(git rev-list -n 1 "$ref" --not $exclude -- "$@") || exit 1
+  if [ -n "$commit" ]; then
+    case $ref in
+      refs/heads/*) echo "${ref#refs/heads/}" ;;
+      *) echo "${ref#refs/remotes/}" ;;
+    esac
+  fi
+done
