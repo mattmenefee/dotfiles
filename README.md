@@ -138,6 +138,18 @@ Uses [mise][mise_link] for managing non-Ruby tool versions.
     Dynamic profiles are read-only in iTerm2's UI. Changing one means editing `main.json` in this
     repository, which is the point of keeping it here rather than in iTerm2's own preferences.
 
+    Whatever the profile does not set is inherited from the machine's **Default** profile, which on
+    a new machine is iTerm2's stock look. Colors are carried across by exporting them from the
+    machine that has them right — **Settings → Profiles → Colors → Color Presets… → Export…** —
+    and merging that file in:
+
+    ```shell
+    iterm-colors-import ~/Desktop/mine.itermcolors
+    ```
+
+    Commit the `main.json` it rewrites. A color preset holds no font, so carrying that means
+    setting `Normal Font` (and `Non Ascii Font`, if you use one) in `main.json` by hand.
+
 1. Install [Vundle][vundle_link] and run the Vim plugin installer
 
     Vundle is not itself installed by Vundle: `.vimrc` adds `~/.vim/bundle/Vundle.vim` to the
