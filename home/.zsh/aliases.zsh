@@ -1,6 +1,5 @@
 # Shell
 alias e='exec'
-alias ta='tmux -2 attach || tn'
 alias vim='mvim -v'
 
 # Ruby

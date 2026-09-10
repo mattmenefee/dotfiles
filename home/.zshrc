@@ -48,6 +48,7 @@ source ~/.zsh/aliases.zsh
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
+# CI checks this list against the README's plugin table; edit both together
 plugins=(git rails docker vi-mode mise z gh bundler)
 
 source $ZSH/oh-my-zsh.sh
@@ -84,6 +85,11 @@ export ROLLBAR_ACCESS_TOKEN="$(security find-generic-password -s rollbar-mcp -w 
 
 source ~/.zsh/iterm2-tab-title.zsh
 
-# Note: these must be placed at the bottom of .zshrc
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# Note: these must be placed at the bottom of .zshrc. The `unset` leaves $? at zero, so a machine
+# missing both files does not render its first prompt as a failure.
+zsh_plugin_share=/opt/homebrew/share
+[[ -r "${zsh_plugin_share}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] &&
+  source "${zsh_plugin_share}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[[ -r "${zsh_plugin_share}/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] &&
+  source "${zsh_plugin_share}/zsh-autosuggestions/zsh-autosuggestions.zsh"
+unset zsh_plugin_share

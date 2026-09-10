@@ -64,6 +64,27 @@ jobs:
 
           exit "${failed}"
 
+      - name: Check the README's plugin table matches .zshrc
+        run: |
+          zshrc=$(sed -n 's/^plugins=(\(.*\))$/\1/p' home/.zshrc | tr ' ' '\n' | sort)
+
+          readme=$(grep -oP '^\s*\| \[\K[a-z-]+(?=\]\[omz_)' README.md | sort)
+
+          if [ -z "${zshrc}" ]; then
+            echo "Found no plugins=() array in home/.zshrc; has the line changed shape?" >&2
+            exit 1
+          fi
+          if [ -z "${readme}" ]; then
+            echo "Found no [name][omz_*] rows in README.md; has the table changed shape?" >&2
+            exit 1
+          fi
+
+          if ! diff <(echo "${zshrc}") <(echo "${readme}"); then
+            echo "::error::plugins=() in home/.zshrc and the README's plugin table disagree." >&2
+            echo "Above, < is in .zshrc only and > is in the README only." >&2
+            exit 1
+          fi
+
       - name: Run the linters
         uses: super-linter/super-linter/slim@v8.7.0
         env:
