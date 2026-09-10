@@ -141,7 +141,12 @@ syntax on " are both of these necessary?
 
 filetype plugin indent on
 
-colorscheme railscasts
+" Absent during the `+PluginInstall` run that installs it, since Vim sources this file first.
+try
+  colorscheme railscasts
+catch /^Vim\%((\a\+)\)\=:E185/
+  colorscheme default
+endtry
 
 map QQ :q<CR>
 map WW :wall<CR>
