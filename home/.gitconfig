@@ -72,23 +72,18 @@
   helper = osxkeychain
 [merge]
   ff = only
-  tool = diffmerge
+  tool = vimdiff
 
   # Standard diff is two sets of final changes. This introduces the original text before each
   # side's changes.
   # https://git-scm.com/docs/git-config#git-config-mergeconflictStyle
   # conflictstyle = diff3
 
-[mergetool "diffmerge"]
-  cmd = "diffmerge --merge --result=\"$MERGED\" \"$LOCAL\" \"$(if test -f \"$BASE\"; then echo \"$BASE\"; else echo \"$LOCAL\"; fi)\" \"$REMOTE\""
-  trustExitCode = true
 [mergetool]
   keepBackup = false
 [diff]
-  tool = diffmerge
+  tool = vimdiff
   submodule = log
-[difftool "diffmerge"]
-  cmd = diffmerge $LOCAL $REMOTE
 [fetch]
   prune = true
 [push]
@@ -98,10 +93,6 @@
   rebase = true
 [color]
   ui = true
-[filter "media"]
-  required = true
-  clean = git media clean %f
-  smudge = git media smudge %f
 [rebase]
   autosquash = true
 [filter "lfs"]
