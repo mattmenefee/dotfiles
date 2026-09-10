@@ -3,10 +3,10 @@
   autocrlf = input
   editor = /opt/homebrew/bin/mvim -v
 [alias]
-  # base, bdone, com and cleanup are stubs; their bodies are scripts in ~/.local/bin, which is on
-  # PATH. Git finds those executables before it reads these entries, so these are the fallback for
-  # contexts without that PATH — launch agents, cron, GUI clients — and naming the full path is what
-  # makes it work.
+  # base, bdone, com, cleanup and touching are stubs; their bodies are scripts in ~/.local/bin,
+  # which is on PATH. Git finds those executables before it reads these entries, so these are the
+  # fallback for contexts without that PATH — launch agents, cron, GUI clients — and naming the full
+  # path is what makes it work.
 
   a = commit --amend
   aa = add --all
@@ -58,6 +58,9 @@
 
   # Pull the current branch, then prune whatever that merged. Takes the same optional base.
   pc = "!f() { git pull && git cleanup \"$@\"; }; f"
+
+  # List the local and origin branches with commits not yet on the base branch that change a path.
+  touching = "!~/.local/bin/git-touching"
 
   # list of deleted files:
   # git log --diff-filter=D --summary | grep delete

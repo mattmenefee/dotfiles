@@ -3,7 +3,8 @@
 # git-base — print the repository's base branch.
 #
 # origin/HEAD when it still points at a ref that exists, else whichever of main or master exists
-# locally or on origin. Read as `$(git base) || exit 1` by git-com, git-bdone, and git-cleanup.
+# locally or on origin. Read as `$(git base) || exit 1` by git-com, git-bdone, git-cleanup, and
+# git-touching.
 #
 # Usually reached as `git base`: this directory is on PATH, and git resolves a `git-base`
 # executable before it consults its aliases, so the `base` entry in ~/.gitconfig is a fallback for
