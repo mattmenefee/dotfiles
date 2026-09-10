@@ -33,6 +33,7 @@ brew 'uv' # Python package installer, runner, and virtualenv manager
 # Version Control tools
 brew 'git'
 brew 'gh' # for the GitHub CLI
+brew 'git-lfs' # .gitconfig sets `required = true`, so LFS repos fail to check out without it
 cask 'github'
 
 # Continuous Integration tools
@@ -47,6 +48,9 @@ brew 'redis'
 brew 'postgresql@18'
 brew 'pgcli'
 
+# Container tools
+cask 'docker-desktop'
+
 # Image processing tools
 brew 'vips' # the Rails v7 default for image processing
 brew 'poppler' # for creating PDF previews
@@ -54,11 +58,12 @@ brew 'poppler' # for creating PDF previews
 # Hosting tools
 brew 'heroku'
 
-# For CIRM's infrastructure management
+# Infrastructure management tools
 brew 'ansible'
 brew 'mise'
 brew 'yq' # YAML processor (like jq for YAML)
-brew 'awscli' # for syncing DigitalOcean Spaces files from Production to Staging
+brew 'awscli' # for S3-compatible object storage, e.g. DigitalOcean Spaces
+cask 'tailscale-app' # Mesh VPN; the `tailscale` formula is the headless daemon, not the macOS app
 
 # For the Open Source Risk Engine (ORE)
 brew 'cmake'
@@ -84,24 +89,3 @@ cask 'cleanmymac'
 # For Claude Code
 brew 'gum' # Interactive terminal UI for multi-select menus in Claude Code commands
 
-
-# brew 'direnv'
-# brew 'dnsmasq'
-# brew 'docbook'
-# brew 'docker'
-# brew 'docker-compose'
-# brew 'graphviz'
-# brew 'httpie'
-# brew 'hub' # an extension to command-line git that helps you do everyday GitHub tasks without ever leaving the terminal
-# brew 'p7zip'
-# cask 'betterzipql'
-# cask 'jet'
-# cask 'mono-mdk'
-# cask 'qlcolorcode'
-# cask 'qlprettypatch'
-# cask 'qlstephen'
-# cask 'quicklook-csv'
-# cask 'quicklook-json'
-# cask 'sonarr'
-# cask 'suspicious-package'
-# cask 'webp-quicklook'
