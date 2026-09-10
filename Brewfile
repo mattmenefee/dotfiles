@@ -50,6 +50,11 @@ brew 'postgresql@18'
 brew 'pgcli'
 
 # Container tools
+# If /Applications/Docker.app already exists outside Homebrew's Caskroom, `brew bundle` adopts it:
+# it backs the bundle up, removes the original, then writes a Spotlight attribute onto the bundled
+# `kubectl`. That write needs App Management, which a terminal lacks by default (`sudo` does not
+# help — macOS checks the responsible application, not the uid), and the failure cleanup purges the
+# backup too. Recover with `brew install --cask docker-desktop`; images and volumes are untouched.
 cask 'docker-desktop'
 
 # Image processing tools
