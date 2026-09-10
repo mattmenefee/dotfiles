@@ -3,6 +3,9 @@
 # Workflow
 
 - When creating Pull Requests or Linear issues, assign them to me by default
+- Never add AI attribution to anything pushed to a repository: no `Co-Authored-By` trailers, no
+  `Claude-Session` lines, and no "Generated with" footers or session links in pull request or issue
+  descriptions. Commits are authored by me alone
 
 ## Linear Issues
 
