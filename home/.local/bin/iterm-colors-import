@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# iterm-colors-import — merge an exported iTerm2 color preset into the tracked dynamic profile.
+#
+# iTerm2 writes a .itermcolors file from Settings -> Profiles -> Colors -> Color Presets -> Export.
+# That file is an XML plist whose keys are already profile keys — `Ansi 0 Color` through
+# `Ansi 15 Color`, `Background Color`, `Foreground Color` and the rest — and dynamic profiles accept
+# them verbatim, so importing is a merge rather than a translation.
+#
+# Whatever color the tracked profile does not set is inherited from the profile named Default on the
+# machine, which on a new one is iTerm2's stock look. Merging a preset in is what makes the whole
+# scheme travel with `homesick link`.
+#
+# Run this on the machine whose colors are right, then commit the result. iTerm2 watches the
+# DynamicProfiles directory and reloads when a file in it changes, so a running terminal picks the
+# colors up without a restart.
+
+require 'json'
+require 'open3'
+
+PROFILE = File.expand_path('../../Library/Application Support/iTerm2/DynamicProfiles/main.json',
+                           __dir__)
+LIGHT = ' (Light)'
+DARK = ' (Dark)'
+
+# Every color is a dictionary of components, which is what separates them from any scalar key a
+# preset may also carry. Selecting on shape rather than on a list of names means a preset from a
+# newer iTerm2 brings its new colors along without this script having to learn their names.
+#
+# A preset exported from a profile with separate light and dark colors carries `(Light)` and
+# `(Dark)` variants beside the plain keys. The tracked profile turns separate colors off, so iTerm2
+# reads only its plain keys: each `(Dark)` variant takes the plain key's place, which keeps the
+# terminal dark in either macOS appearance, and both variants are dropped.
+def colors_in(preset)
+  colors = preset.select { |_, value| value.is_a?(Hash) && value.key?('Red Component') }
+  plain = colors.reject { |key, _| key.end_with?(LIGHT, DARK) }
+  dark = colors.filter_map { |key, value| [key.delete_suffix(DARK), value] if key.end_with?(DARK) }
+  plain.merge(dark.to_h)
+end
+
+def read_preset(path)
+  json, status = Open3.capture2('plutil', '-convert', 'json', '-o', '-', path)
+  abort "iterm-colors-import: #{path} is not a plist iTerm2 wrote" unless status.success?
+
+  preset = JSON.parse(json.force_encoding(Encoding::UTF_8))
+  abort "iterm-colors-import: #{path} is not a color preset" unless preset.is_a?(Hash)
+
+  preset
+end
+
+# Read as UTF-8 whatever the locale: the window title format carries a non-ASCII character
+def read_profile
+  JSON.parse(File.read(PROFILE, encoding: Encoding::UTF_8))
+rescue JSON::ParserError
+  abort "iterm-colors-import: #{PROFILE} is not valid JSON"
+end
+
+# The profile is written with iTerm2's ` : ` between key and value. Matching that spacing keeps an
+# import from showing up as a whole-file diff.
+def iterm_json(document)
+  JSON.pretty_generate(document).gsub(/^(\s*"(?:[^"\\]|\\.)*"): /) { "#{Regexp.last_match(1)} : " }
+end
+
+abort 'usage: iterm-colors-import <file.itermcolors>' unless ARGV.length == 1
+abort "iterm-colors-import: no such file: #{ARGV.first}" unless File.exist?(ARGV.first)
+
+colors = colors_in(read_preset(ARGV.first))
+abort "iterm-colors-import: #{ARGV.first} defines no plain or (Dark) colors" if colors.empty?
+
+document = read_profile
+profiles = document['Profiles']
+one_profile = profiles.is_a?(Array) && profiles.length == 1
+abort "iterm-colors-import: expected one profile in #{PROFILE}" unless one_profile
+
+profile = profiles.first
+# A color already equal to the profile's keeps its existing text, where `1.0` and `1` would
+# otherwise churn
+changed = colors.reject { |key, value| profile[key] == value }
+if changed.empty?
+  puts "\"#{profile['Name']}\" already has all #{colors.length} colors; nothing to commit"
+  exit
+end
+
+profile.merge!(changed)
+File.write(PROFILE, "#{iterm_json(document)}\n")
+
+puts "#{colors.length} colors merged into \"#{profile['Name']}\" (#{changed.length} changed)"
+puts "Commit #{PROFILE.sub("#{Dir.home}/", '~/')} to carry them to another machine."
