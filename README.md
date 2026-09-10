@@ -7,19 +7,72 @@ Uses [mise][mise_link] for managing non-Ruby tool versions.
 
 ## Getting Started
 
-1. Install [Homebrew][homebrew_link] and [homebrew-bundle][brew_bundle_link]
+1. Install [Homebrew][homebrew_link]
 
-1. Install Homesick and symlink dotfiles:
+1. Install [rbenv][rbenv_link] and the [rbenv-default-gems][rbenv_default_gems_link] plugin
+
+    Homesick is a Ruby gem and recent versions of macOS no longer ship a system Ruby, so rbenv
+    comes first. The Brewfile installs it too, but `brew bundle` cannot run before this repository
+    is on disk.
+
+    The plugin installs a fixed list of gems into every Ruby that rbenv builds. Homesick is on that
+    list, so setting the plugin up now is what lets the Ruby in step 4 arrive with Homesick already
+    installed. Cloning it needs no Ruby of its own:
 
     ```shell
-    homesick clone mattmenefee/dotfiles
+    brew install rbenv ruby-build
+
+    # `.zshrc` in this repository already runs `rbenv init`. Rather than let rbenv write to the
+    # `.zshrc` that Homesick is about to replace, just load rbenv into the current shell:
+    eval "$(rbenv init - zsh)"
+
+    git clone https://github.com/rbenv/rbenv-default-gems.git "$(rbenv root)/plugins/rbenv-default-gems"
+    ```
+
+1. Clone this repository and point the plugin at its gem list
+
+    `homesick clone` would normally do the first line, but Homesick is exactly the gem that does
+    not exist yet. Plain `git` is the way out of that loop, and cloning into `~/.homesick/repos` is
+    all `homesick clone` does anyway — step 5 picks the castle up from there.
+
+    ```shell
+    git clone https://github.com/mattmenefee/dotfiles.git ~/.homesick/repos/dotfiles
+
+    mkdir -p "$(rbenv root)"
+    ln -s ~/.homesick/repos/dotfiles/home/.rbenv/default-gems "$(rbenv root)/default-gems"
+    ```
+
+    The symlink has to exist before the next step. `home/.rbenv/default-gems` is the list the
+    plugin reads, and the plugin skips silently when that file is missing — a Ruby installed
+    without it looks like a normal success and simply has none of the gems.
+
+1. Install Ruby
+
+    ```shell
+    rbenv install -l # list all available versions
+    rbenv install [version]
+    rbenv global [version] # set global Ruby version
+    ```
+
+    Everything in `home/.rbenv/default-gems` lands in the new Ruby as part of that install —
+    Homesick, gem_updater, mailcatcher, awesome_print and ruby-lsp — so none of them needs
+    installing by hand, and every Ruby installed later gets the same set.
+
+1. Symlink the dotfiles
+
+    ```shell
     homesick link dotfiles
     ```
+
+    Homesick does not recognize a symlink that already points where it belongs, so it reports
+    `conflict ~/.rbenv/default-gems exists` and prompts to overwrite. Answer `n`: that is the link
+    from step 3, and it is already correct.
 
 1. Install tools managed by Homebrew
 
     The Brewfile installs the CircleCI CLI from a third-party tap, which Homebrew's cask-trust gate
-    blocks until it is explicitly trusted. Run the one-time `brew trust` first, then `brew bundle`:
+    blocks until it is explicitly trusted. Run the one-time `brew trust` first, then
+    [`brew bundle`][brew_bundle_link]:
 
     ```shell
     cd ~/.homesick/repos/dotfiles/
@@ -27,23 +80,20 @@ Uses [mise][mise_link] for managing non-Ruby tool versions.
     brew bundle
     ```
 
-1. Set up [rbenv][rbenv_link] and [rbenv-default-gems][rbenv_default_gems_link] plugin
+    Ruby versions are managed with rbenv. Other tool versions (e.g., Ansible, Terraform) are managed
+    with [mise][mise_link], which is installed via Homebrew and activated through the Oh My Zsh
+    `mise` plugin.
 
-    Ruby versions are managed with rbenv (installed via Homebrew in step 3). Other tool versions
-    (e.g., Ansible, Terraform) are managed with [mise][mise_link], which is also installed via
-    Homebrew and activated through the Oh My Zsh `mise` plugin.
+1. Start the database services
 
     ```shell
-    rbenv init # See rbenv README for why this is necessary
-
-    # Set up the rbenv-default-gems plugin
-    git clone https://github.com/rbenv/rbenv-default-gems.git $(rbenv root)/plugins/rbenv-default-gems
-
-    rbenv install -l # list all available versions
-    rbenv install [version]
-    # Restart shell for changes with $PATH to take effect
-    rbenv global [version] # set global Ruby version
+    brew services start postgresql@18
+    brew services start redis
     ```
+
+    `postgresql@18` is a versioned formula, so Homebrew keeps it keg-only and does not symlink its
+    binaries into the prefix. That is why `.zshrc` puts `/opt/homebrew/opt/postgresql@18/bin` on
+    `PATH` explicitly, and why `psql` only resolves once the dotfiles are linked.
 
 1. Update RubyGems
 
@@ -61,14 +111,14 @@ Uses [mise][mise_link] for managing non-Ruby tool versions.
 
     | Plugin | Source | Description |
     | ------ | ------ | ----------- |
-    | [git][omz_git] | built-in | Git aliases and completions |
+    | [git][omz_git] | built-in | Git aliases and helper functions |
     | [rails][omz_rails] | built-in | Rails command aliases |
     | [docker][omz_docker] | built-in | Docker completions |
     | [vi-mode][omz_vimode] | built-in | Vim keybindings in the shell |
     | [mise][omz_mise] | built-in | Activates [mise][mise_link] for version management |
     | [z][omz_z] | built-in | Jump to frequently used directories (e.g., `z dotfiles`) |
     | [gh][omz_gh] | built-in | GitHub CLI completions |
-    | [bundler][omz_bundler] | built-in | Auto-prefixes gem commands with `bundle exec` |
+    | [bundler][omz_bundler] | built-in | Runs bundled commands via `bundle exec`; adds `be`, `bi`, `bl`, `bp`, `bu` |
 
     Two additional Zsh plugins are installed via Homebrew (included in the Brewfile) and sourced at
     the bottom of `.zshrc`:
@@ -76,23 +126,102 @@ Uses [mise][mise_link] for managing non-Ruby tool versions.
     - **[zsh-syntax-highlighting][zsh_sh_link]** — highlights commands as you type
     - **[zsh-autosuggestions][zsh_as_link]** — suggests commands from history as you type
 
+1. Select the iTerm2 profile
+
+    `homesick link` puts a dynamic profile at
+    `~/Library/Application Support/iTerm2/DynamicProfiles/main.json`. iTerm2 reads that directory
+    at launch and again whenever a file in it changes, so the profile shows up with no import
+    step — but it does not become the default on its own.
+
+    **Settings → Profiles**, select **Matt (dotfiles)**, then **Other Actions… → Set as Default**.
+
+    Dynamic profiles are read-only in iTerm2's UI. Changing one means editing `main.json` in this
+    repository, which is the point of keeping it here rather than in iTerm2's own preferences.
+
 1. Install [Vundle][vundle_link] and run the Vim plugin installer
 
+    Vundle is not itself installed by Vundle: `.vimrc` adds `~/.vim/bundle/Vundle.vim` to the
+    runtime path and calls into it, so that clone has to exist before Vim can install anything.
+
     ```shell
+    git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+
     cd ~/.homesick/repos/dotfiles
     zsh init.zsh
     ```
 
-    This installs Vundle plugins for MacVim. Neovim (also in the Brewfile) uses a separate
-    configuration.
+    This installs Vundle plugins for MacVim. Neovim is in the Brewfile but is not configured here.
 
 1. Set up Git config
 
+    `home/.gitconfig` carries no `[user]` section on purpose — it ends with an include instead:
+
+    ```gitconfig
+    [include]
+      path = ~/.gitconfig.local
+    ```
+
+    The identity belongs in that file, which this repository does not track. `git config --global`
+    would put it in `~/.gitconfig`, and Homesick has symlinked that to the tracked copy: Git
+    resolves the symlink and writes the name and email into this public repository. Name the
+    include file explicitly instead:
+
     ```shell
     # Insert appropriate values
-    git config --global user.name "$GIT_AUTHOR_NAME"
-    git config --global user.email "$GIT_AUTHOR_EMAIL"
+    git config --file ~/.gitconfig.local user.name "$GIT_AUTHOR_NAME"
+    git config --file ~/.gitconfig.local user.email "$GIT_AUTHOR_EMAIL"
     ```
+
+    GitHub Desktop writes the same two settings the same wrong way from its first-run **Configure
+    Git** screen, prefilled from the signed-in account and without asking. Skip that screen, or undo
+    it afterwards — a `[user]` section appended to `home/.gitconfig` is what it leaves behind, and a
+    `git diff` in the castle is where it surfaces:
+
+    ```shell
+    cd ~/.homesick/repos/dotfiles/
+    git diff home/.gitconfig    # a [user] section here is the identity that should have gone local
+    git restore home/.gitconfig # discard it; re-run the `--file` commands above
+    ```
+
+1. Set up an SSH key and `~/.ssh/config`
+
+    Neither the key nor `~/.ssh/config` is tracked here. A private key never belongs in a
+    repository, and the config names one machine's key paths, so both stay local.
+
+    ```shell
+    # Insert appropriate value
+    ssh-keygen -t ed25519 -C "$GIT_AUTHOR_EMAIL"
+    ```
+
+    `~/.ssh/config` is what keeps the passphrase from coming back after every reboot. `UseKeychain`
+    reads it from the macOS Keychain instead of prompting, and `AddKeysToAgent` loads the key into
+    the agent the first time something needs it:
+
+    ```ssh-config
+    Host github.com
+      AddKeysToAgent yes
+      UseKeychain yes
+      IdentityFile ~/.ssh/id_ed25519
+    ```
+
+    ```shell
+    # Store the passphrase in the Keychain, which is what UseKeychain then reads
+    ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+
+    # Upload the public key to GitHub and confirm it authenticates
+    gh ssh-key add ~/.ssh/id_ed25519.pub --title "$(scutil --get ComputerName)"
+    ssh -T git@github.com
+    ```
+
+    `gh ssh-key add` needs the `admin:public_key` scope, which `gh auth login` does not request by
+    default — `gh auth refresh -h github.com -s admin:public_key` adds it to an existing login.
+
+    A successful `ssh -T` greets you by name and **exits 1**, because GitHub never gives the
+    connection a shell. That is the expected result, not a failure.
+
+    Git operations stay on HTTPS: `.config/gh/config.yml` sets `git_protocol: https`, `.gitconfig`
+    sets `credential.helper = osxkeychain` to go with it, and Homesick clones over HTTPS too. The
+    key is for the things that want SSH regardless — other hosts, deploy access, signing.
 
 1. Store secrets in the macOS Keychain
 
@@ -122,8 +251,8 @@ Uses [mise][mise_link] for managing non-Ruby tool versions.
 ## Updating
 
 ```shell
-# Homebrew (or use the `brewup` alias defined in .zshrc)
-brew upgrade && brew cleanup && brew autoremove && brew doctor
+# Homebrew
+brewup
 
 # RubyGems
 gem update --system
