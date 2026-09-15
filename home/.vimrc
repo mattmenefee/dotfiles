@@ -103,6 +103,15 @@ if !isdirectory(expand(&undodir))
   call mkdir(expand(&undodir), 'p')
 endif
 
+" MacVim loads Ruby only when something first uses it, looking for Homebrew's `ruby` by default.
+" Point it at rbenv's global version instead. Reading the version file directly avoids the ~80ms
+" that shelling out to `rbenv prefix` would add to every launch.
+let s:rbenv_version_file = expand('~/.rbenv/version')
+if exists('+rubydll') && filereadable(s:rbenv_version_file)
+  let s:rbenv_version = get(readfile(s:rbenv_version_file, '', 1), 0, '')
+  let &rubydll = expand('~/.rbenv/versions/') . s:rbenv_version . '/lib/libruby.dylib'
+endif
+
 " Softtabs, 2 spaces
 set tabstop=2
 set shiftwidth=2
