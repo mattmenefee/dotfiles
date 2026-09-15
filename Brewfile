@@ -13,6 +13,7 @@ brew 'zsh-syntax-highlighting'
 
 # Web Development tools
 cask 'firefox'
+cask 'google-chrome'
 cask 'tableplus'
 cask 'miro'
 cask 'zeplin'
@@ -92,6 +93,7 @@ cask 'typora'
 cask 'zoom'
 cask 'cleanmymac'
 
-# For Claude Code
+# Claude
+cask 'claude' # Desktop app; Claude Code comes from Anthropic's installer (see README)
 brew 'gum' # Interactive terminal UI for multi-select menus in Claude Code commands
 

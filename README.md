@@ -86,6 +86,15 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
     with [mise][mise_link], which is installed via Homebrew and activated through the Oh My Zsh
     `mise` plugin.
 
+1. Install [Claude Code][claude_code_link]
+
+    ```shell
+    curl -fsSL https://claude.ai/install.sh | bash
+    ```
+
+    Claude Code isn't in the Brewfile: this installer keeps it updated in the background, and the
+    Homebrew casks don't.
+
 1. Start the database services
 
     ```shell
@@ -307,6 +316,7 @@ self-update with System already selected.
 [homesick_link]: https://github.com/technicalpickles/homesick
 [homebrew_link]: https://brew.sh/
 [brew_bundle_link]: https://docs.brew.sh/Brew-Bundle-and-Brewfile
+[claude_code_link]: https://claude.com/product/claude-code
 [rbenv_link]: https://github.com/rbenv/rbenv
 [rbenv_default_gems_link]: https://github.com/rbenv/rbenv-default-gems
 [vundle_link]: https://github.com/VundleVim/Vundle.vim
