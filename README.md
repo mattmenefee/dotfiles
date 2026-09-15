@@ -1,9 +1,10 @@
 # dotfiles
 
 Personal macOS development environment managed with [Homesick][homesick_link]. Configures Zsh (with
-[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], [tmux][tmux_link], Ruby development
-tools via [rbenv][rbenv_link], and a curated set of [Homebrew][homebrew_link] packages for web
-development. Uses [mise][mise_link] for managing non-Ruby tool versions.
+[Oh My Zsh][oh_my_zsh_link]), Neovim (still using [Vundle][vundle_link] for now — migration in
+progress), [tmux][tmux_link], Ruby development tools via [rbenv][rbenv_link], and a curated set of
+[Homebrew][homebrew_link] packages for web development. Uses [mise][mise_link] for managing non-Ruby
+tool versions.
 
 tmux key bindings and options are documented inline in `home/.tmux.conf`.
 
@@ -140,10 +141,10 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
     Dynamic profiles are read-only in iTerm2's UI. Changing one means editing `main.json` in this
     repository, which is the point of keeping it here rather than in iTerm2's own preferences.
 
-1. Install [Vundle][vundle_link] and run the Vim plugin installer
+1. Install [Vundle][vundle_link] and run the Neovim plugin installer
 
-    Vundle is not itself installed by Vundle: `.vimrc` adds `~/.vim/bundle/Vundle.vim` to the
-    runtime path and calls into it, so that clone has to exist before Vim can install anything.
+    Vundle is not itself installed by Vundle: `init.vim` adds `~/.vim/bundle/Vundle.vim` to the
+    runtime path and calls into it, so that clone has to exist before Neovim can install anything.
 
     ```shell
     git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
@@ -152,7 +153,8 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
     zsh init.zsh
     ```
 
-    This installs Vundle plugins for MacVim. Neovim is in the Brewfile but is not configured here.
+    This installs Vundle plugins for Neovim from `~/.config/nvim/init.vim`. Vundle is
+    transitional — see [`PLAN.md`](PLAN.md) for the migration to [lazy.nvim][lazy_link].
 
 1. Set up Git config
 
@@ -311,6 +313,7 @@ self-update with System already selected.
 [rbenv_default_gems_link]: https://github.com/rbenv/rbenv-default-gems
 [vundle_link]: https://github.com/VundleVim/Vundle.vim
 [tmux_link]: https://github.com/tmux/tmux
+[lazy_link]: https://github.com/folke/lazy.nvim
 [mise_link]: https://mise.jdx.dev/
 [docker_settings_link]: https://docs.docker.com/desktop/settings-and-maintenance/settings/
 [omz_bundler]: https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/bundler
