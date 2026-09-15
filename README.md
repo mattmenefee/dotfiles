@@ -219,13 +219,18 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
     # Store the passphrase in the Keychain, which is what UseKeychain then reads
     ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 
+    # Log in, then grant the scope that uploading a key requires
+    gh auth login
+    gh auth refresh -h github.com -s admin:public_key
+
     # Upload the public key to GitHub and confirm it authenticates
     gh ssh-key add ~/.ssh/id_ed25519.pub --title "$(scutil --get ComputerName)"
     ssh -T git@github.com
     ```
 
-    `gh ssh-key add` needs the `admin:public_key` scope, which `gh auth login` does not request by
-    default — `gh auth refresh -h github.com -s admin:public_key` adds it to an existing login.
+    `gh auth login` does not request `admin:public_key` by default, so a `gh ssh-key add` run before
+    the `refresh` fails and uploads nothing. Granting the scope afterward does not retry it: run
+    `gh ssh-key add` again, or `ssh -T` keeps answering `Permission denied (publickey)`.
 
     A successful `ssh -T` greets you by name and **exits 1**, because GitHub never gives the
     connection a shell. That is the expected result, not a failure.
