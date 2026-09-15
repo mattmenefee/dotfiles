@@ -271,8 +271,7 @@ gem update --system
 # Bundler
 gem update bundler
 
-# mise (non-Ruby tool versions)
-mise self-update
+# mise tools (mise itself is updated by brewup)
 mise upgrade
 
 # Dotfiles via Homesick
