@@ -23,7 +23,8 @@ auto-created.
 ### Changes
 
 1. Create `home/.config/nvim/init.vim` containing the full former `.vimrc`
-   contents, **minus** the `undodir` block.
+   contents, **minus** the `undodir` block and the `rubydll` block added in
+   #135 (Neovim has no `rubydll` option, so that block is dead code there).
    - First line: `set runtimepath^=~/.vim runtimepath+=~/.vim/after` so Vundle
      continues finding `~/.vim/bundle/`.
    - Second line: `let &packpath = &runtimepath`.
@@ -31,7 +32,9 @@ auto-created.
 3. Update `home/.zshrc` alias: `alias vim='nvim'` (was `alias vim='mvim -v'`).
 4. Update `init.zsh` bootstrap: `nvim +PluginInstall +qall` (was
    `vim +BundleInstall +qall`).
-5. Remove `brew 'macvim'` from `Brewfile`.
+5. Remove MacVim from `Brewfile`. Since #135 that line is
+   `cask 'macvim-app'`, not `brew 'macvim'`, so rebasing onto `main` will
+   conflict there. Resolve it by deleting the line.
 6. Update `README.md`:
    - Replace "Vim via Vundle" framing with "Neovim via Vundle (transitional)".
    - Update the bootstrap step that says "installs Vundle plugins for MacVim".
@@ -40,7 +43,9 @@ auto-created.
 
 - [ ] `rm -rf ~/.vim/undo` (the workaround directory from #63 is no longer
       written to)
-- [ ] `brew uninstall macvim` after confirming the alias swap works
+- [ ] `brew uninstall --cask macvim-app` after confirming the alias swap works
+      (`brew uninstall macvim` on a machine still on the formula from before
+      #135)
 - [ ] Verify `homesick link dotfiles` produces no `.un~` symlinks on a fresh
       run (closes #64)
 
