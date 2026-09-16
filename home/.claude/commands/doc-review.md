@@ -709,13 +709,13 @@ shell glob, and match `local-review*.md` rather than the exact name:
 
 ```bash
 root="$(git rev-parse --show-toplevel)"
-me="$(id -un)"
+me="$(id -un | sed 's/[][\.*^$+?(){}|/]/\\&/g')"
 
 # One pattern set, used by every pass, so the passes cannot drift apart.
 paths='/users/|/home/|/tmp/|/var/folders/|/volumes/|/root/|-users-'
 paths="$paths"'|[a-z]:\\users|\\wsl|\$\{?home|~[a-z_][a-z0-9_-]*/|\.(internal|local|corp|lan)'
 hosts='(^|[^0-9.])(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.0\.0\.1)'
-ident="$paths|$hosts|$me|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
+ident="$paths|$hosts|(^|[^a-z0-9])$me([^a-z0-9]|$)|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
 secrets='-----begin [a-z ]*private key-----'
 secrets="$secrets"'|(api[_-]?key|secret|token|password|bearer)[[:space:]]*[:=]'
 secrets="$secrets"'|[a-z][a-z0-9+.-]*://[^[:space:]/]+:[^[:space:]@]+@'
@@ -771,6 +771,14 @@ own per-project directories take the form `-Users-<name>--some-repo` — and a l
 caught by the scan, then passes clean after a `~`-prefix rewrite while still naming the user twice.
 A remediation its own verifier certifies as safe is worse than none, because it ends the reviewer's
 attention. `$me` is in the pattern set for exactly this reason.
+
+Match the account name as a whole word, bounded by anything that is not a letter or digit. A bare
+substring fires inside ordinary words — an account named `ann` blocks on "annual" and "planning" —
+so the scrub stops clean posts, and a gate that routinely cries wolf teaches the reader to override
+it. The boundary still catches every form that names the user: `/Users/<name>/`, dash-encoded
+`-Users-<name>--repo`, `<name>@host` and the bare name in prose. The name is escaped before it
+enters the pattern, since an account name can contain `.` or other characters `grep -E` would
+otherwise read as syntax.
 
 **Re-run `scan` after rewriting, and treat any remaining output as blocking.** The rewrite step is
 performed by the same agent that is judging whether it worked, so without a second pass its belief
