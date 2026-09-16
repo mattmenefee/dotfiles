@@ -24,7 +24,7 @@ will not spell itself the same way twice, so a derived name alone would strand t
 silently skip **Merging with an Existing Handoff**:
 
 ```bash
-ls *-HANDOFF.md 2>/dev/null
+find . -maxdepth 1 -name '*-HANDOFF.md'
 ```
 
 - **Exactly one exists and it covers this work** — merge into it, whatever name the topic would have
@@ -401,8 +401,8 @@ clobber it:
 ## Process
 
 1. Determine the topic and target path from `$ARGUMENTS` (or from the session's work), checking for
-   an existing handoff with `ls *-HANDOFF.md` first; if one covers this work, read it and follow
-   **Merging with an Existing Handoff**
+   an existing handoff with `find . -maxdepth 1 -name '*-HANDOFF.md'` first; if one covers this work,
+   read it and follow **Merging with an Existing Handoff**
 1. Gather repository, pull request, issue, and check state using the commands above, recording your
    own model from your environment context
 1. Re-run verification commands whose recorded results would otherwise be stale
