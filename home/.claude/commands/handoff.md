@@ -60,7 +60,7 @@ Use `--no-pager` on Git commands and `--json` on `gh` so output is machine-reada
 waits for input. (`gh` has no `--no-pager` flag; set `GH_PAGER=cat` if a pager ever appears.)
 
 Resolve the base branch first — the commit ranges below need it, and so does the **Branch** header
-line. Never hardcode `main`: this command runs against any repository, including ones that ship from
+row. Never hardcode `main`: this command runs against any repository, including ones that ship from
 `develop` and branches stacked on other feature branches.
 
 ```bash
@@ -68,6 +68,7 @@ base=$(gh pr view --json baseRefName --jq .baseRefName 2>/dev/null) \
   || base=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null) \
   || base=main
 
+git rev-parse --short HEAD
 git --no-pager status --short --branch
 git --no-pager log --oneline "$base"..HEAD
 git --no-pager diff --stat
@@ -84,7 +85,7 @@ work that has a pull request. It fails silently, succeeding with no output, so t
 would report "none" precisely when there is most to find.
 
 The pull request body, the `closingIssuesReferences` field, and commit trailers are where issue
-identifiers hide — harvest them for the **Issues** header line and **References** rather than
+identifiers hide — harvest them for the **Issues** header row and **References** rather than
 reporting "none" by default.
 
 Re-run any test or lint command whose result you intend to record, unless it was run since the last
@@ -100,7 +101,7 @@ unavailable. Only the resolved model identifies the capability behind the file.
 
 Record the ID verbatim, including any context-window or snapshot suffix (e.g. `claude-opus-5[1m]`).
 If you cannot determine your own model, record `unknown` — a wrong entry is worse than a missing
-one. This value populates the **Captured by** header line and the **Handoff History** entry for
+one. This value populates the **Captured by** header row and the **Handoff History** entry for
 *this* pass. **Never rewrite the model recorded on an earlier entry** — each entry is a permanent
 record of the pass that produced it.
 
@@ -118,22 +119,29 @@ indistinguishable from a section the author forgot, while a present one reading 
 been run since the last edit" is the honest signal the rest of this file demands.
 
 The sections appear as `###` headings here because they sit under this command file's own
-`## Document Structure`. **In the generated file the title is an H1 and every section below is an
-H2** — `## Start Here`, `## Objective`, `## Next Steps`, and so on.
+`## Document Structure`. **In the generated file the title is an H1, the Header table sits directly
+under it with no heading of its own and every other section below is an H2 in the order listed** —
+`## Start Here`, `## Objective`, `## Next Steps`, and so on.
 
 ### Header
 
 ```markdown
 # Handoff: <one-line description of the work>
 
-**Status:** In progress | Blocked | Ready for review | Paused
-**Created:** YYYY-MM-DD
-**Updated:** YYYY-MM-DD
-**Branch:** `<branch>` (base: `<base-branch>`)
-**Pull request:** <full url, or "none opened">
-**Issues:** <full urls for the Linear and GitHub issues this work tracks, or "none">
-**Captured by:** <display name> (`<exact-model-id>`)
+| | |
+|---|---|
+| **Status** | <In progress, Blocked, Ready for review or Paused> |
+| **Created** | YYYY-MM-DD |
+| **Updated** | YYYY-MM-DD |
+| **Branch** | `<branch>` (base: `<base-branch>`) |
+| **Commit** | `<short sha>` at capture |
+| **Pull request** | <full URL, or "none opened"> |
+| **Issues** | <full URLs for the Linear and GitHub issues this work tracks, or "none"> |
+| **Captured by** | <display name> (`<exact-model-id>`) |
 ```
+
+The header is a two-column table so each field renders on its own row; plain consecutive lines
+collapse into a single run-on line in any rendered view.
 
 Give **full URLs**, not bare identifiers: `ENG-412` and `#88` are not clickable and are ambiguous
 across projects and repositories. Put the identifier and the URL together —
@@ -156,6 +164,9 @@ is read the checkout may be somewhere else entirely, and the branch named here i
 below describes. The base branch is the `$base` resolved in **Gathering State** — record what was
 resolved rather than assuming `main`.
 
+Record **Commit** from `git rev-parse --short HEAD` in **Gathering State**. It is the one field that
+tells a later reader whether the branch has moved since capture.
+
 ### Start Here
 
 Three or four sentences orienting the reader: what this work is, how far it got, and what the very
@@ -168,7 +179,8 @@ git --no-pager log --oneline -5
 ```
 
 Call out explicitly that the state below was accurate at capture time and should be re-verified
-before it is trusted.
+before it is trusted, starting with the header's **Commit**: if the first line of `git log` names a
+different commit, the branch has moved since capture.
 
 ### Objective
 
@@ -372,8 +384,8 @@ clobber it:
 1. Append a new **Handoff History** entry rather than replacing the old one, naming your own model
    and leaving every earlier entry's model untouched
 1. Move finished **Next Steps** into **Completed Work**, preserving their order
-1. Update **Status**, **Updated**, **Branch**, **Pull request**, **Issues**, **Captured by**, and
-   **Current State** to current reality — leaving **Created** untouched
+1. Update **Status**, **Updated**, **Branch**, **Commit**, **Pull request**, **Issues**,
+   **Captured by**, and **Current State** to current reality — leaving **Created** untouched
 1. Refresh **Verification** — re-run the recorded commands, or mark each result "not re-run since
    `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
