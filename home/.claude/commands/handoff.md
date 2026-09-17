@@ -24,21 +24,27 @@ will not spell itself the same way twice, so a derived name alone would strand t
 silently skip **Merging with an Existing Handoff**:
 
 ```bash
-find . -maxdepth 1 -name '*-HANDOFF.md'
+find "$(git rev-parse --show-toplevel)" -maxdepth 1 -name '*-HANDOFF.md'
 ```
 
 `find` rather than `ls *-HANDOFF.md 2>/dev/null`: the redirect hides a real error on a name
-beginning with `-`, and under zsh an unmatched glob is a shell error that prints regardless.
+beginning with `-`, and under zsh an unmatched glob is a shell error that prints regardless. Anchor
+it to the repository root rather than `.`: handoffs live in the root, and from a subdirectory
+`find .` prints nothing and exits 0, which is indistinguishable from there being no handoff.
 
-- **Exactly one exists and it covers this work** — merge into it, whatever name the topic would have
-  derived. Do not rename it.
-- **Several exist** — ask the user which to update rather than guessing.
-- **None matches** — derive a fresh name.
+- **One covers this work** — merge into it, whatever name the topic would have derived. Do not
+  rename it.
+- **More than one might** — ask the user which to update rather than guessing.
+- **None covers this work** — derive a fresh name, even if handoffs for other work exist.
+
+An explicit `.md` path in `$ARGUMENTS` wins over the lookup: write to that path, merging if the file
+already exists, and tell the user about any other handoff the lookup found for this work. Warn them
+when the path does not end in `-HANDOFF.md`, because a later pass's lookup will not find it.
 
 Write to a **Markdown file in the project root**, unless `$ARGUMENTS` supplied an explicit `.md`
 path (see **Arguments**), in which case use that path verbatim. Derive the filename from the topic:
-lowercase it, convert spaces to dashes, and append `-HANDOFF.md` (e.g. `Payment retry backoff` →
-`payment-retry-backoff-HANDOFF.md`).
+lowercase it, convert spaces to dashes, drop any character other than letters, digits and dashes
+and append `-HANDOFF.md` (e.g. `Payment retry backoff` → `payment-retry-backoff-HANDOFF.md`).
 
 **Never `git add` or commit this file** unless the user explicitly asks. It is a working artifact,
 not part of the change. Leave it untracked; do not add it to `.gitignore` on your own initiative
@@ -425,7 +431,7 @@ clobber it:
 ## Process
 
 1. Determine the topic and target path from `$ARGUMENTS` (or from the session's work), checking for
-   an existing handoff with `find . -maxdepth 1 -name '*-HANDOFF.md'` first; if one covers this
+   an existing handoff with the root-anchored `find` in **Output File** first; if one covers this
    work, read it and follow **Merging with an Existing Handoff**
 1. Gather repository, pull request, issue, and check state using the commands above, recording your
    own model from your environment context
