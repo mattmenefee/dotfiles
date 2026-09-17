@@ -206,8 +206,8 @@ The state of the working tree and the world around it:
 Every bullet that states a fact about the branch, the pull request, CI or an issue names the command
 whose output it summarizes, in the bullet or beside the section — `git --no-pager status --short
 --branch`, `gh pr view --json …`, `mcp__linear-server__get_issue` — and states nothing the session
-did not read from such a command in this pass. A claim written from recollection is the kind that
-gets retracted a session later.
+did not read from such a command in this pass. This section is what `/resume-handoff` verifies
+first, and a claim written from recollection is the kind that gets retracted a session later.
 
 ### Environment & Setup
 
@@ -339,12 +339,14 @@ the pattern being followed.
 ### Resume Prompt
 
 A fenced `text` block the user can paste into a fresh session to start the next agent, naming this
-file and the first task:
+file and the first task. It opens with `/resume-handoff`, which reconciles the file against git, the
+pull request and Linear before anything in it is acted on — a handoff describes a tree that keeps
+moving after capture:
 
 ````markdown
 ```text
-Read payment-retry-backoff-HANDOFF.md in the project root, then continue the work from
-"Next Steps". Start with item 1 and confirm the plan before editing.
+Run /resume-handoff payment-retry-backoff-HANDOFF.md, then continue the work from its "Next Steps".
+Start with item 1 and confirm the plan before editing.
 ```
 ````
 
