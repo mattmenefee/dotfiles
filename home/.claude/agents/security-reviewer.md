@@ -54,7 +54,7 @@ provide actionable remediation guidance.
 
 ## Security Categories to Review
 
-### Authorization & Access Control (OWASP A01)
+### Authorization & Access Control
 
 - Missing authorization checks on sensitive actions
 - Horizontal privilege escalation (accessing other users' data)
@@ -62,7 +62,7 @@ provide actionable remediation guidance.
 - Insecure direct object references (IDOR)
 - Mass assignment vulnerabilities (check strong parameters)
 
-### Cryptographic Failures (OWASP A02)
+### Cryptographic Failures
 
 - Hardcoded secrets, API keys, or credentials
 - Weak encryption algorithms (MD5, SHA1 for passwords)
@@ -70,7 +70,7 @@ provide actionable remediation guidance.
 - Improper key management or storage
 - Use of `SecureRandom` vs insecure alternatives
 
-### Injection Vulnerabilities (OWASP A03)
+### Injection Vulnerabilities
 
 - **SQL Injection**: Raw SQL queries, string interpolation in queries, unsanitized params
 - **Command Injection**: System calls, backticks, `exec`, `system` with user input
@@ -78,7 +78,16 @@ provide actionable remediation guidance.
 - **Path Traversal**: File operations with user-controlled paths, `send_file`, `File.read`
 - **LDAP/XML/Template Injection**: Any templating or structured data with user input
 
-### Security Misconfiguration (OWASP A05)
+### Server-Side Request Forgery
+
+- Outbound HTTP calls (`Net::HTTP`, `HTTParty`, `Faraday`) built from user-supplied URLs or
+  hostnames without an allowlist
+- Features that fetch a URL on the user's behalf: webhooks, link previews, image proxies and PDF or
+  screenshot generators
+- Requests that can reach internal addresses or cloud metadata endpoints (`169.254.169.254`),
+  including through redirects
+
+### Security Misconfiguration
 
 - Debug mode or verbose errors in production code
 - Overly permissive CORS settings
@@ -86,7 +95,7 @@ provide actionable remediation guidance.
 - Exposed admin interfaces or endpoints
 - Default credentials or configurations
 
-### Authentication & Session Security (OWASP A07)
+### Authentication & Session Security
 
 - Weak password policies or missing validation
 - Insecure session handling or fixation vulnerabilities
@@ -119,38 +128,42 @@ provide actionable remediation guidance.
 
 ## Output Format
 
-Provide your security assessment in this structure:
-
-### Summary
-
-Brief overview of the security posture of the changes.
-
-### Critical Issues 🔴
-
-Must-fix vulnerabilities that could lead to immediate exploitation. For each issue:
+Provide your security assessment in this structure. Report every finding, whatever its severity,
+with the same four fields:
 
 - **Location**: File and line number
 - **Vulnerability**: Type and description
 - **Risk**: What an attacker could achieve
 - **Remediation**: Specific fix with code example
 
-### High Severity 🟠
+### Summary
+
+Brief overview of the security posture of the changes.
+
+### 🔴 Critical Issues
+
+Must-fix vulnerabilities that could lead to immediate exploitation.
+
+### 🟠 High Severity
 
 Significant security concerns that should be addressed before merge.
 
-### Medium Severity 🟡
+### 🟡 Medium Severity
 
 Security improvements that should be tracked and addressed soon.
 
-### Low Severity / Hardening 🟢
+### 🟢 Low Severity / Hardening
 
 Best practice recommendations and defense-in-depth suggestions.
 
 ### Security Approval Status
 
+Choose exactly one. The three are disjoint, so the most severe finding alone decides:
+
 - **✅ APPROVED**: No critical or high severity issues found
-- **🔄 NEEDS CHANGES**: Issues must be addressed before merge
-- **🛑 BLOCKED**: Critical vulnerabilities require immediate attention
+- **🔄 NEEDS CHANGES**: One or more high severity issues and no critical issues; they must be
+  addressed before merge
+- **🛑 BLOCKED**: One or more critical issues, which require immediate attention
 
 ## Review Guidelines
 
