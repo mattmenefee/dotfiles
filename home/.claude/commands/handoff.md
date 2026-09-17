@@ -5,7 +5,7 @@ Export everything a future agent needs to resume this session's work to a Markdo
 **Topic (optional):** `$ARGUMENTS`
 
 The reader is an agent with **zero memory of this conversation**. It will have the repository, the
-`CLAUDE.md` files that load automatically (the user's global one and the project's, if any), and
+`CLAUDE.md` files that load automatically (the user's global one and the project's, if any) and
 this file — nothing else. Write accordingly: everything that only exists in this session's
 conversation must survive into the file, and everything already recorded elsewhere should be pointed
 at rather than copied.
@@ -13,7 +13,7 @@ at rather than copied.
 ## Arguments
 
 - **No arguments** — derive the topic from the session's work and write a new handoff (or merge into
-  the existing one, see "Merging with an Existing Handoff").
+  the existing one, see **Merging with an Existing Handoff**).
 - **A topic or slug** (e.g. `payment retry backoff`) — use it for the title and filename.
 - **A path ending in `.md`** — write to that exact path instead of the derived one.
 
@@ -156,7 +156,7 @@ inside the ID already carries that, and keeping both nests parentheses inside pa
 ## Document Structure
 
 Include every section below that has content. Omit a section entirely rather than filling it with
-"N/A" — except **Completed Work**, **Verification**, **Open Questions**, and **Next Steps**, which
+"N/A" — except **Completed Work**, **Verification**, **Open Questions** and **Next Steps**, which
 always appear (write "None" if genuinely empty, because their absence is itself information the
 reader needs). **Verification** earns its place on that list the hard way: an omitted one is
 indistinguishable from a section the author forgot, while a present one reading "None — nothing has
@@ -165,7 +165,7 @@ been run since the last edit" is the honest signal the rest of this file demands
 The sections appear as `###` headings here because they sit under this command file's own
 `## Document Structure`. **In the generated file the title is an H1, the Header table sits directly
 under it with no heading of its own and every other section below is an H2 in the order listed** —
-`## Start Here`, `## Objective`, `## Next Steps`, and so on.
+`## Start Here`, `## Objective`, `## Next Steps` and so on.
 
 ### Header
 
@@ -200,7 +200,7 @@ On the first pass **Updated** matches **Created**; every later pass advances **U
 **Created** alone, so the gap between the two shows at a glance how long the work has been running
 and how fresh the state is.
 
-Use absolute dates — never "today", "yesterday", or "last week", which mislead whenever the file is
+Use absolute dates — never "today", "yesterday" or "last week", which mislead whenever the file is
 read.
 
 Record the branch even though the reader can run `git branch --show-current`: by the time the file
@@ -214,12 +214,12 @@ tells a later reader whether the branch has moved since capture.
 
 ### Start Here
 
-Three or four sentences orienting the reader: what this work is, how far it got, and what the very
+Three or four sentences orienting the reader: what this work is, how far it got and what the very
 first action should be. Then the re-orientation commands, since the repository may have moved on
 since capture:
 
 ```bash
-git status --short --branch
+git --no-pager status --short --branch
 git --no-pager log --oneline -5
 ```
 
@@ -253,10 +253,10 @@ agreed with the user) so it isn't mistaken for finished.
 
 The state of the working tree and the world around it:
 
-- Files modified, staged, and untracked — and which of those belong to this work versus pre-existing
+- Files modified, staged and untracked — and which of those belong to this work versus pre-existing
   local changes that must not be swept into a commit
 - Commits made on this branch, with subjects
-- Stashes, worktrees, or branches created along the way
+- Stashes, worktrees or branches created along the way
 - Pull request state: number, review decision, CI status, unresolved comments
 - Anything left in a knowingly broken or half-migrated state, stated plainly
 
@@ -272,7 +272,7 @@ apart from checked ones.
 
 Only what the reader could not infer: services that must be running, migrations pending, seed data
 required, feature flags toggled, environment variables needed (**names only — never values**),
-non-obvious tool versions, and any local setup performed during the session.
+non-obvious tool versions and any local setup performed during the session.
 
 ### Key Files & Entry Points
 
@@ -286,12 +286,12 @@ that exists nowhere on disk — a snippet the user supplied, or a command output
 the branch history at ship time, and `/ship-it` deletes all of them once it has posted them to the
 pull request — so a handoff that names one as its authoritative record is describing a file that
 shipping will remove. Mark any such reference as branch-local and deletable, and carry the
-load-bearing parts into this file: the conclusions, the open items, and the reasoning the next agent
+load-bearing parts into this file: the conclusions, the open items and the reasoning the next agent
 would otherwise lose. Point at the artifact for the detail; never depend on it for the substance.
 
 ### Decisions & Rationale
 
-Every non-obvious choice, the alternatives considered, and why they were rejected. This is the
+Every non-obvious choice, the alternatives considered and why they were rejected. This is the
 section that most justifies the file's existence: the diff shows what was decided, and nothing but
 this shows *why*, so without it the next agent relitigates settled questions and may quietly undo
 deliberate choices.
@@ -339,7 +339,7 @@ Questions already put to the user and still unanswered belong here, phrased as t
 ### Next Steps
 
 A concrete, ordered checklist. Each item must be actionable without further context — name the file,
-the function, and the intended change:
+the function and the intended change:
 
 ```markdown
 - [ ] 1. Cap `PaymentRetry#backoff` (`app/models/payment_retry.rb:31`) at 5 attempts, matching
@@ -392,7 +392,7 @@ are the one exception — a short SHA resolves with `git show` and needs no URL:
 Repeat the pull request and issue links from the header here rather than pointing back at it — the
 header is scanned, this section is worked from, and a reader following one should never have to
 scroll to the other. Include anything consulted during the session that shaped the work: upstream
-issues, vendor documentation, Stack Overflow answers, and prior commits or pull requests that set
+issues, vendor documentation, Stack Overflow answers and prior commits or pull requests that set
 the pattern being followed.
 
 ### Resume Prompt
@@ -435,7 +435,7 @@ clobber it:
    **Start Here** and the **Resume Prompt** to point at it — they are the first things the next
    agent reads, and left alone they send it back to work that is already done
 1. Update **Status**, **Updated**, **Branch**, **Commit**, **Pull request**, **Issues**,
-   **Captured by**, and **Current State** to current reality — leaving **Created** untouched
+   **Captured by** and **Current State** to current reality — leaving **Created** untouched
 1. Refresh **Verification** — re-run the recorded commands, or mark each result "not re-run since
    `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
@@ -448,12 +448,12 @@ clobber it:
    thought it was fine
 1. Resolve **Open Questions** that have since been answered — record the answer in **Decisions &
    Rationale** rather than deleting the question
-1. Preserve **Dead Ends**, **Decisions & Rationale**, and **Insights & Learnings** in full; these
+1. Preserve **Dead Ends**, **Decisions & Rationale** and **Insights & Learnings** in full; these
    only ever accumulate, because a dead end that is deleted is a dead end that gets retried
 
 ## Writing Guidelines
 
-- **Write for a stranger.** No "the fix we discussed", "as mentioned above", or "the file I edited"
+- **Write for a stranger.** No "the fix we discussed", "as mentioned above" or "the file I edited"
   — name the thing every time. The reader cannot resolve a reference to a conversation it never saw.
 - **Separate fact from hypothesis.** Mark unverified reasoning as such ("likely", "not yet
   confirmed"). A confident-sounding guess recorded as fact is how a handoff actively causes harm
@@ -462,7 +462,7 @@ clobber it:
   running tests.
 - **Point, don't paste.** The repository travels with the file; long code blocks only go stale. Cite
   `path:line` instead.
-- **Never include secrets.** No API keys, tokens, passwords, connection strings, or personal data —
+- **Never include secrets.** No API keys, tokens, passwords, connection strings or personal data —
   name the variable and where its value comes from.
 - **Absolute dates, portable paths.** Write absolute dates, never relative ones. Write paths
   repository-relative, or `~`-prefixed for a file outside the repository — never an absolute path
@@ -479,7 +479,7 @@ clobber it:
 1. Determine the topic and target path from `$ARGUMENTS` (or from the session's work), checking for
    an existing handoff with the root-anchored `find` in **Output File** first; if one covers this
    work, read it and follow **Merging with an Existing Handoff**
-1. Gather repository, pull request, issue, and check state using the commands above, recording your
+1. Gather repository, pull request, issue and check state using the commands above, recording your
    own model from your environment context
 1. Re-run verification commands whose recorded results would otherwise be stale
 1. Draft the document, working backwards from **Next Steps** — deciding what the next agent must do
@@ -488,5 +488,5 @@ clobber it:
 1. Re-read what was written and ask, for each section, whether it survives without the conversation;
    rewrite anything that does not
 1. Report to the user: the file path, the status, a one-line summary of what is done and what is
-   next, and the resume prompt as a copy-pasteable block
+   next and the resume prompt as a copy-pasteable block
 1. Do **not** stage or commit the file unless the user explicitly asks (see **Output File**)
