@@ -5,7 +5,7 @@ Export everything a future agent needs to resume this session's work to a Markdo
 **Topic (optional):** `$ARGUMENTS`
 
 The reader is an agent with **zero memory of this conversation**. It will have the repository, the
-`CLAUDE.md` files that load automatically (the user's global one and the project's, if any), and
+`CLAUDE.md` files that load automatically (the user's global one and the project's, if any) and
 this file — nothing else. Write accordingly: everything that only exists in this session's
 conversation must survive into the file, and everything already recorded elsewhere should be pointed
 at rather than copied.
@@ -13,7 +13,7 @@ at rather than copied.
 ## Arguments
 
 - **No arguments** — derive the topic from the session's work and write a new handoff (or merge into
-  the existing one, see "Merging with an Existing Handoff").
+  the existing one, see **Merging with an Existing Handoff**).
 - **A topic or slug** (e.g. `payment retry backoff`) — use it for the title and filename.
 - **A path ending in `.md`** — write to that exact path instead of the derived one.
 
@@ -24,30 +24,43 @@ will not spell itself the same way twice, so a derived name alone would strand t
 silently skip **Merging with an Existing Handoff**:
 
 ```bash
-find . -maxdepth 1 -name '*-HANDOFF.md'
+find "$(git rev-parse --show-toplevel)" -maxdepth 1 -name '*-HANDOFF.md'
 ```
 
-- **Exactly one exists and it covers this work** — merge into it, whatever name the topic would have
-  derived. Do not rename it.
-- **Several exist** — ask the user which to update rather than guessing.
-- **None matches** — derive a fresh name.
+`find` rather than `ls *-HANDOFF.md 2>/dev/null`: the redirect hides a real error on a name
+beginning with `-`, and under zsh an unmatched glob is a shell error that prints regardless. Anchor
+it to the repository root rather than `.`: handoffs live in the root, and from a subdirectory
+`find .` prints nothing and exits 0, which is indistinguishable from there being no handoff.
+
+- **One covers this work** — merge into it, whatever name the topic would have derived. Do not
+  rename it.
+- **More than one might** — ask the user which to update rather than guessing.
+- **None covers this work** — derive a fresh name, even if handoffs for other work exist.
+
+An explicit `.md` path in `$ARGUMENTS` wins over the lookup: write to that path, merging if the file
+already exists, and tell the user about any other handoff the lookup found for this work. Warn them
+when the path does not end in `-HANDOFF.md`, because a later pass's lookup will not find it.
 
 Write to a **Markdown file in the project root**, unless `$ARGUMENTS` supplied an explicit `.md`
 path (see **Arguments**), in which case use that path verbatim. Derive the filename from the topic:
-lowercase it, convert spaces to dashes, and append `-HANDOFF.md` (e.g. `Payment retry backoff` →
-`payment-retry-backoff-HANDOFF.md`).
+lowercase it, convert spaces to dashes, drop any character other than letters, digits and dashes
+and append `-HANDOFF.md` (e.g. `Payment retry backoff` → `payment-retry-backoff-HANDOFF.md`).
 
 **Never `git add` or commit this file** unless the user explicitly asks. It is a working artifact,
 not part of the change. Leave it untracked; do not add it to `.gitignore` on your own initiative
 either.
 
-`/ship-it` treats a handoff differently from `local-review.md`, `*-DOC-REVIEW.md` and `*-PLAN.md`,
-which it posts whole and deletes. It posts only the durable sections — **Decisions & Rationale**,
-**Insights & Learnings**, **Dead Ends**, still-open **Open Questions** and **References** — as a
-collapsible pull request comment, then asks whether to delete the file. The rest of a handoff
-describes a working tree that merging makes obsolete, and a handoff for work that continues past
-the pull request outlives it. Write the durable sections knowing they are the part that will be
-read after merge.
+`/ship-it` posts review and plan artifacts whole and then deletes them: `*local-review*.md` (an
+identifier may sit on either side of the name, as in `payments-local-review.md` or
+`local-review-2.md`), `*-DOC-REVIEW.md` and `*-PLAN.md` (or a legacy `PLAN.md`).
+
+A handoff is treated differently. `/ship-it` posts only its durable sections — **Decisions &
+Rationale**, **Insights & Learnings**, **Dead Ends**, still-open **Open Questions** and
+**References** — as a collapsible pull request comment, then asks whether to delete the file. The
+rest of a handoff describes a working tree that merging makes obsolete, and a handoff for work that
+continues past the pull request outlives the pull request. Write the durable sections knowing they
+are the part that will be read after merge, and that `/ship-it` publishes them to the pull request:
+name no private repository, internal host or personal data in them.
 
 ## Gathering State
 
@@ -56,22 +69,42 @@ Use `--no-pager` on Git commands and `--json` on `gh` so output is machine-reada
 waits for input. (`gh` has no `--no-pager` flag; set `GH_PAGER=cat` if a pager ever appears.)
 
 Resolve the base branch first — the commit ranges below need it, and so does the **Branch** header
-line. Never hardcode `main`: this command runs against any repository, including ones that ship from
-`develop` and branches stacked on other feature branches.
+row. Never hardcode `main`: this command runs against any repository, including ones that ship from
+`develop`. A stacked branch gets its real base only from its pull request; without one the fallback
+is the repository default, so confirm the base with the user or record it as assumed.
 
 ```bash
-base=$(gh pr view --json baseRefName --jq .baseRefName 2>/dev/null) \
-  || base=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null) \
-  || base=main
+gh auth status >/dev/null 2>&1 \
+  || echo "gh unavailable — pull request, CI and issue state not checked"
 
+if base=$(gh pr view --json baseRefName --jq .baseRefName 2>/dev/null); then
+  base_source="pull request"
+elif base=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null); then
+  base_source="repository default"
+else
+  base=main base_source="assumed"
+fi
+echo "base: $base ($base_source)"
+
+range_base=$(git rev-parse --verify --quiet "refs/remotes/origin/$base") \
+  || range_base=$(git rev-parse --verify --quiet "$base") \
+  || echo "base $base not found locally or on origin — commit range not checked"
+
+git rev-parse --short HEAD
 git --no-pager status --short --branch
-git --no-pager log --oneline "$base"..HEAD
 git --no-pager diff --stat
 git --no-pager diff --stat --cached
 git --no-pager stash list
+git --no-pager worktree list
+git --no-pager branch --sort=-committerdate | head -10
 gh pr view --json \
   number,url,state,isDraft,reviewDecision,statusCheckRollup,body,closingIssuesReferences 2>/dev/null
-git --no-pager log --format=%B "$base"..HEAD   # issue references in commit trailers
+gh pr view --json comments,reviews,latestReviews 2>/dev/null
+
+if [ -n "$range_base" ]; then
+  git --no-pager log --oneline "$range_base"..HEAD
+  git --no-pager log --format=%B "$range_base"..HEAD   # issue references in commit trailers
+fi
 ```
 
 Scope the commit ranges to the **base branch**, not `@{upstream}`. `@{upstream}..HEAD` means
@@ -79,9 +112,25 @@ Scope the commit ranges to the **base branch**, not `@{upstream}`. `@{upstream}.
 work that has a pull request. It fails silently, succeeding with no output, so the harvest below
 would report "none" precisely when there is most to find.
 
-The pull request body, the `closingIssuesReferences` field, and commit trailers are where issue
-identifiers hide — harvest them for the **Issues** header line and **References** rather than
-reporting "none" by default.
+Take the range from the remote-tracking base when there is one. A local base branch is often behind
+— a freshly created worktree's usually is — and a range from it attributes every commit merged
+upstream since, with its issue references, to this branch. The block assumes the remote is
+`origin`; substitute the repository's remote if it differs.
+
+Every `gh` call above is silenced, so a pull request that does not exist and a `gh` that is missing,
+unauthenticated or offline print the same nothing. The `gh auth status` check is what tells them
+apart: when it prints its warning, record **Pull request** and **Issues** as "not checked", never
+"none opened" or "none".
+
+The pull request body, the `closingIssuesReferences` field and commit trailers are where issue
+identifiers hide — harvest them for the **Issues** header row and **References** rather than
+reporting "none" by default. Read each identifier's state from its tracker —
+`gh issue view <number> --json state` for GitHub, the Linear MCP server's `get_issue` tool for
+Linear — or record it as not checked.
+
+`gh pr view` lists comments and reviews but not whether a review thread is resolved. When unresolved
+comments matter, query `reviewThreads { isResolved }` through `gh api graphql`; otherwise record
+them as "not checked".
 
 Re-run any test or lint command whose result you intend to record, unless it was run since the last
 relevant edit — a stale "tests pass" is worse than an honest "not run since the last change".
@@ -96,7 +145,7 @@ unavailable. Only the resolved model identifies the capability behind the file.
 
 Record the ID verbatim, including any context-window or snapshot suffix (e.g. `claude-opus-5[1m]`).
 If you cannot determine your own model, record `unknown` — a wrong entry is worse than a missing
-one. This value populates the **Captured by** header line and the **Handoff History** entry for
+one. This value populates the **Captured by** header row and the **Handoff History** entry for
 *this* pass. **Never rewrite the model recorded on an earlier entry** — each entry is a permanent
 record of the pass that produced it.
 
@@ -107,29 +156,36 @@ inside the ID already carries that, and keeping both nests parentheses inside pa
 ## Document Structure
 
 Include every section below that has content. Omit a section entirely rather than filling it with
-"N/A" — except **Completed Work**, **Verification**, **Open Questions**, and **Next Steps**, which
+"N/A" — except **Completed Work**, **Verification**, **Open Questions** and **Next Steps**, which
 always appear (write "None" if genuinely empty, because their absence is itself information the
 reader needs). **Verification** earns its place on that list the hard way: an omitted one is
 indistinguishable from a section the author forgot, while a present one reading "None — nothing has
 been run since the last edit" is the honest signal the rest of this file demands.
 
 The sections appear as `###` headings here because they sit under this command file's own
-`## Document Structure`. **In the generated file the title is an H1 and every section below is an
-H2** — `## Start Here`, `## Objective`, `## Next Steps`, and so on.
+`## Document Structure`. **In the generated file the title is an H1, the Header table sits directly
+under it with no heading of its own and every other section below is an H2 in the order listed** —
+`## Start Here`, `## Objective`, `## Next Steps` and so on.
 
 ### Header
 
 ```markdown
 # Handoff: <one-line description of the work>
 
-**Status:** In progress | Blocked | Ready for review | Paused
-**Created:** YYYY-MM-DD
-**Updated:** YYYY-MM-DD
-**Branch:** `<branch>` (base: `<base-branch>`)
-**Pull request:** <full url, or "none opened">
-**Issues:** <full urls for the Linear and GitHub issues this work tracks, or "none">
-**Captured by:** <display name> (`<exact-model-id>`)
+| | |
+|---|---|
+| **Status** | <In progress, Blocked, Ready for review or Paused> |
+| **Created** | YYYY-MM-DD |
+| **Updated** | YYYY-MM-DD |
+| **Branch** | `<branch>` (base: `<base-branch>`) |
+| **Commit** | `<short sha>` at capture |
+| **Pull request** | <full URL, or "none opened"> |
+| **Issues** | <full URLs for the Linear and GitHub issues this work tracks, or "none"> |
+| **Captured by** | <display name> (`<exact-model-id>`) |
 ```
+
+The header is a two-column table so each field renders on its own row; plain consecutive lines
+collapse into a single run-on line in any rendered view.
 
 Give **full URLs**, not bare identifiers: `ENG-412` and `#88` are not clickable and are ambiguous
 across projects and repositories. Put the identifier and the URL together —
@@ -144,27 +200,32 @@ On the first pass **Updated** matches **Created**; every later pass advances **U
 **Created** alone, so the gap between the two shows at a glance how long the work has been running
 and how fresh the state is.
 
-Use absolute dates — never "today", "yesterday", or "last week", which mislead whenever the file is
+Use absolute dates — never "today", "yesterday" or "last week", which mislead whenever the file is
 read.
 
 Record the branch even though the reader can run `git branch --show-current`: by the time the file
 is read the checkout may be somewhere else entirely, and the branch named here is the one the state
-below describes. The base branch is the `$base` resolved in **Gathering State** — record what was
-resolved rather than assuming `main`.
+below describes. The base branch is the `$base` resolved in **Gathering State**. When
+`base_source` is not the pull request, say where it came from — `(base: main, repository default)`
+or `(base: main, assumed)` — so a fallback is never presented as checked.
+
+Record **Commit** from `git rev-parse --short HEAD` in **Gathering State**. It is the one field that
+tells a later reader whether the branch has moved since capture.
 
 ### Start Here
 
-Three or four sentences orienting the reader: what this work is, how far it got, and what the very
+Three or four sentences orienting the reader: what this work is, how far it got and what the very
 first action should be. Then the re-orientation commands, since the repository may have moved on
 since capture:
 
 ```bash
-git status --short --branch
+git --no-pager status --short --branch
 git --no-pager log --oneline -5
 ```
 
 Call out explicitly that the state below was accurate at capture time and should be re-verified
-before it is trusted.
+before it is trusted, starting with the header's **Commit**: if the first line of `git log` names a
+different commit, the branch has moved since capture.
 
 ### Objective
 
@@ -192,18 +253,26 @@ agreed with the user) so it isn't mistaken for finished.
 
 The state of the working tree and the world around it:
 
-- Files modified, staged, and untracked — and which of those belong to this work versus pre-existing
+- Files modified, staged and untracked — and which of those belong to this work versus pre-existing
   local changes that must not be swept into a commit
 - Commits made on this branch, with subjects
-- Stashes, worktrees, or branches created along the way
+- Stashes, worktrees or branches created along the way
 - Pull request state: number, review decision, CI status, unresolved comments
 - Anything left in a knowingly broken or half-migrated state, stated plainly
+
+Every bullet that states a fact about the branch, the pull request, CI or an issue names the command
+whose output it summarizes — in the bullet itself, or once under the section heading when a single
+command backs every bullet. Use the commands from **Gathering State**, such as
+`git --no-pager status --short --branch`, `gh pr view --json …` or `mcp__linear-server__get_issue`,
+and state nothing the session did not read from such a command in this pass. Claims written from
+memory at the end of a session are the ones most often wrong, and the next agent cannot tell them
+apart from checked ones.
 
 ### Environment & Setup
 
 Only what the reader could not infer: services that must be running, migrations pending, seed data
 required, feature flags toggled, environment variables needed (**names only — never values**),
-non-obvious tool versions, and any local setup performed during the session.
+non-obvious tool versions and any local setup performed during the session.
 
 ### Key Files & Entry Points
 
@@ -212,17 +281,17 @@ reference and one line on why it matters. Reference code; do not paste it. The e
 that exists nowhere on disk — a snippet the user supplied, or a command output being reasoned about
 — which must be included verbatim or it is lost.
 
-**Do not lean on another working artifact without saying it may be gone.** `local-review.md`,
-`*-DOC-REVIEW.md` and `*-PLAN.md` (or a legacy `PLAN.md`) are branch-local, and `/ship-it` deletes
-them once it has posted them to the pull request — so a handoff that names one as its authoritative
-record is describing a file that shipping will remove. Mark any such reference as branch-local and
-deletable, and carry the load-bearing parts into this file: the conclusions, the open items, and the
-reasoning the next agent would otherwise lose. Point at the artifact for the detail; never depend on
-it for the substance.
+**Do not lean on another working artifact without saying it may be gone.** `*local-review*.md` and
+`*-DOC-REVIEW.md` are untracked, `*-PLAN.md` (or a legacy `PLAN.md`) is tracked but stripped from
+the branch history at ship time, and `/ship-it` deletes all of them once it has posted them to the
+pull request — so a handoff that names one as its authoritative record is describing a file that
+shipping will remove. Mark any such reference as branch-local and deletable, and carry the
+load-bearing parts into this file: the conclusions, the open items and the reasoning the next agent
+would otherwise lose. Point at the artifact for the detail; never depend on it for the substance.
 
 ### Decisions & Rationale
 
-Every non-obvious choice, the alternatives considered, and why they were rejected. This is the
+Every non-obvious choice, the alternatives considered and why they were rejected. This is the
 section that most justifies the file's existence: the diff shows what was decided, and nothing but
 this shows *why*, so without it the next agent relitigates settled questions and may quietly undo
 deliberate choices.
@@ -270,7 +339,7 @@ Questions already put to the user and still unanswered belong here, phrased as t
 ### Next Steps
 
 A concrete, ordered checklist. Each item must be actionable without further context — name the file,
-the function, and the intended change:
+the function and the intended change:
 
 ```markdown
 - [ ] 1. Cap `PaymentRetry#backoff` (`app/models/payment_retry.rb:31`) at 5 attempts, matching
@@ -323,7 +392,7 @@ are the one exception — a short SHA resolves with `git show` and needs no URL:
 Repeat the pull request and issue links from the header here rather than pointing back at it — the
 header is scanned, this section is worked from, and a reader following one should never have to
 scroll to the other. Include anything consulted during the session that shaped the work: upstream
-issues, vendor documentation, Stack Overflow answers, and prior commits or pull requests that set
+issues, vendor documentation, Stack Overflow answers and prior commits or pull requests that set
 the pattern being followed.
 
 ### Resume Prompt
@@ -362,25 +431,29 @@ clobber it:
 1. Append a new **Handoff History** entry rather than replacing the old one, naming your own model
    and leaving every earlier entry's model untouched
 1. Move finished **Next Steps** into **Completed Work**, preserving their order
-1. Update **Status**, **Updated**, **Branch**, **Pull request**, **Issues**, **Captured by**, and
-   **Current State** to current reality — leaving **Created** untouched
+1. Renumber the remaining **Next Steps** so item 1 is the next undone task, then rewrite
+   **Start Here** and the **Resume Prompt** to point at it — they are the first things the next
+   agent reads, and left alone they send it back to work that is already done
+1. Update **Status**, **Updated**, **Branch**, **Commit**, **Pull request**, **Issues**,
+   **Captured by** and **Current State** to current reality — leaving **Created** untouched
 1. Refresh **Verification** — re-run the recorded commands, or mark each result "not re-run since
    `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
-1. Re-check every working artifact this handoff points at — `local-review.md`, `*-DOC-REVIEW.md`,
-   `*-PLAN.md` (or a legacy `PLAN.md`) and anything else branch-local. If one is gone, say so where
-   it is referenced and promote what it was carrying. If one is still there but the handoff leans on
-   it for substance, promote the load-bearing parts now and mark the reference deletable. An earlier
-   pass may have been written before this rule existed, and shipping deletes these files — so the
-   check is on the reference, not on whether a previous pass thought it was fine
+1. Re-check every working artifact this handoff points at — `*local-review*.md`, `*-DOC-REVIEW.md`,
+   `*-PLAN.md` (or a legacy `PLAN.md`; tracked, but stripped by `/ship-it`) and anything else
+   untracked. If one is gone, say so where it is referenced and promote what it was carrying. If one
+   is still there but the handoff leans on it for substance, promote the load-bearing parts now and
+   mark the reference deletable. An earlier pass may have been written before this rule existed, and
+   shipping deletes these files — so the check is on the reference, not on whether a previous pass
+   thought it was fine
 1. Resolve **Open Questions** that have since been answered — record the answer in **Decisions &
    Rationale** rather than deleting the question
-1. Preserve **Dead Ends**, **Decisions & Rationale**, and **Insights & Learnings** in full; these
+1. Preserve **Dead Ends**, **Decisions & Rationale** and **Insights & Learnings** in full; these
    only ever accumulate, because a dead end that is deleted is a dead end that gets retried
 
 ## Writing Guidelines
 
-- **Write for a stranger.** No "the fix we discussed", "as mentioned above", or "the file I edited"
+- **Write for a stranger.** No "the fix we discussed", "as mentioned above" or "the file I edited"
   — name the thing every time. The reader cannot resolve a reference to a conversation it never saw.
 - **Separate fact from hypothesis.** Mark unverified reasoning as such ("likely", "not yet
   confirmed"). A confident-sounding guess recorded as fact is how a handoff actively causes harm
@@ -389,9 +462,11 @@ clobber it:
   running tests.
 - **Point, don't paste.** The repository travels with the file; long code blocks only go stale. Cite
   `path:line` instead.
-- **Never include secrets.** No API keys, tokens, passwords, connection strings, or personal data —
+- **Never include secrets.** No API keys, tokens, passwords, connection strings or personal data —
   name the variable and where its value comes from.
-- **Absolute dates only**, and repository-relative paths only.
+- **Absolute dates, portable paths.** Write absolute dates, never relative ones. Write paths
+  repository-relative, or `~`-prefixed for a file outside the repository — never an absolute path
+  that names a home directory.
 - **Keep it scannable.** A reader skims this file before doing anything; prefer short sections and
   bullets over prose walls.
 - **Wrap prose at 100 characters.** Let URLs and shell commands run past it rather than breaking
@@ -402,9 +477,9 @@ clobber it:
 ## Process
 
 1. Determine the topic and target path from `$ARGUMENTS` (or from the session's work), checking for
-   an existing handoff with `find . -maxdepth 1 -name '*-HANDOFF.md'` first; if one covers this work,
-   read it and follow **Merging with an Existing Handoff**
-1. Gather repository, pull request, issue, and check state using the commands above, recording your
+   an existing handoff with the root-anchored `find` in **Output File** first; if one covers this
+   work, read it and follow **Merging with an Existing Handoff**
+1. Gather repository, pull request, issue and check state using the commands above, recording your
    own model from your environment context
 1. Re-run verification commands whose recorded results would otherwise be stale
 1. Draft the document, working backwards from **Next Steps** — deciding what the next agent must do
@@ -413,5 +488,5 @@ clobber it:
 1. Re-read what was written and ask, for each section, whether it survives without the conversation;
    rewrite anything that does not
 1. Report to the user: the file path, the status, a one-line summary of what is done and what is
-   next, and the resume prompt as a copy-pasteable block
+   next and the resume prompt as a copy-pasteable block
 1. Do **not** stage or commit the file unless the user explicitly asks (see **Output File**)
