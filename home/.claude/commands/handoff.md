@@ -50,14 +50,17 @@ and append `-HANDOFF.md` (e.g. `Payment retry backoff` → `payment-retry-backof
 not part of the change. Leave it untracked; do not add it to `.gitignore` on your own initiative
 either.
 
-`/ship-it` treats a handoff differently from `*local-review*.md` (the name may carry an identifier
-on either side, such as `payments-local-review.md` or `local-review-2.md`), `*-DOC-REVIEW.md` and
-`*-PLAN.md`, which it posts whole and deletes. It posts only the durable sections — **Decisions &
+`/ship-it` posts review and plan artifacts whole and then deletes them: `*local-review*.md` (an
+identifier may sit on either side of the name, as in `payments-local-review.md` or
+`local-review-2.md`), `*-DOC-REVIEW.md` and `*-PLAN.md` (or a legacy `PLAN.md`).
+
+A handoff is treated differently. `/ship-it` posts only its durable sections — **Decisions &
 Rationale**, **Insights & Learnings**, **Dead Ends**, still-open **Open Questions** and
 **References** — as a collapsible pull request comment, then asks whether to delete the file. The
 rest of a handoff describes a working tree that merging makes obsolete, and a handoff for work that
-continues past the pull request outlives it. Write the durable sections knowing they are the part
-that will be read after merge.
+continues past the pull request outlives the pull request. Write the durable sections knowing they
+are the part that will be read after merge, and that `/ship-it` publishes them to the pull request:
+name no private repository, internal host or personal data in them.
 
 ## Gathering State
 
@@ -280,7 +283,7 @@ that exists nowhere on disk — a snippet the user supplied, or a command output
 
 **Do not lean on another working artifact without saying it may be gone.** `*local-review*.md` and
 `*-DOC-REVIEW.md` are untracked, `*-PLAN.md` (or a legacy `PLAN.md`) is tracked but stripped from
-the branch history at ship time, and `/ship-it` deletes all three once it has posted them to the
+the branch history at ship time, and `/ship-it` deletes all of them once it has posted them to the
 pull request — so a handoff that names one as its authoritative record is describing a file that
 shipping will remove. Mark any such reference as branch-local and deletable, and carry the
 load-bearing parts into this file: the conclusions, the open items, and the reasoning the next agent
@@ -437,7 +440,7 @@ clobber it:
    `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
 1. Re-check every working artifact this handoff points at — `*local-review*.md`, `*-DOC-REVIEW.md`,
-   `*-PLAN.md` or a legacy `PLAN.md` (tracked, but stripped by `/ship-it`) and anything else
+   `*-PLAN.md` (or a legacy `PLAN.md`; tracked, but stripped by `/ship-it`) and anything else
    untracked. If one is gone, say so where it is referenced and promote what it was carrying. If one
    is still there but the handoff leans on it for substance, promote the load-bearing parts now and
    mark the reference deletable. An earlier pass may have been written before this rule existed, and
@@ -461,7 +464,9 @@ clobber it:
   `path:line` instead.
 - **Never include secrets.** No API keys, tokens, passwords, connection strings, or personal data —
   name the variable and where its value comes from.
-- **Absolute dates only**, and repository-relative paths only.
+- **Absolute dates, portable paths.** Write absolute dates, never relative ones. Write paths
+  repository-relative, or `~`-prefixed for a file outside the repository — never an absolute path
+  that names a home directory.
 - **Keep it scannable.** A reader skims this file before doing anything; prefer short sections and
   bullets over prose walls.
 - **Wrap prose at 100 characters.** Let URLs and shell commands run past it rather than breaking
