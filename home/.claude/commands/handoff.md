@@ -428,6 +428,9 @@ clobber it:
 1. Append a new **Handoff History** entry rather than replacing the old one, naming your own model
    and leaving every earlier entry's model untouched
 1. Move finished **Next Steps** into **Completed Work**, preserving their order
+1. Renumber the remaining **Next Steps** so item 1 is the next undone task, then rewrite
+   **Start Here** and the **Resume Prompt** to point at it — they are the first things the next
+   agent reads, and left alone they send it back to work that is already done
 1. Update **Status**, **Updated**, **Branch**, **Commit**, **Pull request**, **Issues**,
    **Captured by**, and **Current State** to current reality — leaving **Created** untouched
 1. Refresh **Verification** — re-run the recorded commands, or mark each result "not re-run since
