@@ -67,22 +67,41 @@ waits for input. (`gh` has no `--no-pager` flag; set `GH_PAGER=cat` if a pager e
 
 Resolve the base branch first — the commit ranges below need it, and so does the **Branch** header
 row. Never hardcode `main`: this command runs against any repository, including ones that ship from
-`develop` and branches stacked on other feature branches.
+`develop`. A stacked branch gets its real base only from its pull request; without one the fallback
+is the repository default, so confirm the base with the user or record it as assumed.
 
 ```bash
-base=$(gh pr view --json baseRefName --jq .baseRefName 2>/dev/null) \
-  || base=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null) \
-  || base=main
+gh auth status >/dev/null 2>&1 \
+  || echo "gh unavailable — pull request, CI and issue state not checked"
+
+if base=$(gh pr view --json baseRefName --jq .baseRefName 2>/dev/null); then
+  base_source="pull request"
+elif base=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null); then
+  base_source="repository default"
+else
+  base=main base_source="assumed"
+fi
+echo "base: $base ($base_source)"
+
+range_base=$(git rev-parse --verify --quiet "refs/remotes/origin/$base") \
+  || range_base=$(git rev-parse --verify --quiet "$base") \
+  || echo "base $base not found locally or on origin — commit range not checked"
 
 git rev-parse --short HEAD
 git --no-pager status --short --branch
-git --no-pager log --oneline "$base"..HEAD
 git --no-pager diff --stat
 git --no-pager diff --stat --cached
 git --no-pager stash list
+git --no-pager worktree list
+git --no-pager branch --sort=-committerdate | head -10
 gh pr view --json \
   number,url,state,isDraft,reviewDecision,statusCheckRollup,body,closingIssuesReferences 2>/dev/null
-git --no-pager log --format=%B "$base"..HEAD   # issue references in commit trailers
+gh pr view --json comments,reviews,latestReviews 2>/dev/null
+
+if [ -n "$range_base" ]; then
+  git --no-pager log --oneline "$range_base"..HEAD
+  git --no-pager log --format=%B "$range_base"..HEAD   # issue references in commit trailers
+fi
 ```
 
 Scope the commit ranges to the **base branch**, not `@{upstream}`. `@{upstream}..HEAD` means
@@ -90,9 +109,25 @@ Scope the commit ranges to the **base branch**, not `@{upstream}`. `@{upstream}.
 work that has a pull request. It fails silently, succeeding with no output, so the harvest below
 would report "none" precisely when there is most to find.
 
-The pull request body, the `closingIssuesReferences` field, and commit trailers are where issue
+Take the range from the remote-tracking base when there is one. A local base branch is often behind
+— a freshly created worktree's usually is — and a range from it attributes every commit merged
+upstream since, with its issue references, to this branch. The block assumes the remote is
+`origin`; substitute the repository's remote if it differs.
+
+Every `gh` call above is silenced, so a pull request that does not exist and a `gh` that is missing,
+unauthenticated or offline print the same nothing. The `gh auth status` check is what tells them
+apart: when it prints its warning, record **Pull request** and **Issues** as "not checked", never
+"none opened" or "none".
+
+The pull request body, the `closingIssuesReferences` field and commit trailers are where issue
 identifiers hide — harvest them for the **Issues** header row and **References** rather than
-reporting "none" by default.
+reporting "none" by default. Read each identifier's state from its tracker —
+`gh issue view <number> --json state` for GitHub, the Linear MCP server's `get_issue` tool for
+Linear — or record it as not checked.
+
+`gh pr view` lists comments and reviews but not whether a review thread is resolved. When unresolved
+comments matter, query `reviewThreads { isResolved }` through `gh api graphql`; otherwise record
+them as "not checked".
 
 Re-run any test or lint command whose result you intend to record, unless it was run since the last
 relevant edit — a stale "tests pass" is worse than an honest "not run since the last change".
@@ -167,8 +202,9 @@ read.
 
 Record the branch even though the reader can run `git branch --show-current`: by the time the file
 is read the checkout may be somewhere else entirely, and the branch named here is the one the state
-below describes. The base branch is the `$base` resolved in **Gathering State** — record what was
-resolved rather than assuming `main`.
+below describes. The base branch is the `$base` resolved in **Gathering State**. When
+`base_source` is not the pull request, say where it came from — `(base: main, repository default)`
+or `(base: main, assumed)` — so a fallback is never presented as checked.
 
 Record **Commit** from `git rev-parse --short HEAD` in **Gathering State**. It is the one field that
 tells a later reader whether the branch has moved since capture.
@@ -222,10 +258,12 @@ The state of the working tree and the world around it:
 - Anything left in a knowingly broken or half-migrated state, stated plainly
 
 Every bullet that states a fact about the branch, the pull request, CI or an issue names the command
-whose output it summarizes, in the bullet or beside the section — `git --no-pager status --short
---branch`, `gh pr view --json …`, `mcp__linear-server__get_issue` — and states nothing the session
-did not read from such a command in this pass. A claim written from recollection is the kind that
-gets retracted a session later.
+whose output it summarizes — in the bullet itself, or once under the section heading when a single
+command backs every bullet. Use the commands from **Gathering State**, such as
+`git --no-pager status --short --branch`, `gh pr view --json …` or `mcp__linear-server__get_issue`,
+and state nothing the session did not read from such a command in this pass. Claims written from
+memory at the end of a session are the ones most often wrong, and the next agent cannot tell them
+apart from checked ones.
 
 ### Environment & Setup
 
