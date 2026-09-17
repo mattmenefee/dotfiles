@@ -657,8 +657,8 @@ rule that stops where the patterns stop leaves a personal name, a customer datum
 repository's name to a backstop that was never built to catch it.
 
 This rule governs every artifact `/ship-it` publishes, not just the one this command writes — it
-posts `local-review.md` and `PLAN.md` whole as well, and the scrub's own filename list in PR Comment
-Format is the proof that an authoring rule scoped to a single file is scoped too narrowly.
+posts `local-review.md` and `*-PLAN.md` whole as well, and the scrub's own filename list in PR
+Comment Format is the proof that an authoring rule scoped to a single file is scoped too narrowly.
 
 The artifact **may** be published verbatim into a pull request comment — PR Comment Format says when
 — and `/ship-it` deletes the local copy once it has posted it, so a quoted secret outlives both the
@@ -723,7 +723,7 @@ secrets="$secrets"'|[a-z][a-z0-9+.-]*://[^[:space:]/]+:[^[:space:]@]+@'
 artifacts() {
   find "$root" -maxdepth 1 \
     \( -name 'local-review*.md' -o -name '*-DOC-REVIEW*.md' \
-       -o -name '*-HANDOFF.md' -o -name 'PLAN.md' \) "$@"
+       -o -name '*-HANDOFF.md' -o -name '*PLAN.md' \) "$@"
 }
 
 # A hit is exempt only when the segment is angle-bracketed: /Users/<name>/…
@@ -812,8 +812,8 @@ no second check and both stages had a documented reason not to look.
 
 This section is the **normative definition** of the scrub, and every other command that publishes
 these artifacts carries its own copy of it — notably a project's `/ship-it`, which posts
-`local-review.md`, `*-DOC-REVIEW.md` and `PLAN.md` together and then deletes them, so it publishes
-two artifacts this command never writes. Duplicate the check into each publisher; do not
+`local-review.md`, `*-DOC-REVIEW.md` and `*-PLAN.md` together and then deletes them, so it
+publishes two artifacts this command never writes. Duplicate the check into each publisher; do not
 cross-reference this section. A cross-reference between command files reaches nobody — the same
 reason the status rule is restated in the prompt at the top of this file — and the agent running
 `/ship-it` never reads this one. Duplication costs a few lines; a missing scrub costs a disclosure
