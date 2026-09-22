@@ -265,9 +265,9 @@ git clean -f -- <any .tf files you created>
 Name the exact files — never a glob, never a directory. `git checkout -- <paths>` is the wrong
 primitive here: it restores from the index rather than from `HEAD`, so once anything has been staged
 it exits 0, reports nothing, and leaves the bad edit in place *and staged*. It also cannot remove a
-`.tf` file you created. Scope matters just as much: by this point `Gemfile.lock`, `yarn.lock`,
-`.rubocop_todo.yml`, and every RuboCop autofix from Steps 3, 4, and 7 are uncommitted, and a broad
-revert discards all of them with no reflog to recover from.
+`.tf` file you created. Scope matters just as much: by this point `Gemfile.lock`, `yarn.lock`, any
+regenerated `.rubocop_todo.yml`, and every RuboCop autofix from Steps 3, 4, and 7 are uncommitted,
+and a broad revert discards all of them with no reflog to recover from.
 
 Having the CLI is not the same as having a *usable* one, so check what the configuration will accept
 from it:
@@ -511,9 +511,9 @@ message (see [Step 9](#step-9-build-the-final-commit-message)).
 ### Step 7: Handle RuboCop Updates
 
 Check the `gem_update` output or `git diff Gemfile.lock` for changes to `rubocop` or any `rubocop-*`
-gem.
+gem. Which of them changed decides how much of this step to run.
 
-If a RuboCop gem was updated:
+If `rubocop` itself was updated, whether or not any plugin was too:
 
 1. Run `bin/rubocop -A` to auto-fix any new violations.
 2. Review the output for violations that could not be auto-fixed and manually fix them.
@@ -525,6 +525,15 @@ If a RuboCop gem was updated:
 
    This updates the timestamp and version in `.rubocop_todo.yml` (if it exists).
 4. Note the RuboCop fixes for inclusion in the commit message body (see Step 9).
+
+If only `rubocop-*` plugins were updated (for example `rubocop-rails`), run items 1, 2, and 4 but
+**not** item 3. The `.rubocop_todo.yml` header records only the core RuboCop version, so
+regenerating it after a plugin-only bump changes nothing but the timestamp. If a regeneration
+happened anyway, restore the file rather than committing the timestamp-only diff:
+
+```bash
+git restore --source=HEAD --staged --worktree .rubocop_todo.yml
+```
 
 A clean `bin/rubocop -A` run exits 0 and reports "no offenses detected" or lists only auto-corrected
 offenses. Any remaining offenses must be fixed manually before proceeding.
@@ -615,7 +624,8 @@ Stage all files changed during this workflow:
 # Core manifest files
 git add Gemfile Gemfile.lock package.json yarn.lock
 
-# Linter configuration and auto-fixed source files (if applicable)
+# Linter configuration and auto-fixed source files (if applicable). .rubocop_todo.yml changes only
+# when the rubocop gem itself was bumped; a plugin-only bump leaves it untouched (see Step 7).
 git add .rubocop_todo.yml .haml-lint_todo.yml
 # Plus any source files modified by bin/rubocop -A or bin/rails lint:haml
 
