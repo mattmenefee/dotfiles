@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+#
+# iterm-colors-import — merge an exported iTerm2 color preset into the tracked dynamic profile.
+#
+# iTerm2 writes a .itermcolors file from Settings -> Profiles -> Colors -> Color Presets ->
+# Export. That file is an XML plist whose keys are already profile keys — `Ansi 0 Color` through
+# `Ansi 15 Color`, `Background Color`, `Foreground Color` and the rest — and dynamic profiles
+# accept them verbatim, so importing is a merge rather than a translation.
+#
+# Without it the tracked profile sets titles and inherits everything else from whichever profile
+# is Default on the machine, which on a new one is iTerm2's stock look. Merging the preset in is
+# what makes the colors travel with `homesick link`.
+#
+# Run this on the machine whose colors are right, then commit the result. iTerm2 watches the
+# DynamicProfiles directory and reloads when a file in it changes, so a running terminal picks the
+# colors up without a restart.
+
+require 'json'
+require 'open3'
+
+PROFILE = File.expand_path('../../Library/Application Support/iTerm2/DynamicProfiles/main.json',
+                           __dir__)
+
+# Every color is a dictionary of components, which is what separates them from the scalar keys a
+# preset may also carry (`Ansi 16 Color` aside, iTerm2 has shipped metadata keys here before).
+# Selecting on shape rather than on a list of names means a preset from a newer iTerm2 brings its
+# new colors along without this script having to learn their names.
+def colors_in(preset)
+  preset.select { |_, value| value.is_a?(Hash) && value.key?('Red Component') }
+end
+
+def read_preset(path)
+  json, status = Open3.capture2('plutil', '-convert', 'json', '-o', '-', path)
+  abort "iterm-colors-import: #{path} is not a plist iTerm2 wrote" unless status.success?
+
+  JSON.parse(json)
+end
+
+# iTerm2 writes ` : ` between key and value and may rewrite this file itself, since the profile is
+# Rewritable. Matching its spacing keeps the next rewrite from showing up as a whole-file diff.
+def iterm_json(document)
+  JSON.pretty_generate(document).gsub(/^(\s*"(?:[^"\\]|\\.)*"): /) { "#{Regexp.last_match(1)} : " }
+end
+
+abort 'usage: iterm-colors-import <file.itermcolors>' unless ARGV.length == 1
+abort "iterm-colors-import: no such file: #{ARGV.first}" unless File.exist?(ARGV.first)
+
+colors = colors_in(read_preset(ARGV.first))
+abort "iterm-colors-import: #{ARGV.first} defines no colors" if colors.empty?
+
+document = JSON.parse(File.read(PROFILE))
+profiles = document['Profiles']
+abort "iterm-colors-import: expected one profile in #{PROFILE}" unless profiles.is_a?(Array) &&
+                                                                      profiles.length == 1
+
+profile = profiles.first
+changed = colors.count { |key, value| profile[key] != value }
+profile.merge!(colors)
+File.write(PROFILE, "#{iterm_json(document)}\n")
+
+puts "#{colors.length} colors merged into \"#{profile['Name']}\" (#{changed} changed)"
+puts "Commit #{PROFILE.sub("#{Dir.home}/", '~/')} to carry them to another machine."
