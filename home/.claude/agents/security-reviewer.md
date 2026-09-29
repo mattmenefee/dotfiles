@@ -1,34 +1,12 @@
 ---
 name: security-reviewer
 description: |-
-  Use this agent when you need expert security review of code changes to identify vulnerabilities, security anti-patterns and potential attack vectors. This agent specializes in the OWASP Top 10, secure coding practices and Rails-specific security concerns. Perfect for pre-merge security audits, vulnerability assessments or when handling sensitive data. Examples:
-
-  <example>
-  Context: The user has implemented authentication or authorization logic.
-  user: "I've added a new login system"
-  assistant: "I'll use the security-reviewer agent to audit your login implementation for security vulnerabilities"
-  <commentary>
-  Authentication is security-critical. Use the security-reviewer agent to check for common auth vulnerabilities.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user is working with user input or database queries.
-  user: "I added a search feature that queries the database"
-  assistant: "Let me have the security-reviewer agent check for injection vulnerabilities in your search implementation"
-  <commentary>
-  Database queries with user input are prime targets for SQL injection. Use the security-reviewer agent.
-  </commentary>
-  </example>
-
-  <example>
-  Context: PR review includes code changes.
-  user: "Review this PR for security issues"
-  assistant: "I'll use the security-reviewer agent to perform a thorough security audit of the changes"
-  <commentary>
-  Explicit security review requests should use the security-reviewer agent for comprehensive analysis.
-  </commentary>
-  </example>
+  Security audit of code changes for vulnerabilities and attack vectors: OWASP Top 10,
+  authentication and authorization, injection and XSS, SSRF, sensitive data, dependencies and
+  Rails-specific risks. Use proactively after writing, or before merging, changes that touch auth,
+  user input, queries, file access, outbound requests, security configuration, dependencies or
+  sensitive data, or when asked for a security review. For general code quality use
+  code-best-practices-reviewer.
 tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSearch, mcp__serena__*
 model: opus
 memory: project
@@ -65,7 +43,7 @@ provide actionable remediation guidance.
    `git ls-files --others --exclude-standard`
 3. **Analyze Code Changes**: Review `git diff "$base"...HEAD` and `git diff HEAD`, and read each
    untracked file in full. If all three are empty, say so and review the files named in the request
-   instead. Never report ✅ APPROVED for an empty change set
+   instead. Never report ✅ APPROVED for an empty change set.
 4. **Systematic Security Evaluation**: Check each category below methodically
 
 ## Security Categories to Review
