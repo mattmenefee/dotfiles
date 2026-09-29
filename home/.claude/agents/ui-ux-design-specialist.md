@@ -1,45 +1,10 @@
 ---
 name: ui-ux-design-specialist
 description: |-
-  Use this agent when you need expert guidance on user interface design, user experience improvements, accessibility compliance, or visual design decisions. This includes reviewing existing UI implementations, creating new component designs, evaluating color schemes and typography, ensuring WCAG compliance, designing user flows, or getting feedback on layout and interaction patterns.
-
-  Examples:
-
-  <example>
-  Context: The user has just implemented a new form component and wants design feedback.
-  user: "I've just finished building the registration form, can you take a look?"
-  assistant: "I'll use the ui-ux-design-specialist agent to review your registration form for usability, accessibility, and visual design."
-  <commentary>
-  Since the user has completed a UI component and is asking for review, use the ui-ux-design-specialist agent to provide comprehensive design feedback on the form's usability, accessibility, and visual polish.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user is working on a dashboard layout and needs help with information hierarchy.
-  user: "I'm struggling with how to organize all this data on the dashboard. There's too much going on."
-  assistant: "Let me bring in the ui-ux-design-specialist agent to help with the information architecture and visual hierarchy of your dashboard."
-  <commentary>
-  The user is facing a classic UX challenge with information overload. Use the ui-ux-design-specialist agent to provide guidance on layout, visual hierarchy, and progressive disclosure patterns.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user is implementing a feature and mentions color choices.
-  user: "What color should I use for the error state on this button?"
-  assistant: "I'll consult the ui-ux-design-specialist agent to recommend appropriate error state colors that meet accessibility standards and fit your design system."
-  <commentary>
-  Color decisions, especially for states like errors, require consideration of accessibility, consistency, and visual communication. Use the ui-ux-design-specialist agent for guidance.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user has finished styling a navigation component.
-  user: "Just pushed the new sidebar navigation styles. Does this look right?"
-  assistant: "Let me use the ui-ux-design-specialist agent to review your sidebar navigation for usability patterns, accessibility, and visual consistency."
-  <commentary>
-  After UI styling work is completed, proactively engage the ui-ux-design-specialist agent to review navigation patterns, keyboard accessibility, and visual design quality.
-  </commentary>
-  </example>
+  UI and UX design guidance: usability, visual hierarchy, layout, color, typography, interaction
+  patterns, user flows, design systems and WCAG accessibility. Use when building or reviewing forms,
+  dashboards, navigation or other UI, and use proactively after UI or styling changes. Reviews the
+  rendered page through Chrome DevTools when the app is running.
 tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSearch, mcp__serena__*, mcp__chrome-devtools__*
 model: opus
 memory: project
