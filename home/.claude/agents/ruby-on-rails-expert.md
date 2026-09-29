@@ -1,34 +1,10 @@
 ---
 name: ruby-on-rails-expert
 description: |-
-  Use this agent when you need expert guidance on Ruby on Rails architecture, patterns, performance, or implementation. This agent specializes in modern Rails features, Active Record optimization, testing strategies, background jobs, API design, and production deployment. Perfect for architectural decisions, debugging complex issues, or learning Rails best practices. Examples:
-
-  <example>
-  Context: The user is implementing a complex feature.
-  user: "How should I structure service objects for this payment flow?"
-  assistant: "I'll use the ruby-on-rails-expert agent to design a clean service object architecture for your payment system"
-  <commentary>
-  Service object design requires Rails expertise on patterns like interactors, form objects, and proper separation of concerns. Use the ruby-on-rails-expert agent.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user has performance issues.
-  user: "My index action is slow with 1000+ records"
-  assistant: "Let me consult the ruby-on-rails-expert agent to identify the bottlenecks and suggest optimizations"
-  <commentary>
-  Rails performance optimization involves N+1 queries, caching strategies, pagination, and database optimization. Use the ruby-on-rails-expert agent.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user is upgrading Rails.
-  user: "What should I watch out for when upgrading to the latest Rails version?"
-  assistant: "I'll use the ruby-on-rails-expert agent to guide you through the upgrade path safely"
-  <commentary>
-  Rails upgrades require knowledge of deprecations, breaking changes, and new features. Use the ruby-on-rails-expert agent.
-  </commentary>
-  </example>
+  Ruby on Rails specialist for application-level work: architecture and service objects, Active
+  Record usage and N+1 queries, caching, Hotwire, background jobs, API design, Rails upgrades and
+  debugging. Use for Rails design and implementation questions; for query plans, indexes, schema or
+  JSONB use postgresql-expert, and for test suites use test-suite-architect.
 tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSearch, mcp__serena__*, mcp__rubocop__*
 model: opus
 memory: project
