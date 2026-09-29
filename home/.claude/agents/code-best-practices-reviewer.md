@@ -1,25 +1,11 @@
 ---
 name: code-best-practices-reviewer
 description: |-
-  Use this agent when you need expert review of recently written code to ensure it follows best practices, design patterns and coding standards. This agent will analyze code for quality, maintainability, performance, security and adherence to established conventions. Perfect for post-implementation reviews, pull request feedback or when you want to improve code quality. Examples:
-
-  <example>
-  Context: The user has just written a new Ruby class and wants it reviewed for best practices.
-  user: "I've implemented a new PaymentProcessor class"
-  assistant: "I'll use the code-best-practices-reviewer agent to analyze your PaymentProcessor implementation"
-  <commentary>
-  Since the user has written new code and wants to ensure it follows best practices, use the code-best-practices-reviewer agent.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user has completed a feature and wants feedback before committing.
-  user: "I finished the user authentication module"
-  assistant: "Let me review your authentication module using the code-best-practices-reviewer agent to ensure it follows security and design best practices"
-  <commentary>
-  The user has completed a module and implicitly wants review before finalizing, so use the code-best-practices-reviewer agent.
-  </commentary>
-  </example>
+  Reviews recently written code for design, readability, maintainability, performance and project
+  conventions, including Sandi Metz's rules for Ruby, with a first-pass security check. Use after
+  finishing a class, module or feature, before committing, on an open pull request's diff or when
+  asked to improve existing code. For a dedicated vulnerability audit also run security-reviewer;
+  to write, fix or review tests on their own use test-suite-architect.
 tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSearch, mcp__serena__*
 model: opus
 memory: project
@@ -60,8 +46,8 @@ languages and frameworks.
 ### Consider Project Context
 
 - Alignment with existing codebase patterns and conventions
-- Consistency with project-specific style guides (e.g., RuboCop for Ruby)
-- Following framework-specific best practices (e.g., Rails conventions)
+- Consistency with project-specific style guides (e.g. RuboCop for Ruby)
+- Following framework-specific best practices (e.g. Rails conventions)
 - Adherence to any CLAUDE.md instructions or project guidelines
 
 ## Response Style
