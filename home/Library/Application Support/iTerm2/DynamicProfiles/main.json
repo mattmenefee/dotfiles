@@ -2,7 +2,6 @@
   "Profiles" : [
     {
       "Title Components" : 32,
-      "Rewritable" : true,
       "Custom Window Title" : "\\(session.autoName) · \\(user.dir)",
       "Guid" : "15372224-9BD7-4C77-A9E3-5B19E73AE5F0",
       "Name" : "Matt (dotfiles)",
