@@ -39,16 +39,19 @@
       "mcp__appsignal__get_metrics_list",
       "mcp__appsignal__get_metrics_timeseries",
       "mcp__chrome-devtools__close_page",
+      "mcp__chrome-devtools__list_console_messages",
       "mcp__chrome-devtools__navigate_page",
       "mcp__chrome-devtools__new_page",
       "mcp__chrome-devtools__select_page",
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__take_snapshot",
+      "mcp__harvest__list_time_entries",
       "mcp__linear-server__get_issue",
       "mcp__linear-server__get_issue_status",
       "mcp__linear-server__get_project",
       "mcp__linear-server__get_team",
       "mcp__linear-server__get_user",
+      "mcp__linear-server__list_comments",
       "mcp__linear-server__list_issue_labels",
       "mcp__linear-server__list_issue_statuses",
       "mcp__linear-server__list_issues",
@@ -169,7 +172,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.config/iterm2/cc-status"
+            "command": "~/.config/iterm2/cc-status",
+            "async": true
           }
         ]
       }
@@ -179,7 +183,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.config/iterm2/cc-status"
+            "command": "~/.config/iterm2/cc-status",
+            "async": true
           }
         ]
       }
@@ -251,7 +256,17 @@
     "playwright-cli@playwright-cli": true,
     "ruby-lsp@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
-    "claude-code-setup@claude-plugins-official": true
+    "claude-code-setup@claude-plugins-official": false,
+    "design@synced": false,
+    "engineering@synced": false,
+    "productivity@synced": false
+  },
+  "skillOverrides": {
+    "anthropic-skills:canvas-design": "off",
+    "anthropic-skills:docx": "off",
+    "anthropic-skills:import-memory": "off",
+    "anthropic-skills:learn": "off",
+    "anthropic-skills:pptx": "off"
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
