@@ -83,6 +83,9 @@ export RUBY_DEBUG_FORK_MODE="parent"
 # Rollbar MCP server, read from the Keychain so the token stays out of this repo
 export ROLLBAR_ACCESS_TOKEN="$(security find-generic-password -s rollbar-mcp -w 2>/dev/null)"
 
+# Postmark MCP server, read from the Keychain so the token stays out of this repo
+export POSTMARK_SERVER_TOKEN="$(security find-generic-password -s postmark-mcp -w 2>/dev/null)"
+
 source ~/.zsh/iterm2-tab-title.zsh
 
 # Note: these must be placed at the bottom of .zshrc. The `unset` leaves $? at zero, so a machine
