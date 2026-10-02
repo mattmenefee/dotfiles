@@ -5,10 +5,10 @@ Export everything a future agent needs to resume this session's work to a Markdo
 **Topic (optional):** `$ARGUMENTS`
 
 The reader is an agent with **zero memory of this conversation**. It will have the repository, the
-`CLAUDE.md` files that load automatically (the user's global one and the project's, if any) and
-this file — nothing else. Write accordingly: everything that only exists in this session's
-conversation must survive into the file, and everything already recorded elsewhere should be pointed
-at rather than copied.
+`CLAUDE.md` files that load automatically (the user's global one and the project's, if any) and this
+file — nothing else. Write accordingly: everything that only exists in this session's conversation
+must survive into the file, and everything already recorded elsewhere should be pointed at rather
+than copied.
 
 ## Arguments
 
@@ -43,8 +43,8 @@ when the path does not end in `-HANDOFF.md`, because a later pass's lookup will 
 
 Write to a **Markdown file in the project root**, unless `$ARGUMENTS` supplied an explicit `.md`
 path (see **Arguments**), in which case use that path verbatim. Derive the filename from the topic:
-lowercase it, convert spaces to dashes, drop any character other than letters, digits and dashes
-and append `-HANDOFF.md` (e.g. `Payment retry backoff` → `payment-retry-backoff-HANDOFF.md`).
+lowercase it, convert spaces to dashes, drop any character other than letters, digits and dashes and
+append `-HANDOFF.md` (e.g. `Payment retry backoff` → `payment-retry-backoff-HANDOFF.md`).
 
 **Never `git add` or commit this file** unless the user explicitly asks. It is a working artifact,
 not part of the change. Leave it untracked; do not add it to `.gitignore` on your own initiative
@@ -114,8 +114,8 @@ would report "none" precisely when there is most to find.
 
 Take the range from the remote-tracking base when there is one. A local base branch is often behind
 — a freshly created worktree's usually is — and a range from it attributes every commit merged
-upstream since, with its issue references, to this branch. The block assumes the remote is
-`origin`; substitute the repository's remote if it differs.
+upstream since, with its issue references, to this branch. The block assumes the remote is `origin`;
+substitute the repository's remote if it differs.
 
 Every `gh` call above is silenced, so a pull request that does not exist and a `gh` that is missing,
 unauthenticated or offline print the same nothing. The `gh auth status` check is what tells them
@@ -189,11 +189,10 @@ collapse into a single run-on line in any rendered view.
 
 Give **full URLs**, not bare identifiers: `ENG-412` and `#88` are not clickable and are ambiguous
 across projects and repositories. Put the identifier and the URL together —
-`ENG-412 (https://linear.app/…)`. Harvest them as **Gathering State** describes rather than
-assuming there are none — a bare `gh issue list` returns the repository's recent open issues, which
-have no relationship to this branch. If the work tracks no issue at all, write "none" so the reader
-knows it was checked rather than skipped; if `gh` or the tracker could not be checked, write
-"not checked".
+`ENG-412 (https://linear.app/…)`. Harvest them as **Gathering State** describes rather than assuming
+there are none — a bare `gh issue list` returns the repository's recent open issues, which have no
+relationship to this branch. If the work tracks no issue at all, write "none" so the reader knows it
+was checked rather than skipped; if `gh` or the tracker could not be checked, write "not checked".
 
 On the first pass **Updated** matches **Created**; every later pass advances **Updated** and leaves
 **Created** alone, so the gap between the two shows at a glance how long the work has been running
@@ -204,9 +203,9 @@ read.
 
 Record the branch even though the reader can run `git branch --show-current`: by the time the file
 is read the checkout may be somewhere else entirely, and the branch named here is the one the state
-below describes. The base branch is the `$base` resolved in **Gathering State**. When
-`base_source` is not the pull request, say where it came from — `(base: main, repository default)`
-or `(base: main, assumed)` — so a fallback is never presented as checked.
+below describes. The base branch is the `$base` resolved in **Gathering State**. When `base_source`
+is not the pull request, say where it came from — `(base: main, repository default)` or
+`(base: main, assumed)` — so a fallback is never presented as checked.
 
 Record **Commit** from `git rev-parse --short HEAD` in **Gathering State**. It is the one field that
 tells a later reader whether the branch has moved since capture.
@@ -263,9 +262,9 @@ Every bullet that states a fact about the branch, the pull request, CI or an iss
 whose output it summarizes — in the bullet itself, or once under the section heading when a single
 command backs every bullet. Use the commands from **Gathering State**, such as
 `git --no-pager status --short --branch`, `gh pr view --json …` or the Linear MCP server's
-`get_issue` tool, and state nothing the session did not read from such a command in this pass.
-Claims written from memory at the end of a session are the ones most often wrong, and the next agent
-cannot tell them apart from checked ones.
+`get_issue` tool, and state nothing the session did not read from such a command in this pass. This
+section is what `/resume-handoff` verifies first. Claims written from memory at the end of a session
+are the ones most often wrong, and the next agent cannot tell them apart from checked ones.
 
 ### Environment & Setup
 
@@ -391,18 +390,20 @@ are the one exception — a short SHA resolves with `git show` and needs no URL:
 Repeat the pull request and issue links from the header here rather than pointing back at it — the
 header is scanned, this section is worked from, and a reader following one should never have to
 scroll to the other. Include anything consulted during the session that shaped the work: upstream
-issues, vendor documentation, Stack Overflow answers and prior commits or pull requests that set
-the pattern being followed.
+issues, vendor documentation, Stack Overflow answers and prior commits or pull requests that set the
+pattern being followed.
 
 ### Resume Prompt
 
 A fenced `text` block the user can paste into a fresh session to start the next agent, naming this
-file and the first task:
+file and the first task. It opens with `/resume-handoff`, which reconciles the file against git, the
+pull request and Linear before anything in it is acted on — a handoff describes a tree that keeps
+moving after capture:
 
 ````markdown
 ```text
-Read payment-retry-backoff-HANDOFF.md in the project root, then continue the work from
-"Next Steps". Start with item 1 and confirm the plan before editing.
+Run /resume-handoff payment-retry-backoff-HANDOFF.md, then continue the work from its "Next Steps".
+Start with item 1 and confirm the plan before editing.
 ```
 ````
 
@@ -452,8 +453,8 @@ clobber it:
 
 ## Writing Guidelines
 
-- **Write for a stranger.** No "the fix we discussed", "as mentioned above" or "the file I edited"
-  — name the thing every time. The reader cannot resolve a reference to a conversation it never saw.
+- **Write for a stranger.** No "the fix we discussed", "as mentioned above" or "the file I edited" —
+  name the thing every time. The reader cannot resolve a reference to a conversation it never saw.
 - **Separate fact from hypothesis.** Mark unverified reasoning as such ("likely", "not yet
   confirmed"). A confident-sounding guess recorded as fact is how a handoff actively causes harm
   rather than merely omitting help.
