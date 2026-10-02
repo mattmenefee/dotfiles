@@ -260,6 +260,7 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
     | Variable | Keychain service | Used by |
     | -------- | ---------------- | ------- |
     | `ROLLBAR_ACCESS_TOKEN` | `rollbar-mcp` | Rollbar MCP server in Claude Code |
+    | `POSTMARK_SERVER_TOKEN` | `postmark-mcp` | Postmark MCP server in Claude Code |
 
     These lookups run only for interactive shells, because `.zshrc` is where they live. An
     application launched from the Dock rather than a terminal does not inherit them.
