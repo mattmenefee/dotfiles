@@ -1075,8 +1075,11 @@ on F5, and "all" would take G2 and G4.
 
 ### PR Comment Format
 
-<!-- Keep in sync with Step 8 of a project's .claude/commands/ship-it.md, where one exists: it
-     restates this section's stats-line rule and carries its own copy of the scrub -->
+<!-- Keep in sync with a project's /ship-it, where one exists: Step 8 of
+     .claude/commands/ship-it.md in some projects, and in the dotfiles repository Step 6 of
+     .claude/skills/ship-it/SKILL.md with the patterns in scripts/scrub.sh beside it, whose header
+     lists the differences from this section that are intended. Each restates the stats-line rule
+     and carries its own copy of the scrub -->
 
 When posting review findings as a PR comment (e.g., during `/ship-it` or when explicitly asked),
 build a temporary file with a collapsible `<details><summary>` wrapper and post it with
@@ -1125,9 +1128,17 @@ paths='/users/|/home/|/tmp/|/var/folders/|/volumes/|/root/|-users-'
 paths="$paths"'|[a-z]:\\users|\\wsl|\$\{?home|~[a-z_][a-z0-9_-]*/|\.(internal|local|corp|lan)'
 hosts='(^|[^0-9.])(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.0\.0\.1)'
 ident="$paths|$hosts|(^|[^a-z0-9])$me([^a-z0-9]|$)|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
+keys='api\\?[_-]?key|access\\?[_-]?key|secret|token|passw(or)?d|pwd|credential|auth|bearer'
 secrets='-----begin [a-z ]*private key-----'
-secrets="$secrets"'|(api[_-]?key|secret|token|password|bearer)[[:space:]]*[:=]'
+secrets="$secrets|($keys)[\"'\`\\\\]*[[:space:]]*(\\|[[:space:]]*[^|[:space:]]|[:=])"
+secrets="$secrets"'|authorization:[[:space:]]*(basic|bearer|token)[[:space:]]'
 secrets="$secrets"'|[a-z][a-z0-9+.-]*://[^[:space:]/]+:[^[:space:]@]+@'
+secrets="$secrets"'|gh[pousr]_[a-z0-9]{30,}|github_pat_[a-z0-9_]{20,}'
+secrets="$secrets"'|(^|[^a-z0-9])(akia|asia)[0-9a-z]{16}([^0-9a-z]|$)|xox[abprs]-[a-z0-9-]{10,}'
+secrets="$secrets"'|[sr]k_live_[a-z0-9]{10,}|(^|[^a-z0-9])sk-(ant-|proj-)?[a-z0-9_-]{20,}'
+secrets="$secrets"'|(^|[^a-z0-9])aiza[0-9a-z_-]{35}|glpat-[a-z0-9_-]{20,}|npm_[a-z0-9]{36}'
+secrets="$secrets"'|sg\.[a-z0-9_-]{16,}\.[a-z0-9_-]{16,}'
+secrets="$secrets"'|eyj[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.|bearer[[:space:]]+[a-z0-9._~+/=-]{16,}'
 
 artifacts() {
   find "$root" -maxdepth 1 \
