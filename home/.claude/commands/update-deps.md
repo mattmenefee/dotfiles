@@ -1,7 +1,7 @@
 # Update Dependencies
 
-Update the app's Ruby, JavaScript, and Terraform dependencies, build a detailed commit message from
-changelogs, and open a pull request.
+Update the app's Ruby, JavaScript and Terraform dependencies, build a detailed commit message from
+changelogs and open a pull request.
 
 ## Overview
 
@@ -16,7 +16,7 @@ This command automates the full dependency update workflow:
 7. Handle RuboCop version bumps
 8. Handle haml-lint version bumps
 9. Build the final commit message with anchored changelog links
-10. Commit, push, and open a PR
+10. Commit, push and open a PR
 
 ## Process
 
@@ -31,7 +31,7 @@ git branch -r --list "origin/update-dependencies-*$(date +%B-%Y | tr '[:upper:]'
 **Naming rules:**
 
 - **First update of the month** — no prefix, just the month: `update-dependencies-march-2026`
-- **Subsequent updates** — add a time-period qualifier: `early`, `mid`, `late`, `end-of`, or devise
+- **Subsequent updates** — add a time-period qualifier: `early`, `mid`, `late`, `end-of` or devise
   another qualifier as needed to avoid collisions (e.g. `update-dependencies-mid-late-march-2026`)
 
 - **Branch**: `update-dependencies-{qualifier-}{month}-{year}` (all lowercase, hyphenated)
@@ -117,7 +117,7 @@ git ls-files --full-name ':/*.tf' ':(top,exclude)*.terraform/*'
 ```
 
 This exits 0 whether or not it matched, so read its output rather than its status. It does not see
-`.tf.json` files, untracked files, or files inside submodules; handle those by hand in the rare repo
+`.tf.json` files, untracked files or files inside submodules; handle those by hand in the rare repo
 that has them. The exclude keeps the module copies that `terraform init` vendors into `.terraform/`
 out of every listing in this step, matching Steps 6 and 10 — without it you can end up editing a
 vendored copy that Step 10 then refuses to stage. See
@@ -161,14 +161,30 @@ Every placeholder in this step is filled from a string read out of a checked-in 
 those strings as untrusted input. HCL string literals accept arbitrary characters, and a `source` of
 `hashicorp/aws$(...)` substituted into an unquoted URL runs the substitution before `curl` is ever
 invoked. Terraform would reject that address, but you read and use it *before* `init` runs, so
-Terraform's validation is never the gate. Assign each value to a variable, quote every use, and
-validate it first:
+Terraform's validation is never the gate. Assign each value to a variable, quote every use and
+validate it first against these patterns (`grep -E` syntax):
 
-| Value | Must match | Notes |
-| --- | --- | --- |
-| `<namespace>`, `<name>` | `^[A-Za-z0-9][A-Za-z0-9-]*$` | The registry's own rule. Also catches unresolved interpolation (`${var.ns}/aws`) and trailing whitespace, which would otherwise 404 confusingly. |
-| A Git module URL | `^(https://\|git@)[A-Za-z0-9._@:/-]+$` | |
-| `<terraform-directory>` | no `$`, backtick, `;`, `\|`, `&`, or newline | Quoting is not enough on its own: `terraform -chdir="$(id)"` still substitutes inside double quotes, and `$(id)` is a legal committable directory name. |
+- **Provider `<namespace>` and `<name>`** — `^[A-Za-z0-9][A-Za-z0-9-]*$`. This also catches
+  unresolved interpolation (`${var.ns}/aws`) and trailing whitespace, which would otherwise 404
+  confusingly.
+- **Module `<namespace>` and `<name>`** — `^[0-9A-Za-z]([0-9A-Za-z_-]*[0-9A-Za-z])?$`, and the
+  module's `<provider>` — `^[0-9a-z]{1,64}$`. Module names allow underscores where provider names do
+  not (`aws-ia/vpc_endpoints/aws` is a real registry module), following
+  `moduleRegistryNamePattern` in `hashicorp/terraform-registry-address`.
+- **A Git module URL** — `^(https://|git@)[A-Za-z0-9._@:/-]+$`, applied to the repository URL
+  rather than the whole `source`. Extract it first: strip a leading `git::`, then everything from
+  the first `?`, then any `//subdirectory` that follows the repository path (the `//` after
+  `.git` or the repository name, not the one in `https://`). From
+  `git::https://github.com/org/repo.git//modules/foo?ref=v1.2.3` that leaves
+  `https://github.com/org/repo.git`. Validate the `ref=` value on its own: a version tag must match
+  `^v?[0-9]+(\.[0-9]+)*$`, the same filter the tag lookup below applies, and a commit SHA must
+  match `^[0-9a-f]{7,40}$`.
+- **`<terraform-directory>`** — `^[A-Za-z0-9._/ -]+$`. An allowlist, because a denylist misses
+  characters: a committed directory named `x">out"` closes the quotes in
+  `terraform -chdir="x">out""` and redirects the command's output into a file. Quoting alone is not
+  enough either: `terraform -chdir="$(id)"` still substitutes inside double quotes, and `$(id)` is a
+  legal committable directory name. Better still, assign the directory to a variable and pass
+  `-chdir="$dir"`, so no substituted text is ever parsed as shell syntax.
 
 Anything that fails these is not a dependency you can look up automatically — stop and report it
 rather than working around it.
@@ -180,22 +196,19 @@ entirely unrelated provider. A bare two-part source (`source = "hashicorp/aws"`,
 has no host to strip and is always the public registry:
 
 ```bash
-curl -fsS --max-time 10 https://registry.terraform.io/v1/providers/<namespace>/<name> \
+ns=hashicorp name=aws   # from the block's source, both validated as above
+curl -fsS --max-time 10 "https://registry.terraform.io/v1/providers/$ns/$name" \
   | jq -er '[.versions[] | select(test("^[0-9]+(\\.[0-9]+)*$"))]
             | sort_by(split(".") | map(tonumber))
             | last // error("no stable release found")'
 ```
 
-Do not use the response's `.version` field. It reports the highest semver version **including
-prereleases**, and Terraform will pin to a prerelease without complaint. At the time of writing the
-endpoint returned `5.5.0-pre.1` for `heroku/heroku` while stable sat at `5.4.0` — an arbitrary
-provider that happened to demonstrate it, not one you are expected to use. The specific numbers
-move; the behavior does not. If that provider now looks unremarkable, check another rather than
-concluding the warning is stale. The filter above discards prereleases and sorts numerically, so
-`2.100.0` correctly beats `2.99.1`.
+Do not use the response's `.version` field: it includes prereleases, and Terraform will pin to one
+without complaint. The filter above discards prereleases and sorts numerically, so `2.100.0`
+correctly beats `2.99.1`.
 
 Registry modules answer the same way at
-`https://registry.terraform.io/v1/modules/<namespace>/<name>/<provider>` — and **the hostname rule
+`"https://registry.terraform.io/v1/modules/$ns/$name/$provider"` — and **the hostname rule
 above applies here too**. Module source addresses carry an optional host in the same leading
 position, so `app.terraform.io/acme/vpc/aws` and `tfe.internal/platform/vpc/aws` are both valid.
 Query the public registry only for a bare three-part source or one prefixed with exactly
@@ -206,48 +219,49 @@ unrelated public module to be written into a private module's pin. Modules with 
 
 Modules sourced from Git (`source = "git::https://github.com/org/repo.git//modules/foo?ref=v1.2.3"`)
 or a private registry have no public version API. List the repository's version tags and bump the
-`ref=` value directly:
+`ref=` value directly. That is only right when the existing `ref=` is a version tag; a commit SHA, a
+branch name or a missing `ref=` each need different handling, which the Modules table under Bump the
+Pins gives:
 
 ```bash
-if ! tags=$(git ls-remote --tags --refs https://github.com/org/repo.git); then
+url=https://github.com/org/repo.git   # extracted from source and validated as above
+if ! tags=$(git ls-remote --tags --refs "$url"); then
   echo "STOP: ls-remote failed - do not record this as 'no tags'" >&2
   exit 1
 fi
 printf '%s\n' "$tags" | sed 's|.*refs/tags/||' \
   | grep -E '^v?[0-9]+(\.[0-9]+)*$' \
-  | awk '{k=$0; sub(/^v/,"",k); print k" "$0}' \
-  | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n \
-  | tail -1 | awk '{print $2}'
+  | awk '{k=$0; sub(/^v/,"",k); n=split(k,p,".")
+          key=""; for (i=1; i<=4; i++) key=key sprintf("%09d", (i<=n ? p[i] : 0))
+          print key, $0}' \
+  | LC_ALL=C sort | tail -1 | awk '{print $2}'
 ```
 
-Do not reach for `git ls-remote --sort=-v:refname | head -1`. That sort ranks `v3.0.0-rc1` above
-`v2.1.0`, ranks every `v`-prefixed tag above every bare-numeric one — so a repo that dropped the
-prefix at `2.0.0` reports the older `v1.10.0`, the exact silent downgrade you are trying to avoid —
-and ranks floating tags like `stable` and `latest` in among the versions. The `grep` above discards
-prereleases and non-version tags, and the numeric sort compares field by field.
-
-Branch on `git ls-remote`'s exit status rather than piping it straight into `head`: a pipeline's
-exit status is the last command's, so an unreachable or unauthorized repository prints to stderr and
-the pipeline still exits 0 — the same trap `-fsS`/`jq -e` guard against for curl. `|| echo` is no
-substitute for the `if`: `echo` succeeds, so `$?` is 0 and the empty `$tags` flows on into a filter
-that prints nothing. Keep the two outcomes apart. A non-zero `ls-remote` is a **lookup failure** — a
-network outage, a private-repo 403, a mistyped URL — and you must stop and report it, never record
-it as "no update available". Only when `ls-remote` succeeds and the filter still prints nothing does
-the repository genuinely have no version tags; leave the `ref=` alone and say so rather than
-guessing. The pipeline sorts on the version with any `v` stripped but prints the **tag as it
-actually exists**, so use its output verbatim in `ref=`. Do not re-derive the prefix from the
-existing `ref=`: a repository whose convention changed will have an existing `ref=6.6.1` alongside a
-real tag of `v6.6.1`, and writing the reconstructed name produces `couldn't find remote ref` — which
-Step 6 would then misread as a bad edit. Treat a module major like a provider major — skim the
-repository's release notes first, since module inputs and outputs change across majors.
+Use the pipeline as written rather than `git ls-remote --sort=-v:refname` or `sort -t.`, both of
+which can rank an older tag first. Keep its two outcomes apart. A non-zero `ls-remote` is a
+**lookup failure** — a network outage, a private-repo 403, a mistyped URL — and you must stop and
+report it, never record it as "no update available". Only when `ls-remote` succeeds and the filter
+still prints nothing does the repository genuinely have no version tags; leave the `ref=` alone and
+say so rather than guessing. The pipeline prints the **tag as it actually exists**, so use its
+output verbatim in `ref=` and never re-derive the `v` prefix from the existing `ref=`. Treat a
+module major like a provider major — skim the repository's release notes first, since module inputs
+and outputs change across majors.
 
 Know what a `ref=` bump is worth as a pin, because it is the weakest one in this workflow. A tag is
 mutable and force-pushable, so a module repository whose release tag is moved delivers different
 code under an unchanged `ref=` on the next `init` — and unlike a provider, there is no checksum
 recorded anywhere to notice it. A reviewer looking at `ref=v1.2.3 → ref=v1.4.0` has no artifact to
-verify against. For modules you do not control, resolve the tag to its commit SHA — `git ls-remote
---tags` prints it in the first column, alongside the ref — and record that SHA in the commit
-message, so the review has something fixed to point at.
+verify against. For modules you do not control, resolve the tag to its commit SHA and record that
+SHA in the commit message, so the review has something fixed to point at. `--refs` hides the line
+you need, so query the tag without it:
+
+```bash
+git ls-remote --tags "$url" "refs/tags/$tag" "refs/tags/$tag^{}"
+```
+
+Take the ID from the `^{}` line. A release is usually an annotated tag, whose own line holds the tag
+object's ID rather than the commit's; only the peeled `^{}` line holds the commit. A lightweight tag
+has no `^{}` line, and the ID on its own line is already the commit.
 
 #### Bump the Pins
 
@@ -262,12 +276,10 @@ git restore --source=HEAD --staged --worktree -- <the exact .tf files you edited
 git clean -f -- <any .tf files you created>
 ```
 
-Name the exact files — never a glob, never a directory. `git checkout -- <paths>` is the wrong
-primitive here: it restores from the index rather than from `HEAD`, so once anything has been staged
-it exits 0, reports nothing, and leaves the bad edit in place *and staged*. It also cannot remove a
-`.tf` file you created. Scope matters just as much: by this point `Gemfile.lock`, `yarn.lock`, any
-regenerated `.rubocop_todo.yml`, and every RuboCop autofix from Steps 3, 4, and 7 are uncommitted,
-and a broad revert discards all of them with no reflog to recover from.
+Name the exact files — never a glob, never a directory — and do not use `git checkout --` in place
+of this pair. Scope matters: by this point the changes from Steps 3 and 4
+(`Gemfile.lock`, `yarn.lock` and any `Gemfile` or `package.json` edits for version-locked packages)
+are uncommitted, and a broad revert discards them with no reflog to recover from.
 
 Having the CLI is not the same as having a *usable* one, so check what the configuration will accept
 from it:
@@ -280,7 +292,7 @@ If any `required_version` excludes the installed CLI, every `init` in that modul
 does any provider work, with `Error: Unsupported Terraform Core version`. Install a CLI the
 configuration accepts, or stop and tell the user which version is needed. **Never widen or bump
 `required_version` to make the error go away.** It is a deliberate constraint on which Terraform may
-touch that state, it is not a dependency this command updates, and changing it during a routine
+touch that state, it is not a dependency this command updates and changing it during a routine
 dependency refresh buries an infrastructure decision in a bump PR.
 
 Compare each result against the version in the constraint, numerically field by field rather than as
@@ -302,25 +314,24 @@ rules, so read them from separate tables.
 | Local path | `source = "../../modules/net"` | Versioned by this repository — leave it alone. A local-path module cannot carry a `version` argument at all; Terraform rejects one with `Error: Invalid registry module source address`. |
 | Registry, with `version` | `source = "cloudposse/label/null"`, `version = "~> 0.24.0"` | Same two rules as a provider constraint: edit an exact pin, and edit a range only if the new release falls outside it. |
 | Registry, no `version` | `source = "cloudposse/label/null"` | Nothing governs it, and `init -upgrade` takes the newest stable release, crossing majors silently. Add an explicit constraint rather than leaving it open. |
-| Git `ref=` | `source = "git::https://github.com/org/repo.git//modules/foo?ref=v1.2.3"` | Edit the `ref=` to the new tag. |
+| Git `ref=` | `source = "git::https://github.com/org/repo.git//modules/foo?ref=v1.2.3"` | A version tag: edit the `ref=` to the new tag. A commit SHA: keep a SHA, moving it to the peeled commit of the newer release tag, since replacing it with a tag weakens the pin. A branch name or no `ref=` at all: leave it alone and report it, since moving it to a tag changes what the pin means. |
 
-Do not carry provider-shaped verification over to the module tables. The lock file records
-**provider** selections only — Terraform does not remember version selections for remote modules —
-so no module bump produces a lock-file diff, and there is no `version` line to check before and
-after. The `Downloading <source> <version> for <name>` line in `terraform init` output is the only
-evidence that a module moved, which makes it the only thing the commit message can cite. Capture it
-as [Step 6](#step-6-re-resolve-and-verify-terraform-lock-files) runs.
+Do not carry provider-shaped verification over to the module tables: a module bump leaves no
+lock-file diff to check, so [Step 6](#step-6-re-resolve-and-verify-terraform-lock-files) captures
+its evidence from the `init` output instead.
 
-Count the constraint's segments before deciding "outside" a range. `~>` frees only the component one
-level less precise than the last one given, so `~> 2.99` means `>= 2.99, < 3.0` — it admits `2.99`
+Count the constraint's segments before deciding "outside" a range. `~>` lets only the right-most
+component given increase, so `~> 2.99` means `>= 2.99, < 3.0` — it admits `2.99`
 and every later `2.x`, which makes `2.100.0` **inside** it and `2.5.0` outside — while `~> 2.99.0`
 admits only `2.99.x`.
 
-Three things can cross a major version boundary in one step: replacing an exact pin with the
-registry's latest, letting an unbounded range such as `>= 2.5` drift forward, and a root-module bare
-`source`. The latter two are the more dangerous, because no `.tf` line changes — the only trace is a
-`version` line in the lock file diff, which is easy to skim past. Skim the provider's release notes
-for breaking changes before taking a major bump in any of the three cases.
+Several things can cross a major version boundary in one step. For providers: replacing an exact
+pin with the registry's latest, letting an unbounded range such as `>= 2.5` drift forward and a
+root-module bare `source`. The latter two are the more dangerous, because no `.tf` line changes —
+the only trace is a `version` line in the lock file diff, which is easy to skim past. For modules: a
+registry module with no `version`, which `init -upgrade` moves across majors silently and which
+leaves no lock-file trace at all, and a Git `ref=` bump to a new major tag. Skim the provider's or
+module's release notes for breaking changes before taking a major bump in any of these cases.
 
 Your own reading of the release notes is not the checkpoint, though — it is preparation for one. A
 provider or module major does not get committed on your judgment alone: **stop and ask the user
@@ -342,39 +353,48 @@ there is nothing to commit.
 
 ### Step 6: Re-resolve and Verify Terraform Lock Files
 
-**If `terraform init` exits non-zero anywhere in this step, no Terraform change may be committed.**
-A failed `init` leaves the lock file untouched while your Step 5 edits stand, and staging that pair
-produces a commit that can neither `init` nor `plan`. That bars the Terraform work, not the whole
-run — see below for what to do with the Ruby and JavaScript updates. Read the error before deciding
-what to do:
+**Never commit a root module whose most recent `terraform init` exited non-zero.** A failed `init`
+leaves the lock file untouched while your Step 5 edits stand, and staging that pair produces a
+commit that can neither `init` nor `plan`. The rule is per root module: fix the failure and re-run,
+or revert that root module's changes as described below. Root modules whose `init` succeeded are
+unaffected, and so are the Ruby and JavaScript updates.
+
+Read the error before deciding what to do.
+
 `no available releases match the given constraints` or any HCL syntax error means the edit you just
 made is wrong — fix it in place and re-run.
 
 `does not have a package available for your current platform` is a different animal and does **not**
 mean your edit is wrong. It usually means the provider publishes no build for the platform you are
 on, commonly `darwin_arm64`. Do not revert a legitimate bump over it and do not hand-edit the lock
-file; record the hashes for the platforms that do have builds instead:
+file. Do not name the missing platform in `providers lock` either: a `-platform` with no build makes
+the whole command fail and write nothing. Record the hashes for the platforms that do have builds:
 
 ```bash
-terraform -chdir="<terraform-directory>" providers lock \
-  -platform=darwin_arm64 -platform=linux_amd64
+terraform -chdir="<terraform-directory>" providers lock -platform=linux_amd64
 ```
 
-Adapt that platform list rather than copying it: it must name every platform that runs Terraform
-against this repository — each developer machine plus CI, which is `linux_amd64` on GitHub Actions
-and CircleCI unless the job asks for an ARM runner. The pair above assumes an Apple Silicon Mac and
-x86 Linux CI. A platform you omit here is one whose hashes the lock file will not carry.
+Adapt that platform list rather than copying it: it must name every other platform that runs
+Terraform against this repository — each developer machine plus CI, which is `linux_amd64` on GitHub
+Actions and CircleCI unless the job asks for an ARM runner. The example assumes x86 Linux CI is the
+only other platform. A platform you omit here is one whose hashes the lock file will not carry.
+
+Nobody on the missing platform can `init` or `plan` this root module afterwards, and that includes
+you, so the plan below cannot run here either. Tell the user which platform lost support, and offer
+a provider version that does publish a build for it as the alternative to keeping the bump. If they
+keep it, say in the PR body that developers on that platform cannot run this root module.
 
 If the provider genuinely publishes nothing for any platform you need, report it as unavailable
 rather than working around it.
 
-Only stop for failures you cannot resolve locally. Stopping means dropping the Terraform work, not
-abandoning the run: revert that root module's `.tf` edits and any lock-file changes with the
-`git restore`/`git clean` pair from [Step 5](#step-5-decide-terraform-version-bumps), naming the
-exact files, then **continue with Steps 7–10 for the Ruby and JavaScript updates alone**. Omit the
-`terraform` label, and say in the PR body that Terraform was skipped and why. `gem_update` and
-`yarn up` have already rewritten the tree by this point, and those updates are validated and worth
-shipping. Abandon the whole run only when the tree cannot be returned to a consistent state.
+Only stop for failures you cannot resolve locally. Stopping means dropping that root module's
+Terraform work, not abandoning the run: revert that root module's `.tf` edits and any lock-file
+changes with the `git restore`/`git clean` pair from
+[Step 5](#step-5-decide-terraform-version-bumps), naming the exact files, then **continue with
+Steps 7–10 for the remaining updates**. Say in the PR body which root modules were skipped and
+why, and omit the `terraform` label if no Terraform change remains. `gem_update` and `yarn up` have
+already rewritten the tree by this point, and those updates are validated and worth shipping.
+Abandon the whole run only when the tree cannot be returned to a consistent state.
 
 Leave `.terraform/` alone either way. You cannot tell whether the failed run created it or merely
 wrote into one that was already there — Terraform does not report that — and it is not a disposable
@@ -418,7 +438,7 @@ git ls-files -z --full-name ':/*.tf' ':(top,exclude)*.terraform/*' \
 ```
 
 Treat a candidate as a root module if it declares a `backend` or `cloud` block, declares a
-`provider` block, or is simply a directory you would run `terraform apply` in, and run
+`provider` block or is simply a directory you would run `terraform apply` in, and run
 `init -upgrade` in every one. If the repo clearly uses providers but tracks no lock files at all,
 check `.gitignore` and say in the PR body that lock files are not tracked — otherwise Step 10's
 `git add -- ':/*.terraform.lock.hcl'` aborts with `fatal: pathspec … did not match any files` and
@@ -480,7 +500,21 @@ terraform -chdir="<terraform-directory>" providers lock \
 
 Where credentials are available, run a plan in each affected root module before opening the PR — a
 provider major can turn an in-place update into a destroy-and-recreate, and the plan diff is the
-only thing that surfaces that:
+only thing that surfaces that.
+
+Planning runs code that nobody has reviewed yet. `plan` reads data sources, and an `external` data
+source runs whatever program the module names, with the credentials the session holds. `init`
+checks provider packages against their signatures but checks nothing about module code, so a moved
+tag or a compromised module release runs during the plan. So before planning a root module, check
+which of its modules this run bumped:
+
+- **No module bumped, or every bumped module comes from a source the user controls** — plan
+  without asking. Provider-only bumps fall here, since their packages are signature-checked
+- **Any other module bumped** — stop and ask the user before planning that root module, naming each
+  such module, its old and new version and the credentials the session holds. If they decline,
+  treat the root module as one you could not plan
+
+Then plan:
 
 ```bash
 terraform -chdir="<terraform-directory>" plan -input=false -lock=false
@@ -497,7 +531,7 @@ cannot plan at all, say so in the PR body and leave its checkbox unticked rather
 silently.
 
 **Summarize Terraform output in the PR body and the commit message — never paste it raw.** Backend
-and credential errors are not generic: they embed account IDs, IAM principal ARNs, and state bucket
+and credential errors are not generic: they embed account IDs, IAM principal ARNs and state bucket
 names. A successful plan is no safer, since it prints every attribute the provider did not mark
 `Sensitive`. None of that is a credential, but all of it is reconnaissance, and a PR body is
 permanent and public to everyone with repository access. "Could not plan `infra/prod` — no backend
@@ -509,6 +543,11 @@ Then stage the lock file along with the `.tf` changes (see
 message (see [Step 9](#step-9-build-the-final-commit-message)).
 
 ### Step 7: Handle RuboCop Updates
+
+**Stop first if nothing changed.** Steps 3 through 6 are the only steps that update dependencies, so
+whether there is anything to ship is known now. If `git status --porcelain` prints nothing, tell the
+user that no dependency moved, offer to delete the empty branch from
+[Step 2](#step-2-create-the-feature-branch) and stop here.
 
 Check the `gem_update` output or `git diff Gemfile.lock` for changes to `rubocop` or any `rubocop-*`
 gem. Which of them changed decides how much of this step to run.
@@ -526,7 +565,7 @@ If `rubocop` itself was updated, whether or not any plugin was too:
    This updates the timestamp and version in `.rubocop_todo.yml` (if it exists).
 4. Note the RuboCop fixes for inclusion in the commit message body (see Step 9).
 
-If only `rubocop-*` plugins were updated (for example `rubocop-rails`), run items 1, 2, and 4 but
+If only `rubocop-*` plugins were updated (for example `rubocop-rails`), run items 1, 2 and 4 but
 **not** item 3. The `.rubocop_todo.yml` header records only the core RuboCop version, so
 regenerating it after a plugin-only bump changes nothing but the timestamp. If a regeneration
 happened anyway, restore the file rather than committing the timestamp-only diff:
@@ -558,14 +597,22 @@ If haml-lint was updated:
    # `bin/haml-lint --auto-gen-config --auto-gen-exclude-limit 1000`
    ```
 
+3. Note the haml-lint fixes for inclusion in the commit message body (see Step 9).
+
 A successful `bin/rails lint:haml` run exits 0 with no reported offenses. Any violations must be
 fixed manually before proceeding.
 
 ### Step 9: Build the Final Commit Message
 
 Launch a **documentation-expert** sub-agent (using the Agent tool) to refine the commit message.
-Give it the `gem_update` output from Step 3, any JavaScript dependency changes from Step 4, any
-Terraform provider and module changes from Step 5, and the conventions below.
+Give it the `gem_update` output from Step 3, any JavaScript dependency changes from Step 4, the
+conventions below and, if Terraform changed, the evidence Steps 5 and 6 collected:
+
+- Each lock file's version changes against the Step 5 baseline, including transitive providers that
+  no `required_providers` block names
+- The `Downloading <source> <version> for <name>` lines captured from `init -upgrade` in Step 6,
+  the only record of a module bump
+- Each Git module's resolved commit SHA from Step 5
 
 The agent should:
 
@@ -573,18 +620,22 @@ The agent should:
 
 2. **Fill in missing changelog links** — for any dependency where `gem_update` did not find a
    changelog URL, look it up:
-   - Check the gem's metadata (`gem specification <name>`) for `changelog_uri`, `source_code_uri`,
+   - Check the gem's metadata (`gem specification <name>`) for `changelog_uri`, `source_code_uri`
      or homepage
    - For npm packages, check the package's repository URL on the npm registry
+   - For Terraform providers and registry modules, the registry API's `source` field names the
+     repository (`curl -fsS "https://registry.terraform.io/v1/providers/$ns/$name" | jq -r .source`,
+     or `/v1/modules/$ns/$name/$provider` for a module); use its releases page or changelog file.
+     A Git module's changelog lives in the repository its `source` points at
 
    **Prefer GitHub releases** if the repo uses them (link to the specific release tag page).
    Otherwise, fall back to whichever changelog or history document the repo uses. Common file names
    (in various casing and extensions):
    - `CHANGELOG`, `CHANGES`, `HISTORY`, `NEWS`
-   - Extensions: `.md`, `.txt`, `.textile`, `.rdoc`, or no extension
+   - Extensions: `.md`, `.txt`, `.textile`, `.rdoc` or no extension
 
    **Diffend fallback for Ruby gems** — if a gem has no changelog, no GitHub releases with
-   meaningful notes, and no history file, use [Diffend](https://my.diffend.io) as a last resort.
+   meaningful notes and no history file, use [Diffend](https://my.diffend.io) as a last resort.
    Diffend shows a file-level diff between gem versions. Link format:
    `https://my.diffend.io/gems/<gem-name>/<old-version>/<new-version>`. Diffend only works for
    RubyGems — do not use it for npm packages.
@@ -598,7 +649,13 @@ The agent should:
    release tag (e.g. `https://github.com/org/repo/releases/tag/v1.2.0`).
 
 4. Add any JavaScript and Terraform dependency version changes in the same format, interleaved
-   alphabetically with the Ruby dependencies.
+   alphabetically with the Ruby dependencies. Name a provider by its source address and a module by
+   its block name and source type, and give a Git module's commit SHA beside its version:
+
+   ```text
+   * hashicorp/aws 5.80.0 → 5.81.0
+   * vpc module (Git) v1.2.3 → v1.4.0 (commit <sha>)
+   ```
 
 5. If multi-version jumps occurred for a dependency, list each version's changelog on its own line
    with a version prefix:
@@ -609,31 +666,36 @@ The agent should:
    [v1.2.0 changelog](url)
    ```
 
-6. If RuboCop fixes were needed (Step 7), append to the end of the commit body:
+6. If RuboCop or haml-lint fixes were needed (Steps 7 and 8), append to the end of the commit body,
+   keeping only the sections that apply:
 
    ```text
    Fix the following RuboCop violations:
    - CopName: Brief description of the fix
+
+   Fix the following haml-lint violations:
+   - LinterName: Brief description of the fix
    ```
 
-### Step 10: Commit, Push, and Create the PR
+### Step 10: Commit, Push and Create the PR
 
 Stage all files changed during this workflow:
 
 ```bash
-# Core manifest files
-git add Gemfile Gemfile.lock package.json yarn.lock
-
-# Linter configuration and auto-fixed source files (if applicable). .rubocop_todo.yml changes only
-# when the rubocop gem itself was bumped; a plugin-only bump leaves it untouched (see Step 7).
-git add .rubocop_todo.yml .haml-lint_todo.yml
+# Manifests and linter configuration. Stage each file only if it exists: git add validates every
+# pathspec before staging anything, so one missing file (no yarn.lock in a repo without JavaScript,
+# no .haml-lint_todo.yml without Haml) aborts the whole invocation and stages nothing.
+# .rubocop_todo.yml changes only when the rubocop gem itself was bumped (see Step 7).
+for f in Gemfile Gemfile.lock package.json yarn.lock .rubocop_todo.yml .haml-lint_todo.yml; do
+  if [ -e "$f" ]; then git add -- "$f"; fi
+done
 # Plus any source files modified by bin/rubocop -A or bin/rails lint:haml
 
 # Changed Terraform manifests and the lock files rewritten by terraform init -upgrade.
 # Prefer staging the exact paths identified in Steps 5 and 6. If you glob, keep :/*.tf and
 # :/*.terraform.lock.hcl in separate git add invocations: git add validates every pathspec before
-# staging anything, so one that matches nothing aborts the whole invocation and silently leaves
-# the .tf changes unstaged.
+# staging anything, so one that matches nothing aborts the whole invocation and leaves the .tf
+# changes unstaged. Git prints a fatal: line and exits 128, but that is easy to miss.
 # Omit either line entirely for repos that have no such files. The exclude keeps the modules that
 # terraform init vendors into .terraform/ out of the commit; both magic prefixes anchor to the
 # repository root so the commands behave the same from any directory.
@@ -657,16 +719,17 @@ Determine which labels to apply:
 - Include `javascript` if any npm packages were updated
 - Include `terraform` if any Terraform providers or modules were updated
 
-Only use labels that exist in the repository. Check with:
+Only use labels that exist in the repository. `gh label list --search` ranks by fuzzy relevance
+rather than filtering, so it cannot confirm a name exists. Match the full list exactly instead; this
+prints each candidate that exists:
 
 ```bash
-gh label list --search "dependencies"
-gh label list --search "ruby"
-gh label list --search "javascript"
-gh label list --search "terraform"
+gh label list --limit 1000 --json name --jq '.[].name' \
+  | grep -Fx -e dependencies -e ruby -e javascript -e terraform
 ```
 
-Omit any labels that don't exist in the repo from the `--label` flag below.
+Pass one `--label` flag per label it printed, and omit the rest. Repeating the flag avoids the
+comma-separated form, where a space after a comma becomes part of the next label's name.
 
 Create the PR with a summary body:
 
@@ -682,7 +745,7 @@ gh pr create --title "<title>" --body "$(cat <<'EOF'
 - [ ] CI passes
 - [ ] Smoke test the app locally
 EOF
-)" --label "<comma-separated list of verified labels>"
+)" --label "<label>" --label "<label>"
 ```
 
 Omit any category (Ruby, JavaScript, Terraform) that had no changes. Tailor the summary bullets to
@@ -690,6 +753,22 @@ highlight the most notable updates (major version bumps, security patches, linte
 required code changes, etc.). If any Terraform providers **or modules** changed, add a
 `- [ ] terraform plan shows no unexpected resource changes` checkbox to the test plan — a module
 major changes inputs and outputs, which is at least as plan-visible as a provider bump.
+
+Steps 5 and 6 also decide what else the PR body must say about Terraform. Add each that applies,
+summarized and never pasted from Terraform's output, as
+[Step 6](#step-6-re-resolve-and-verify-terraform-lock-files) explains:
+
+- **A provider or module major** — the plan's one-line summary, or, for a major the user chose to
+  ship unplanned, a statement at the very top of the body that it is unplanned
+  ([Step 5](#step-5-decide-terraform-version-bumps))
+- **A root module that could not be planned** — no credentials, `init -backend=false`, a module plan
+  the user declined or a platform with no provider build — with the plan checkbox left unticked
+  ([Step 6](#step-6-re-resolve-and-verify-terraform-lock-files))
+- **A platform that lost support** — which developers can no longer run that root module
+  ([Step 6](#step-6-re-resolve-and-verify-terraform-lock-files))
+- **Root modules skipped**, and why ([Step 6](#step-6-re-resolve-and-verify-terraform-lock-files))
+- **Lock files not tracked**, when the repository ignores them
+  ([Step 6](#step-6-re-resolve-and-verify-terraform-lock-files))
 
 ## Commit Message Format Reference
 
@@ -701,7 +780,7 @@ bullet with the changelog link on the next line:
 [changelog](https://github.com/owner/repo/blob/main/CHANGELOG.md#version-heading-slug)
 ```
 
-Entries are listed in **alphabetical order**. Ruby, JavaScript, and Terraform dependencies are
+Entries are listed in **alphabetical order**. Ruby, JavaScript and Terraform dependencies are
 interleaved together in one list.
 
 ## Version-Locked Packages
@@ -777,7 +856,7 @@ missing credentials) with no TTY to answer it, erroring out instead of hanging.
 **Why `-fsS` and `jq -e`.** A bare `curl -s ... | jq -r .version` prints `null` and **exits 0** on a
 404, which reads as "no newer release exists" and silently skips the bump. The pipeline's status is
 jq's, not curl's, so the failure never surfaces. `-f` makes curl exit non-zero, `-S` restores the
-error message, and `jq -e` propagates a non-zero status instead of printing `null`.
+error message and `jq -e` propagates a non-zero status instead of printing `null`.
 
 **Why the `:/` pathspec prefix.** It anchors matching to the repository root, so the `git` commands
 select the same files from any directory. It does not normalize the *printed* paths, which is why
@@ -787,6 +866,38 @@ limit of that guarantee: it covers the `git` queries, not the `terraform -chdir`
 `git status`/`git diff` commands that consume the root-relative paths they print. Those break in a
 subdirectory, which is why [Step 5](#step-5-decide-terraform-version-bumps) opens by `cd`-ing to the
 root rather than merely asking you to be there.
+
+**Why not the registry's `.version` field.** It reports the highest semver version including
+prereleases. At the time of writing the provider endpoint returned `5.5.0-pre.1` for
+`heroku/heroku` while stable sat at `5.4.0` — an arbitrary provider that happened to demonstrate it.
+The specific numbers move; the behavior does not. If that provider now looks unremarkable, check
+another rather than concluding the warning is stale.
+
+**Why the Git tag pipeline sorts as it does.** `git ls-remote --sort=-v:refname | head -1` ranks
+`v3.0.0-rc1` above `v2.1.0`, ranks every `v`-prefixed tag above every bare-numeric one — so a repo
+that dropped the prefix at `2.0.0` reports the older `v1.10.0`, a silent downgrade — and ranks
+floating tags like `stable` and `latest` in among the versions. The pipeline's `grep` discards
+prereleases and non-version tags, and its `awk` step builds a fixed-width key from up to four
+version fields, padding missing ones with zero, so a plain sort compares field by field: `v1.2.1`
+beats `v1.2` and `1.10.0` beats `1.9.9`. Sorting `<version> <tag>` lines with `sort -t.` instead
+fails without a fixed width, because a short version's tag text spills into the later sort keys and
+`v1.2` ranks above `v1.2.1`.
+
+**Why the `if` around `ls-remote`.** A pipeline's exit status is the last command's, so an
+unreachable or unauthorized repository piped straight into the filter prints to stderr and the
+pipeline still exits 0 — the same trap `-fsS`/`jq -e` guard against for curl. `|| echo` is no
+substitute for the `if`: `echo` succeeds, so `$?` is 0 and the empty `$tags` flows on into a filter
+that prints nothing, which reads as "no newer tag".
+
+**Why the tag is used verbatim.** The pipeline sorts with any `v` stripped but prints the tag as it
+exists. A repository whose convention changed will have an existing `ref=6.6.1` alongside a real tag
+of `v6.6.1`, and a name reconstructed from the old `ref=` produces `couldn't find remote ref` —
+which Step 6 would then misread as a bad edit.
+
+**Why `git restore --source=HEAD`, not `git checkout --`.** `git checkout -- <paths>` restores from
+the index rather than from `HEAD`, so once anything has been staged it exits 0, reports nothing and
+leaves the bad edit in place *and staged*. It also cannot remove a `.tf` file you created, which is
+what the `git clean` half of the pair is for.
 
 **Module bumps and the lock file.** The lock file records provider selections only, so no module
 bump changes it. `-upgrade` is not what fetches a new module source: a Git `ref=` bump is picked up
@@ -820,11 +931,12 @@ only for host-specific notes that the Dart Sass changelog does not cover.
 - **Changelog links are required** — see [Step 9](#step-9-build-the-final-commit-message).
 - **Never skip linter checks** — see [Step 7](#step-7-handle-rubocop-updates) and
   [Step 8](#step-8-handle-haml-lint-updates).
-- **Always run `terraform init -upgrade` after a Terraform dependency changes** — otherwise the lock
-  file goes stale and `terraform plan` fails. See
+- **Run `terraform init -upgrade` in every root module whenever the repo has `.tf` files** — even
+  with no `.tf` edits, since range constraints and transitive providers move on their own, and a
+  skipped root module leaves a stale lock file that makes `terraform plan` fail. See
   [Step 6](#step-6-re-resolve-and-verify-terraform-lock-files).
-- **Never commit a Terraform change whose `init` failed** — the `.tf` edits stand while the lock
-  file does not move, producing a commit that can neither `init` nor `plan`. See
+- **Never commit a root module whose most recent `init` failed** — the `.tf` edits stand while the
+  lock file does not move, producing a commit that can neither `init` nor `plan`. See
   [Step 6](#step-6-re-resolve-and-verify-terraform-lock-files).
 - **Version-locked packages** — see [Step 4](#step-4-update-javascript-dependencies) and
   [Version-Locked Packages](#version-locked-packages).
