@@ -1,34 +1,10 @@
 ---
 name: test-suite-architect
 description: |-
-  Use this agent when you need to create, review or improve test suites for any codebase. This includes writing unit tests, integration tests, end-to-end tests, designing test strategies, improving test coverage, refactoring existing tests or debugging failing tests. The agent specializes in test-driven development practices and ensuring comprehensive test coverage. Examples:
-
-  <example>
-  Context: The user has just written a new Ruby class and wants to ensure it has proper test coverage.
-  user: "I've created a new PriceCalculator class that handles discount logic"
-  assistant: "I'll use the test-suite-architect agent to create comprehensive tests for your PriceCalculator class"
-  <commentary>
-  Since the user has written new code that needs testing, use the test-suite-architect agent to create appropriate test cases.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user is working on improving their test suite.
-  user: "Our test suite is getting slow and some tests are flaky"
-  assistant: "Let me use the test-suite-architect agent to analyze and improve your test suite performance"
-  <commentary>
-  The user needs help with test optimization and reliability, which is the test-suite-architect's specialty.
-  </commentary>
-  </example>
-
-  <example>
-  Context: The user needs help with test strategy.
-  user: "What's the best way to test this API integration?"
-  assistant: "I'll use the test-suite-architect agent to design a comprehensive testing strategy for your API integration"
-  <commentary>
-  The user is asking for testing expertise and strategy, perfect for the test-suite-architect agent.
-  </commentary>
-  </example>
+  Writes, reviews and improves tests: unit, integration and end-to-end specs, TDD, test strategy,
+  coverage gaps, slow or flaky suites and failing tests. Use when new code needs tests, when
+  deciding how to test a feature or integration, or when a suite needs refactoring. Prefer it over
+  ruby-on-rails-expert whenever the deliverable is tests.
 tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSearch, mcp__serena__*
 model: opus
 memory: project
