@@ -231,10 +231,10 @@ if ! tags=$(git ls-remote --tags --refs "$url"); then
 fi
 printf '%s\n' "$tags" | sed 's|.*refs/tags/||' \
   | grep -E '^v?[0-9]+(\.[0-9]+)*$' \
-  | awk '{k=$0; sub(/^v/,"",k); n=split(k,p,".")
+  | awk '{k=$(0); sub(/^v/,"",k); n=split(k,p,".")
           key=""; for (i=1; i<=4; i++) key=key sprintf("%09d", (i<=n ? p[i] : 0))
-          print key, $0}' \
-  | LC_ALL=C sort | tail -1 | awk '{print $2}'
+          print key, $(0)}' \
+  | LC_ALL=C sort | tail -1 | awk '{print $(2)}'
 ```
 
 Use the pipeline as written rather than `git ls-remote --sort=-v:refname` or `sort -t.`, both of

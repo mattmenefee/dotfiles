@@ -1290,7 +1290,7 @@ printf '%s\n' "$body" | LC_ALL=C awk -v limit="$limit" -v dir="$work_dir" '
     size += blen; buf = ""; blen = 0
   }
   /^##+ / { flush() }
-  { buf = buf $0 "\n"; blen += length($0) + 1 }
+  { buf = buf $(0) "\n"; blen += length($(0)) + 1 }
   END { flush() }'
 
 set -- "$work_dir"/part-*
@@ -1305,7 +1305,8 @@ for part in "$work_dir"/part-*; do
   [ "$total" -eq 1 ] || label=" (part $i of $total)"
   {
     if [ "$i" -eq 1 ]; then
-      echo "## Document Review: $(basename "$document") — [status summary]"
+      printf '## Document Review: %s (`%s`) — [status summary]\n' \
+        "$(basename "$document")" "$(basename "$review_file")"
       echo ""
       echo "**[N findings — X fixed, R refuted, Y deferred, Z ignored, W open, V observations]**"
       echo ""
@@ -1342,7 +1343,9 @@ added at assembly — and the heading interpolates the document name from `$ARGU
 document outside the repository is routinely an absolute path. That line never passed the gate and
 is the **first visible line of the public comment**. Use `basename`, never the path, and re-scan the
 assembled file: the section's own principle is to check at the step that publishes, and checking
-only the source is one step short of it.
+only the source is one step short of it. The heading also names the review file's base name in
+backticks, in the slot `` (`<base name>`) — ``, which is how `/ship-it` finds an earlier comment for
+the same file and updates it instead of posting a second one.
 
 Read the body into a variable and assert it before wrapping it. Inside the group, a failing `cat`
 sends its error to stderr and the group's exit status is the trailing `echo`'s, so an unreadable

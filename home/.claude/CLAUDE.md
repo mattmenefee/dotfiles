@@ -24,10 +24,11 @@ When creating Linear issues, write descriptions for a non-technical audience:
 - Include a Test plan section with checkboxes
 - Reference related Linear issues if applicable
 - When posting review findings (local review, doc review, etc.) as a PR comment, wrap the full
-  content in a `<details><summary>` block so only a summary line is visible by default:
+  content in a `<details><summary>` block so only a summary line is visible by default. Name the
+  review file in the heading so a later post can find and update the comment:
 
   ```markdown
-  ## [Review Type] — [status summary]
+  ## [Review Type] (`[review file's base name]`) — [status summary]
 
   **[brief stats line]**
 
@@ -96,6 +97,10 @@ After completing any coding task, run these commands in order:
 - When writing slash commands, agent files or docs that prescribe shell commands, prescribe the
   non-interactive form. Claude follows a command file literally, so an editor-opening command in one
   will hang
+- Never put `$` followed by a digit (`$0`, `$1`, `$2`) in a slash command or skill file. Claude Code
+  replaces each one with a word of the invocation's arguments, even inside fenced blocks and quoted
+  `awk`. Write awk fields as `$(0)` and `$(2)`, pass shell function arguments through `"$@"` or a
+  variable set before the call, or move the logic into a script run by path
 
 # Serena MCP Server
 
