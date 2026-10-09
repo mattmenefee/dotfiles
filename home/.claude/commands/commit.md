@@ -80,9 +80,15 @@ editors are neutralized, as in the fallback below — use these instead:
   the rebase combines the messages. When both messages matter, use a fixup and reword the result
   with `/commit reword <sha>`.
 
-- **Reordering, dropping, or splitting commits** is a judgment call about what the history should
+- **Reordering, dropping or splitting commits** is a judgment call about what the history should
   say. **Stop and hand it back to the user** rather than reconstructing it — explain what reshaping
-  is needed and let them drive the rebase themselves.
+  is needed and let them drive the rebase themselves. The one exception is a project command, such
+  as `/ship-it` in a project that has one, that proposes a squash grouping and gets the user's
+  explicit approval of it before rebasing: it may reorder commits to carry out that grouping and
+  nothing more, because the user approves the grouping, never the agent, so the decision stays
+  theirs. Without such a command, or without that approval, stop and hand it back as above.
+  <!-- Keep in sync with Step 3 of .claude/skills/ship-it/SKILL.md in the dotfiles repository,
+       whose squash proposal and approval this exception covers -->
 
 ## Rewording Under a `commit-msg` Hook
 
