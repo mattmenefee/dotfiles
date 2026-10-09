@@ -4,7 +4,7 @@
 
 - When creating Pull Requests or Linear issues, assign them to me by default
 - Never add AI attribution to anything pushed to a repository: no `Co-Authored-By` trailers, no
-  `Claude-Session` lines, and no "Generated with" footers or session links in pull request or issue
+  `Claude-Session` lines and no "Generated with" footers or session links in pull request or issue
   descriptions. Commits are authored by me alone
 
 ## Linear Issues
@@ -12,10 +12,10 @@
 When creating Linear issues, write descriptions for a non-technical audience:
 
 - Focus on user benefits, not implementation details
-- Use familiar references (e.g., "similar to Slack") to ground changes
+- Use familiar references (e.g. "similar to Slack") to ground changes
 - Include a "Why This Matters" section connecting the change to business value
-- Avoid code-level details like file names, CSS values, or internal refactors
-- Describe accessibility improvements in plain language (e.g., "easier to tap" not "WCAG 2.5.8")
+- Avoid code-level details like file names, CSS values or internal refactors
+- Describe accessibility improvements in plain language (e.g. "easier to tap" not "WCAG 2.5.8")
 
 ## Pull Requests
 
@@ -42,7 +42,7 @@ When creating Linear issues, write descriptions for a non-technical audience:
 ## Committing Changes
 
 - Always use the `/commit` slash command when writing or editing a commit message — this includes
-  creating new commits, amending commits, and editing commit messages
+  creating new commits, amending commits and editing commit messages
 - Consider using the `/doc-review` slash command after writing or updating a significant amount of
   documentation
 
@@ -59,12 +59,12 @@ After completing any coding task, run these commands in order:
 - Follow Sandi Metz's rules from "Practical Object-Oriented Design in Ruby"
 - Follow the [Ruby Style Guide](https://rubystyle.guide/) and the
   [Rails Style Guide](https://rails.rubystyle.guide/)
-- Always leave a blank line at the end of a file
-- Wrap at 100 characters where it makes sense — source code, comments, Markdown prose, slash command
-  and agent files, and configuration. Defer to a project's own linter or `.editorconfig` when it
-  sets a different limit
+- End every file with a single trailing newline (not a literal blank line)
+- Wrap at 100 characters where it makes sense — source code and comments, Markdown prose
+  (including slash command and agent files) and configuration. Defer to a project's own linter or
+  `.editorconfig` when it sets a different limit
 - Do not wrap where the line break would be wrong rather than merely long: PR and issue descriptions
-  (GitHub and Linear both reflow them), long URLs, Markdown tables, and strings or identifiers that
+  (GitHub and Linear both reflow them), long URLs, Markdown tables and any string or identifier that
   cannot be split
 
 # Writing & Copy Conventions
@@ -75,7 +75,7 @@ After completing any coding task, run these commands in order:
 - Generally prefer spelling terms out over abbreviating, though it can depend on the context — for
   example, write "DigitalOcean" rather than "DO"
 
-# Testing
+# Testing (RSpec)
 
 - When writing tests:
   - Do not stub the subject
@@ -89,12 +89,13 @@ After completing any coding task, run these commands in order:
 
 - No TTY is available, so any command that opens an editor or waits for input will hang — supply
   input via flags instead (`git commit -F <file>`, `gh pr create --title --body`). Common offenders:
-  bare `git commit`, `git commit --squash`, `git add -i`/`-p`, `docker`/`kubectl -it`,
-  REPLs (`psql`, `rails console`), and `yarn upgrade-interactive`.
+  bare `git commit`, `git commit --squash`, `git add -i`/`-p`, `docker run -it`/`kubectl exec -it`,
+  REPLs (`psql`, `rails console`) and `yarn upgrade-interactive`.
 - `-i` is not itself the hazard: `git rebase -i` runs fine when its editors are neutralized
   (`GIT_SEQUENCE_EDITOR=true`), which some commands prescribe
-- When writing slash commands, agent files, or docs that prescribe shell commands, prescribe the
-  non-interactive form — a command file that says to run an editor-opening command will be followed
+- When writing slash commands, agent files or docs that prescribe shell commands, prescribe the
+  non-interactive form. Claude follows a command file literally, so an editor-opening command in one
+  will hang
 
 # Serena MCP Server
 
@@ -102,5 +103,5 @@ After completing any coding task, run these commands in order:
 - Activation steps:
   1. Load the tool: `ToolSearch` with query `select:mcp__serena__activate_project`
   2. Activate the project: `mcp__serena__activate_project` with the current project path
-- Serena has project memories that can be read with `read_memory` when relevant
+- Serena has project memories that can be read with `mcp__serena__read_memory` when relevant
 - Do NOT attempt to call any `mcp__serena__*` tool without first loading it via `ToolSearch`
