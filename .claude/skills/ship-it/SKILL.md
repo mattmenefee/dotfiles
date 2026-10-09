@@ -56,6 +56,10 @@ pushed, and everything published is checked before it leaves the machine.
   ```
 
   After changing its patterns, run `test-scrub.sh` beside it.
+- **Never type an artifact's file name into a command.** Step 6 records each artifact's path in a
+  file of its own, `<work dir>/artifact-<n>`, which names that file for the whole run, and every
+  block reads the name from there. A name pasted into a quoted shell word breaks the quoting at a
+  `'` and runs at a `$( )`.
 
 ## Step 1: Rebase onto `origin/main`
 
@@ -188,6 +192,9 @@ LC_ALL=en_US.UTF-8 command grep -n '.\{73,\}' /dev/null "$f"
 ```
 
 ### Propose the remaining commits
+
+<!-- The squash proposal and approval here are the exception /commit's Reshaping History grants
+     (home/.claude/commands/commit.md); keep the two in sync -->
 
 Fold into the commit it belongs to: a commit that fixes, finishes or reverts earlier work on this
 branch; a review fix round; a `wip`, `fixup!` or `squash!` commit; a generated file into the commit
@@ -378,24 +385,40 @@ the file and run it again.
 
 ## Step 6: Post Review Artifacts
 
-Look in the repository root for this branch's artifacts:
+Look in the repository root for this branch's artifacts, recording each one's path:
 
 ```bash
+work='<work dir>'
 root=$(git rev-parse --show-toplevel) || exit 1
-find "$root" -maxdepth 1 \( -name '*local-review*.md' -o -name '*-REVIEW*.md' \
-  -o -name '*-PLAN.md' -o -name PLAN.md -o -name '*-HANDOFF.md' \) -print
+work=$work find "$root" -maxdepth 1 \( -name '*local-review*.md' -o -name '*-REVIEW*.md' \
+  -o -name '*-PLAN.md' -o -name PLAN.md -o -name '*-HANDOFF.md' \) -exec bash -c '
+    for p do
+      n=1
+      while [ -e "$work/artifact-$n" ] && [ "$(cat -- "$work/artifact-$n")" != "$p" ]; do
+        n=$((n + 1))
+      done
+      printf "%s" "$p" > "$work/artifact-$n" && printf "artifact-%s  %q\n" "$n" "$p"
+    done' bash {} \;
 git ls-files -- '*PLAN.md'
 ```
 
-`*-REVIEW*.md` takes in a `*-DOC-REVIEW*.md` and a review merged from several reviewers alike. Use
-`find`, never a shell glob: an unmatched glob is an error under zsh. A root can hold artifacts
-for other in-flight work, so read each file's header table and post only those whose **Branch**
-row names the current branch in this repository. Both `/doc-review` and `/handoff` write it as a
-table row with **Branch** in the first cell and the backticked name in the second; a handoff
-follows the name with its base. Ask about one that names another branch or another repository,
-and about a review or handoff with no Branch row. A plan without a header belongs to the branch its
-filename names. A plan that `git ls-files` lists is tracked, which this repository's workflow never
-does: stop and ask the user about it rather than posting or deleting it.
+Each line names an artifact as `artifact-<n>`, the name every block below takes, followed by its
+path quoted for the shell. Read a file with the `Read` tool, which takes the path unquoted; never
+paste the path into a command. `*-REVIEW*.md` takes in a `*-DOC-REVIEW*.md` and a review merged
+from several reviewers alike. Use `find`, never a shell glob: an unmatched glob is an error under
+zsh. A root can hold artifacts for other in-flight work, so read each file's header table and post
+only those whose **Branch** row names the current branch in this repository. Both `/doc-review` and
+`/handoff` write it as a table row with **Branch** in the first cell and the backticked name in the
+second; a handoff follows the name with its base. Ask about one that names another branch or
+another repository, and about a review or handoff with no Branch row. A plan without a header
+belongs to the branch its filename names. A plan that `git ls-files` lists is tracked, which this
+repository's workflow never does: stop and ask the user about it rather than posting or deleting it.
+
+A number names one file for the whole run. Running discovery again keeps every number it gave and
+gives a new file the next free one; a source deleted after posting keeps its number, which the
+delete block then skips, so a number's `.copy` and other work files never pass to another file.
+Every block takes an artifact's `artifact-<n>` except the handoff's, which take `handoff`; its
+`artifact-<n>` is used only to delete it.
 
 ### Only finished reviews are posted
 
@@ -403,7 +426,7 @@ A review comment records how the review ended, not a snapshot of one in progress
 review file, check it for findings with no disposition:
 
 ```bash
-f='<review file>'
+f=$(cat -- '<work dir>/artifact-<n>') || exit 1
 [ -r "$f" ] || { echo "cannot read $f" >&2; exit 1; }
 command grep -nE '^\| F[0-9]+ \|.*\| ❓ \|' /dev/null "$f"; a=$?
 command grep -n '^- \[ \]' /dev/null "$f"; b=$?
@@ -431,7 +454,9 @@ For each review file that passed, and for an untracked plan, work on a copy in t
 the source is deleted only once its comment is verified:
 
 ```bash
-cp -- '<file>' '<work dir>/<file name>.copy'
+work='<work dir>'
+name='artifact-<n>'
+src=$(cat -- "$work/$name") && cp -- "$src" "$work/$name.copy"
 ```
 
 Read the copy in full and replace with `[redacted: <what it was>]`, describing the value's shape
@@ -456,12 +481,14 @@ Put a neutral count where the section stood, and report each withheld finding to
 Then list what the post block must not find in the comment, from the source:
 
 ```bash
-src='<file>'
-out='<work dir>/<file name>.withheld'
+work='<work dir>'
+name='artifact-<n>'
+src=$(cat -- "$work/$name") || exit 1
+out="$work/$name.withheld"
 awk '/^## /{s=/^## Sensitive Information/}
-     s && /^### F[0-9]+ /{t=$0; sub(/^### F[0-9]+ (~~)?/, "", t); i=index(t, " - ")
+     s && /^### F[0-9]+ /{t=$(0); sub(/^### F[0-9]+ (~~)?/, "", t); i=index(t, " - ")
                           if (i) t=substr(t, i+3); sub(/~~.*/, "", t); print t}
-     s && /^- \*\*Location\*\* — /{l=$0; sub(/^- \*\*Location\*\* — /, "", l); print l}' \
+     s && /^- \*\*Location\*\* — /{l=$(0); sub(/^- \*\*Location\*\* — /, "", l); print l}' \
   "$src" > "$out" && cat -- "$out"
 ```
 
@@ -471,7 +498,7 @@ at the finding, such as a section heading every finding shares.
 Then scrub the copy:
 
 ```bash
-bash "<scrub>" '<copy>' '<cleared file, or /dev/null>'
+bash "<scrub>" '<work dir>/artifact-<n>.copy' '<cleared file, or /dev/null>'
 ```
 
 Rewrite an identifying hit in the copy (`~`-prefixed outside the repository, repository-relative
@@ -482,16 +509,18 @@ exactly as the script printed them **without** the `<file>:<line>:` prefix, and 
 the second argument here and in every block below. If the user clears nothing, nothing is posted.
 
 Patterns cannot see a person's name or a private repository. Before posting, list the people and
-organizations the copy names, other than the user, and ask whether each may be published. Ask the
-same about any `linear.app/` link, whose workspace slug names the employer. The post block checks
-each `github.com/<owner>/<repo>` it finds and refuses one that is not public.
+organizations the copy and the comment header mention, the source's file name included, other than
+the user, and ask whether each may be published. Ask the same about any `linear.app/` link, whose
+workspace slug names the employer. When the file name is not cleared, leave its
+`` (`[base name]`) `` slot out of the heading and accept that the next run posts a second comment.
+The post block checks each `github.com/<owner>/<repo>` it finds and refuses one that is not public.
 
 ### Build, check and post
 
-Write the comment header with the `Write` tool to `<file name>.header` in the work directory:
+Write the comment header with the `Write` tool to `artifact-<n>.header` in the work directory:
 
 ```markdown
-## [Title] — [status summary]
+## [Title] (`[base name]`) — [status summary]
 
 **[stats line]**
 
@@ -499,16 +528,45 @@ Redacted before posting: [count and kinds, or none]
 ```
 
 Derive the title and stats line from the file: finding counts for a review, the plan's title for a
-plan. Name every status bucket separately (fixed, refuted, deferred, ignored, observations) and omit
-empty ones; a refuted finding is never counted as fixed. When this run rewrote history, add a line
-saying file and line references and cited SHAs may have drifted.
+plan. `[base name]` is the source's file name without its directory, in backticks, so the next run
+can find the comment. Name every status bucket separately (fixed, refuted, deferred, ignored,
+observations) and omit empty ones; a refuted finding is never counted as fixed. When this run
+rewrote history, add a line saying file and line references and cited SHAs may have drifted.
 
-Then build, check and post in one command:
+A source kept after posting is found again by the next run. Look for the user's earlier comment
+whose heading names the same file or, for a handoff, the user's earlier `## Handoff notes` comment,
+so a second run updates it instead of adding a copy:
 
 ```bash
 work='<work dir>'
-name='<file name>'
-src='<file>'
+name='<artifact-<n>, or handoff>'
+me=$(gh api user --jq .login) || exit 1
+if [ "$name" = handoff ]; then
+  mode=handoff key='## Handoff notes'
+else
+  key=$(cat -- "$work/$name") || exit 1
+  mode=artifact key="(\`${key##*/}\`) — "
+fi
+ME=$me MODE=$mode KEY=$key gh api --paginate "repos/{owner}/{repo}/issues/<pr-number>/comments" \
+  --jq '.[] | select(.user.login == env.ME and (.body | split("\n")[0] |
+    if env.MODE == "handoff" then startswith(env.KEY)
+    else startswith("## ") and contains(env.KEY) end)) | .id'
+```
+
+The login and the key reach `jq` through the environment, never pasted into its program. An
+artifact's key is the whole `` (`<base name>`) — `` slot, so a doc review of `PLAN.md`, whose
+heading names `PLAN.md` elsewhere, never matches the plan. A handoff's heading must start with
+`## Handoff notes`. Anyone can comment on a public pull request, so a match by someone else is never
+updated. More than one id: ask which to update. Carry the id, or nothing, to the post block.
+
+Then build, check and post in one command, or, with an id, save the current body first and update
+it:
+
+```bash
+work='<work dir>'
+name='artifact-<n>'
+id='<id, or empty to post a new comment>'
+src=$(cat -- "$work/$name") || exit 1
 cleared="$work/cleared.txt"; [ -e "$cleared" ] || cleared=/dev/null
 scrub="$(git rev-parse --show-toplevel)/.claude/skills/ship-it/scripts/scrub.sh"
 pr_url=$(gh pr view --json url,state --jq 'select(.state == "OPEN") | .url')
@@ -522,11 +580,11 @@ comment="$work/$name.comment"
 [ "$(wc -c < "$comment")" -le 60000 ] || { echo 'over 60000 bytes: ask the user' >&2; exit 1; }
 ! command grep -q '^## Sensitive Information' "$comment" ||
   { echo 'withhold: the section is still in the comment' >&2; exit 1; }
-ids=$(awk '/^## /{s=/^## Sensitive Information/} s && /^### F[0-9]+ /{print $2}' "$src") ||
+ids=$(awk '/^## /{s=/^## Sensitive Information/} s && /^### F[0-9]+ /{print $(2)}' "$src") ||
   exit 1
-for id in $(printf '%s\n' "$ids"); do
-  ! command grep -qE "(^|[^0-9a-z])$id([^0-9]|\$)" "$comment" ||
-    { echo "withhold: $id is still in the comment" >&2; exit 1; }
+for fid in $(printf '%s\n' "$ids"); do
+  ! command grep -qE "(^|[^0-9a-z])$fid([^0-9]|\$)" "$comment" ||
+    { echo "withhold: $fid is still in the comment" >&2; exit 1; }
 done
 if [ -e "$work/$name.withheld" ]; then
   while IFS= read -r t; do
@@ -541,13 +599,34 @@ while IFS= read -r ref; do
     { echo "repository $slug is not public, or could not be checked" >&2; exit 1; }
 done < "$work/repos"
 bash "$scrub" "$comment" "$cleared" || exit 1
-gh pr comment "$pr_url" --body-file "$comment"
+if [ -n "$id" ]; then
+  case $id in *[!0-9]*) echo "not a comment id: $id" >&2; exit 1 ;; esac
+  me=$(gh api user --jq .login) || exit 1
+  at=$(gh api "repos/{owner}/{repo}/issues/comments/$id" --jq '.user.login + " " + .html_url') ||
+    exit 1
+  case $at in "$me $pr_url#"*) ;; *) echo "not yours on this pull request: $at" >&2; exit 1 ;; esac
+  prev="$work/$name.previous"
+  if [ ! -e "$prev" ]; then
+    gh api "repos/{owner}/{repo}/issues/comments/$id" --jq .body > "$prev" ||
+      { rm -f -- "$prev"; exit 1; }
+  fi
+  echo "previous body saved to $prev"
+  gh api "repos/{owner}/{repo}/issues/comments/$id" --method PATCH \
+    -F "body=@$comment" --jq .html_url
+else
+  gh pr comment "$pr_url" --body-file "$comment"
+fi
 ```
 
 The comment is scrubbed again because the header was written around the copy and never passed the
-first scrub. The URL `gh pr comment` prints ends in `#issuecomment-<id>`; carry that id to the
-read-back. A comment over 60,000 bytes stops: ask the user whether to cut the review or post it in
-parts, each part passing every check in this block before the first is posted.
+first scrub. `-F body=@<file>` sends the file's content unchanged. `-f` would send the literal path
+instead. An id is updated only when it is numeric and names a comment the user wrote on this pull
+request. The previous body is saved only once, so a retry keeps the original; tell the user where it
+was saved: it is the only copy of what the comment said. A `Not Found` here means the comment is
+gone: run the lookup again, and post with an empty id if it finds nothing. The URL either branch
+prints ends in `#issuecomment-<id>`; carry that id to the read-back. A comment over 60,000 bytes
+stops: ask the user whether to cut the review or post it in parts, each part passing every check in
+this block before the first is posted.
 
 ### Verify, then delete
 
@@ -555,7 +634,7 @@ Read each comment back and compare it with what was sent before deleting anythin
 
 ```bash
 work='<work dir>'
-name='<file name>'
+name='<artifact-<n>, or handoff>'
 id='<id from the posted URL>'
 case $id in '' | *[!0-9]*) echo "not a comment id: $id" >&2; exit 1 ;; esac
 gh api "repos/{owner}/{repo}/issues/comments/$id" --jq .body > "$work/$name.posted" || exit 1
@@ -563,11 +642,17 @@ gh api "repos/{owner}/{repo}/issues/comments/$id" --jq .body > "$work/$name.post
   echo verified || echo 'MISMATCH: do not delete'
 ```
 
-Delete only a verified file whose source is not being kept, naming it: `rm -- '<file>'`. Never
-delete with a glob. Keep the source when its credentials await the user's word on rotation, and
-keep a `*-DOC-REVIEW*.md` whose Sensitive Information findings were withheld, since those findings
-have no other copy: name it to the user and delete it only on their word. A file whose comment did
-not verify is never deleted.
+Delete only a verified source that is not being kept, by its `artifact-<n>` and never with a glob:
+
+```bash
+src=$(cat -- '<work dir>/artifact-<n>') && [ -f "$src" ] && rm -- "$src" &&
+  printf 'deleted %s\n' "$src"
+```
+
+Keep the source when its credentials await the user's word on rotation, and keep a
+`*-DOC-REVIEW*.md` whose Sensitive Information findings were withheld, since those findings have no
+other copy: name it to the user and delete it only on their word. A file whose comment did not
+verify is never deleted.
 
 ### Handoff notes
 
@@ -594,18 +679,9 @@ working-tree state it described is superseded by the merge. Write the comment wi
 to `handoff.comment` in the work directory, carrying the prose verbatim, and escape any literal
 `</details>` in it. Apply the redaction and name rules from Copy, redact and scrub to it.
 
-Look for an earlier handoff comment of the user's, so a second run updates it instead of adding a
-copy:
-
-```bash
-me=$(gh api user --jq .login) || exit 1
-gh api --paginate "repos/{owner}/{repo}/issues/<pr-number>/comments" \
-  --jq ".[] | select(.user.login == \"$me\" and (.body | startswith(\"## Handoff notes\"))) | .id"
-```
-
-Anyone can comment on a public pull request, so a match by someone else is never updated. More than
-one id: ask which to update. Then run the repository check and scrub from the post block on
-`handoff.comment`, and post it, or, with an id, save the current body first and update it:
+Look for an earlier handoff comment with the lookup in Build, check and post, using `handoff` as
+the name. Then run the repository check and scrub from the post block on `handoff.comment`, and
+post it, or, with an id, save the current body first and update it:
 
 ```bash
 work='<work dir>'
@@ -616,9 +692,17 @@ pr_url=$(gh pr view --json url,state --jq 'select(.state == "OPEN") | .url')
 [ -n "$pr_url" ] || { echo 'no open pull request: do not post' >&2; exit 1; }
 bash "$scrub" "$work/handoff.comment" "$cleared" || exit 1
 if [ -n "$id" ]; then
-  gh api "repos/{owner}/{repo}/issues/comments/$id" --jq .body > "$work/handoff.previous" ||
+  case $id in *[!0-9]*) echo "not a comment id: $id" >&2; exit 1 ;; esac
+  me=$(gh api user --jq .login) || exit 1
+  at=$(gh api "repos/{owner}/{repo}/issues/comments/$id" --jq '.user.login + " " + .html_url') ||
     exit 1
-  echo "previous body saved to $work/handoff.previous"
+  case $at in "$me $pr_url#"*) ;; *) echo "not yours on this pull request: $at" >&2; exit 1 ;; esac
+  prev="$work/handoff.previous"
+  if [ ! -e "$prev" ]; then
+    gh api "repos/{owner}/{repo}/issues/comments/$id" --jq .body > "$prev" ||
+      { rm -f -- "$prev"; exit 1; }
+  fi
+  echo "previous body saved to $prev"
   gh api "repos/{owner}/{repo}/issues/comments/$id" --method PATCH \
     -F "body=@$work/handoff.comment" --jq .html_url
 else
@@ -626,8 +710,8 @@ else
 fi
 ```
 
-`-F body=@<file>` sends the file's content unchanged. `-f` would send the literal path instead.
-Tell the user where the previous body was saved: it is the only copy of what the comment said.
+The id checks, the single save and a `Not Found` work as for a review: tell the user where the
+previous body was saved.
 
 Read the comment back with the Verify block above, using `handoff` as the name. Only once it
 verifies, ask with `AskUserQuestion`:
@@ -636,7 +720,7 @@ verifies, ask with `AskUserQuestion`:
 - **Keep it**: the work continues past this pull request
 
 When verification failed, say so and do not offer deletion. Delete only on the first answer, with
-`rm -- '<handoff file>'`.
+the delete block above, naming the handoff's `artifact-<n>`.
 
 ## Step 7: Mark Ready
 
