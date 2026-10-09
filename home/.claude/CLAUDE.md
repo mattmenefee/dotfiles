@@ -24,10 +24,11 @@ When creating Linear issues, write descriptions for a non-technical audience:
 - Include a Test plan section with checkboxes
 - Reference related Linear issues if applicable
 - When posting review findings (local review, doc review, etc.) as a PR comment, wrap the full
-  content in a `<details><summary>` block so only a summary line is visible by default:
+  content in a `<details><summary>` block so only a summary line is visible by default. Name the
+  review file in the heading so a later post can find and update the comment:
 
   ```markdown
-  ## [Review Type] — [status summary]
+  ## [Review Type] (`[review file's base name]`) — [status summary]
 
   **[brief stats line]**
 
