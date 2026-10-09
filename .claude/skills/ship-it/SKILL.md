@@ -459,9 +459,9 @@ Then list what the post block must not find in the comment, from the source:
 src='<file>'
 out='<work dir>/<file name>.withheld'
 awk '/^## /{s=/^## Sensitive Information/}
-     s && /^### F[0-9]+ /{t=$0; sub(/^### F[0-9]+ (~~)?/, "", t); i=index(t, " - ")
+     s && /^### F[0-9]+ /{t=$(0); sub(/^### F[0-9]+ (~~)?/, "", t); i=index(t, " - ")
                           if (i) t=substr(t, i+3); sub(/~~.*/, "", t); print t}
-     s && /^- \*\*Location\*\* — /{l=$0; sub(/^- \*\*Location\*\* — /, "", l); print l}' \
+     s && /^- \*\*Location\*\* — /{l=$(0); sub(/^- \*\*Location\*\* — /, "", l); print l}' \
   "$src" > "$out" && cat -- "$out"
 ```
 
@@ -522,7 +522,7 @@ comment="$work/$name.comment"
 [ "$(wc -c < "$comment")" -le 60000 ] || { echo 'over 60000 bytes: ask the user' >&2; exit 1; }
 ! command grep -q '^## Sensitive Information' "$comment" ||
   { echo 'withhold: the section is still in the comment' >&2; exit 1; }
-ids=$(awk '/^## /{s=/^## Sensitive Information/} s && /^### F[0-9]+ /{print $2}' "$src") ||
+ids=$(awk '/^## /{s=/^## Sensitive Information/} s && /^### F[0-9]+ /{print $(2)}' "$src") ||
   exit 1
 for id in $(printf '%s\n' "$ids"); do
   ! command grep -qE "(^|[^0-9a-z])$id([^0-9]|\$)" "$comment" ||

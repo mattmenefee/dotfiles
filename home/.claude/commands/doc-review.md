@@ -1290,7 +1290,7 @@ printf '%s\n' "$body" | LC_ALL=C awk -v limit="$limit" -v dir="$work_dir" '
     size += blen; buf = ""; blen = 0
   }
   /^##+ / { flush() }
-  { buf = buf $0 "\n"; blen += length($0) + 1 }
+  { buf = buf $(0) "\n"; blen += length($(0)) + 1 }
   END { flush() }'
 
 set -- "$work_dir"/part-*

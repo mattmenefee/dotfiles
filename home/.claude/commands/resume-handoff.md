@@ -310,14 +310,14 @@ recorded on an earlier Handoff History entry.
 Check that nothing was lost, and delete the backup only if nothing was:
 
 ```bash
-headings() { awk '/^(```|~~~)/ { fence = !fence; next } !fence && /^#/' "$1"; }
-section() { awk -v h="## $2" '/^## / { on = ($0 == h) } on' "$1"; }
+headings() { awk '/^(```|~~~)/ { fence = !fence; next } !fence && /^#/' "$@"; }
+section() { awk -v h="## $name" '/^## / { on = ($(0) == h) } on' "$@"; }
 lost=$(diff <(headings <handoff>.bak) <(headings <handoff>) | grep '^<')
-for s in 'Objective' 'Scope' 'Constraints & Preferences' 'Decisions & Rationale' \
+for name in 'Objective' 'Scope' 'Constraints & Preferences' 'Decisions & Rationale' \
   'Insights & Learnings' 'Dead Ends'; do
-  missing=$(section <handoff>.bak "$s" | grep -vxF -f <(section <handoff> "$s"))
+  missing=$(section <handoff>.bak | grep -vxF -f <(section <handoff>))
   [ -z "$missing" ] || lost="$lost
-$s: $missing"
+$name: $missing"
 done
 if [ -n "$lost" ]; then
   printf 'kept the backup — lost:%s\n' "$lost"
@@ -328,8 +328,9 @@ fi
 
 The check skips fenced blocks, so an edited shell comment is not a heading. It reports only headings
 that went missing, so adding one is fine, and it compares the preserved sections line by line, since
-an emptied section keeps its heading. If it reports a loss, the backup stays: restore what went
-missing and tell the user.
+an emptied section keeps its heading. `section` reads the heading from `name`, which the loop sets,
+because a positional parameter in this file would be replaced by the command's arguments. If it
+reports a loss, the backup stays: restore what went missing and tell the user.
 
 **Never `git add` or commit the handoff**, and do not rename it.
 
