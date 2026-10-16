@@ -1,0 +1,233 @@
+#!/usr/bin/env python3
+"""Copy a Markdown draft to the clipboard as HTML, so a paste into Teams keeps its formatting.
+
+Teams discards blank lines from a plain-text paste and there is no separator character that
+survives: U+00A0 is stripped as whitespace, and U+200B is kept but read as content, which merges
+every line into one paragraph. Teams honors the clipboard's rich-text flavor instead, and an empty
+spacer paragraph between blocks restores the gap its editor removes.
+
+    teams-copy draft.md                # copy to the clipboard, ready to paste into Teams
+    teams-copy draft.md --print-html   # print the HTML instead of copying it
+    teams-copy < draft.md              # read the draft from stdin
+    teams-copy --help                  # this text
+
+Supported: paragraphs, # headings, **bold**, *italics*, `inline code`, [text](https://…) links,
+- and 1. lists (one level, with indented continuation lines) and @[Name] mentions. Bold italics
+(***text***), _underscores_, fenced code blocks and nested lists are not. Single newlines are kept
+as line breaks, so don't hard-wrap drafts.
+
+@[Name] becomes a live Teams @mention. Mentions need a people file that is not part of this
+repository, because it lists colleagues and their Teams user ids (MRIs). Create it at
+~/.config/teams-copy/people.json with mode 600: a JSON object whose keys are the exact text written
+inside @[…] (case-sensitive, and also the text the pasted mention shows) and whose values are the
+person's MRI, "8:orgid:" followed by their Entra object id. Several keys may share one MRI.
+
+    {
+      "Alex": "8:orgid:00000000-0000-0000-0000-000000000000"
+    }
+
+Without the file, everything but mentions still works, and a draft that uses @[Name] stops with an
+error rather than pasting plain text. To find someone's MRI, @mention them in a Teams compose box
+and copy the mention, which puts Teams' HTML on the clipboard, then run:
+
+    osascript -e 'the clipboard as «class HTML»' | sed -E 's/«data HTML//; s/»$//' | xxd -r -p
+"""
+
+import argparse
+import functools
+import html
+import json
+import os
+import pathlib
+import re
+import subprocess
+import sys
+
+PEOPLE_FILE = os.path.expanduser('~/.config/teams-copy/people.json')
+
+LINK = r'\[([^\]]+)\]\((https?://[^)\s"<>\[]+)\)'
+ITALIC = r'(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])'
+LIST_MARKERS = {'ul': r'^\s*[-*+]\s+', 'ol': r'^\s*\d+[.)]\s+'}
+
+
+@functools.cache
+def people():
+    try:
+        with open(PEOPLE_FILE, encoding='utf-8') as file:
+            entries = json.load(file)
+    except FileNotFoundError:
+        return None
+    except json.JSONDecodeError as error:
+        sys.exit(f'teams-copy: {PEOPLE_FILE} is not valid JSON: {error} (see teams-copy --help)')
+    if not isinstance(entries, dict) or not all(isinstance(v, str) for v in entries.values()):
+        sys.exit(f'teams-copy: {PEOPLE_FILE} must be a JSON object of names to Teams user ids')
+    return entries
+
+
+def mention(match):
+    """Mirror the markup Teams itself puts on the clipboard when a mention is copied"""
+    name = html.unescape(match.group(1))
+    if people() is None:
+        sys.exit(f'teams-copy: @[{name}] needs {PEOPLE_FILE}, which does not exist '
+                 '(see teams-copy --help)')
+    if name not in people():
+        sys.exit(f'teams-copy: no entry for @[{name}] in {PEOPLE_FILE} '
+                 '(keys match exactly; see teams-copy --help)')
+    label = html.escape(name)
+    return (
+        '<readonly class="skipProofing" itemtype="http://schema.skype.com/Mention" '
+        f'spellcheck="false"><mention mri="{html.escape(people()[name])}" type="person" '
+        f'aria-label="{label}">{label}</mention></readonly>'
+    )
+
+
+def inline(text):
+    """Escape HTML, then apply the inline Markdown these drafts use. Code spans and link targets
+    are set aside first, so no later rule rewrites what is inside them."""
+    kept = []
+
+    def keep(markup):
+        kept.append(markup)
+        return f'\0{len(kept) - 1}\0'
+
+    def link(match):
+        opening = keep(f'<a href="{html.escape(html.unescape(match.group(2)))}">')
+        return f'{opening}{match.group(1)}{keep("</a>")}'
+
+    out = html.escape(text.replace('\0', ''), quote=False)
+    out = re.sub(r'`([^`]+)`', lambda match: keep(f'<code>{match.group(1)}</code>'), out)
+    out = re.sub(LINK, link, out)
+    out = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', out)
+    out = re.sub(ITALIC, r'<i>\1</i>', out)
+    out = re.sub(r'@\[([^\]]+)\]', mention, out)
+    return re.sub(r'\0(\d+)\0', lambda match: kept[int(match.group(1))], out)
+
+
+def list_kind(line):
+    return next((tag for tag, marker in LIST_MARKERS.items() if re.match(marker, line)), None)
+
+
+def segments(lines):
+    """Split a block into runs of list items and runs of other lines, so a list that follows
+    its lead-in line without a blank line between still becomes a real list. An indented line
+    with no marker continues the list item above it."""
+    runs = []
+    for line in lines:
+        kind = list_kind(line)
+        previous = runs[-1] if runs else (None, None)
+        if kind:
+            item = [re.sub(LIST_MARKERS[kind], '', line)]
+            if previous[0] == kind:
+                previous[1].append(item)
+            else:
+                runs.append((kind, [item]))
+        elif previous[0] and line[:1].isspace():
+            previous[1][-1].append(line.strip())
+        elif runs and previous[0] is None:
+            previous[1].append(line)
+        else:
+            runs.append((None, [line]))
+    return runs
+
+
+def render_text(lines):
+    if heading := re.match(r'^(#{1,6})\s+(.*)$', lines[0]):
+        level = len(heading.group(1))
+        out = [f'<h{level}>{inline(heading.group(2))}</h{level}>']
+        if rest := lines[1:]:
+            out.append(f'<p>{"<br>".join(inline(line) for line in rest)}</p>')
+        return out
+    # A single newline inside a paragraph becomes <br>, the line break Shift+Enter makes in Teams
+    return [f'<p>{"<br>".join(inline(line) for line in lines)}</p>']
+
+
+def render_list(kind, items):
+    rows = ''.join(f'<li>{"<br>".join(inline(line) for line in item)}</li>' for item in items)
+    return f'<{kind}>{rows}</{kind}>'
+
+
+def render_blocks(markdown):
+    """Render each block, merging a list into the list before it when only blank lines separate
+    them, so numbering does not restart"""
+    blocks = []
+    for block in re.split(r'\n\s*\n', markdown.strip()):
+        lines = [line for line in block.split('\n') if line.strip()]
+        for kind, entries in segments(lines):
+            if kind is None:
+                blocks.extend((None, markup) for markup in render_text(entries))
+            elif blocks and blocks[-1][0] == kind:
+                blocks[-1][1].extend(entries)
+            else:
+                blocks.append((kind, entries))
+    return [render_list(kind, body) if kind else body for kind, body in blocks]
+
+
+def is_list(block):
+    return block.startswith(('<ul>', '<ol>'))
+
+
+def join_with_spacers(blocks):
+    """Teams' compose editor zeroes out <p> margins, so <p> alone renders as a single line
+    break and paragraphs run together. A spacer paragraph between blocks survives its
+    normalization and supplies the gap. Verified against Teams on 2026-08-25; double <br>
+    and an inline margin-bottom style also worked, if this ever regresses. Teams already
+    spaces a native list from its neighbors, so a spacer beside a list would double the gap."""
+    out = blocks[:1]
+    for previous, block in zip(blocks, blocks[1:]):
+        if not (is_list(previous) or is_list(block)):
+            out.append('<p>&nbsp;</p>')
+        out.append(block)
+    return ''.join(out)
+
+
+def to_html(blocks):
+    return f'<html><body><span data-teams="true">{join_with_spacers(blocks)}</span></body></html>'
+
+
+def copy_as_html(markup):
+    """Set the clipboard's HTML flavor. AppleScript wants hex inside guillemets."""
+    script = f'set the clipboard to «data HTML{markup.encode("utf-8").hex()}»'
+    subprocess.run(['osascript', '-e', script], check=True)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        prog='teams-copy', description=__doc__, allow_abbrev=False,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument('draft', nargs='?', type=pathlib.Path,
+                        help='the Markdown draft; omit it to read the draft from stdin')
+    parser.add_argument('--print-html', action='store_true',
+                        help='print the HTML instead of copying it')
+    args = parser.parse_args()
+    if args.draft is None and sys.stdin.isatty():
+        parser.error('give a draft file or pipe one in')
+    return args
+
+
+def read_draft(path):
+    try:
+        source = path.read_text(encoding='utf-8') if path else sys.stdin.read()
+    except OSError as error:
+        sys.exit(f'teams-copy: {error}')
+    if not source.strip():
+        sys.exit('teams-copy: nothing to copy')
+    return source
+
+
+def main():
+    args = parse_args()
+    blocks = render_blocks(read_draft(args.draft))
+    markup = to_html(blocks)
+
+    if args.print_html:
+        print(markup)
+        return
+
+    copy_as_html(markup)
+    noun = 'block' if len(blocks) == 1 else 'blocks'
+    print(f'Copied {len(blocks)} {noun} as HTML. Paste into Teams — spacing is preserved.')
+
+
+if __name__ == '__main__':
+    main()
