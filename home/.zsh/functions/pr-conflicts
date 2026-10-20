@@ -1,16 +1,58 @@
 # List open PRs with merge conflicts. PR numbers are OSC 8 hyperlinks (clickable in modern
 # terminals). Optional first arg overrides the default fetch limit of 500.
 #
+# Queries `mergeable` rather than `mergeStateStatus`: the latter also evaluates checks, reviews and
+# branch protection, which is slow enough that GitHub's GraphQL gateway times out with a 502. GitHub
+# computes mergeability lazily, so PRs it hasn't checked since their base branch moved come back
+# UNKNOWN. The list is re-polled up to 3 more times, 3s apart; PRs still UNKNOWN after that are left
+# out of the output and counted in a warning on stderr.
+#
+# A failed `gh pr list` is retried 3 times, after 2s, 4s and 8s, except an authentication failure,
+# which no retry fixes. When a re-poll's fetch fails for good, the previous poll's list is used;
+# when the first one does, the function returns gh's exit status. A limit that isn't a positive
+# integer returns 2 and a jq failure returns jq's status. Otherwise it returns 0, even when PRs are
+# left out because their mergeability is still unknown.
+#
 # Autoloaded: the bare body with no `pr-conflicts() { ... }` wrapper is zsh's fpath convention.
 
 emulate -L zsh
 
 local limit=${1:-500}
+[[ $limit == <1-> ]] || { print -u2 "usage: pr-conflicts [limit]"; return 2 }
+
 local esc=$'\033'
-gh pr list --limit "$limit" \
-    --json number,title,headRefName,mergeStateStatus,url \
-  | jq -r --arg esc "$esc" '
-      .[]
-      | select(.mergeStateStatus == "DIRTY")
-      | "\($esc)]8;;\(.url)\($esc)\\#\(.number)\($esc)]8;;\($esc)\\\t\(.headRefName)\t\(.title)"
-    '
+local max_attempts=4 max_polls=4
+local prs fetched attempt poll rc unknown
+
+for poll in {1..$max_polls}; do
+  for attempt in {1..$max_attempts}; do
+    fetched=$(gh pr list --limit "$limit" --json number,title,headRefName,mergeable,url) && break
+    rc=$?
+    # gh exits 4 when authentication is required
+    if (( rc == 4 || attempt == max_attempts )); then
+      (( poll > 1 )) && break 2
+      return $rc
+    fi
+    print -u2 "pr-conflicts: gh pr list failed; retrying in $(( 2 ** attempt ))s" \
+      "($attempt/$(( max_attempts - 1 )))…"
+    sleep $(( 2 ** attempt ))
+  done
+  prs=$fetched
+
+  unknown=$(jq '[.[] | select(.mergeable == "UNKNOWN")] | length' <<< "$prs") || return
+  (( unknown == 0 || poll == max_polls )) && break
+  # ${unknown:#1} is empty only when unknown is 1, so :+s pluralizes every other count
+  print -u2 "GitHub is still computing mergeability for $unknown PR${${unknown:#1}:+s}; checking" \
+    "again…"
+  sleep 3
+done
+
+jq -r --arg esc "$esc" '
+    .[]
+    | select(.mergeable == "CONFLICTING")
+    | "\($esc)]8;;\(.url)\($esc)\\#\(.number)\($esc)]8;;\($esc)\\\t\(.headRefName)\t\(.title)"
+  ' <<< "$prs" || return
+
+(( unknown == 0 )) ||
+  print -u2 "Mergeability still unknown for $unknown PR${${unknown:#1}:+s}, left out of the list" \
+    "above; rerun shortly."
