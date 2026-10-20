@@ -12,7 +12,7 @@ local -a checks=(
   'claude doctor'
   'npm doctor'
   'mise doctor'
-  'gh auth status' # pr-conflicts depends on gh, and an expired token fails silently
+  'gh auth status' # pr-conflicts depends on gh and stops at an expired token
 )
 local check tool
 local -i failed=0
