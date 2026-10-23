@@ -11,22 +11,23 @@
 - Expect `conflict … exists` for every path already present, correct links included; only new
   links print `symlink`. A real file shadowing a link is declined the same way and kept, so check
   a suspected shadow with `test -L`, and a suspected miss with `test -e`
-- Symlinks point into the castle checkout, `~/.homesick/repos/dotfiles/home`. A dotfile that
-  exists only on a branch is linked only while the castle checkout has that branch checked out;
-  from another worktree it is never linked, and the output doesn't mention it. Once the castle
-  checkout leaves the branch, its link dangles silently
+- Symlinks point into the castle checkout's `home` directory, `~/.homesick/repos/dotfiles/home`. A
+  dotfile that exists only on a branch is linked only while the castle checkout has that branch
+  checked out; from another worktree it is never linked, and the output doesn't mention it. Once the
+  castle checkout leaves the branch, its link dangles silently
 - `~/.gitconfig`, the shell profiles and `~/.claude/settings.json` are symlinks into this
-  repository, so a tool that rewrites its own config (`git config --global`, Docker Desktop's PATH
-  block, Claude Code's model picker) produces a diff in the castle checkout, not in a worktree.
-  Before reverting a surprising diff, work out whether a tool wrote it; reverting one the tool will
-  rewrite is wasted
+  repository, so a tool that rewrites its own config (`git config --global`, the PATH block the
+  Claude Code installer adds to `.zshrc`, Claude Code's model picker) produces a diff in the castle
+  checkout, not in a worktree. Before reverting a surprising diff, work out whether a tool wrote it;
+  reverting one the tool will rewrite is wasted
 
 # Homebrew
 
-- I run Homebrew mutations myself (`brew install`, `upgrade`, `uninstall`, `untap`, `unlink`, a
-  bare `brew bundle` and the `brewup` alias). Edit the `Brewfile`, propose the exact commands and
-  wait. Read-only queries (`brew info`, `brew list`, `brew doctor`, `brew bundle check`) are fine
-  to run
+- I run every `brew` command other than a read-only query myself (for example `brew install`,
+  `upgrade`, `uninstall`, `tap`/`untap`, `link`/`unlink`, `update`, `cleanup`, `autoremove`,
+  `services`, `pin`/`unpin`, a bare `brew bundle` and the `brewup` alias). Edit the `Brewfile`,
+  propose the exact commands and wait. Read-only queries (`brew info`, `brew list`, `brew doctor`,
+  `brew bundle check`) are fine to run
 
 # Shell Files
 
@@ -35,13 +36,21 @@
 
 # Subagents
 
-- Run agents that only read in this checkout, not in an isolated worktree, and run `/doc-review`'s
-  collator and recording agents, which write only the review file, here too, each under the rules
-  `/doc-review` gives it: `worktree.baseRef` is `fresh`, so an isolated worktree branches from
-  `origin/main` and its agent reads `main`, not the branch under review, and a collator or recording
-  agent there would write the review file into the worktree rather than the project root. Use a
-  worktree only for an agent that must run a command that writes
+- Dispatch agents into this checkout, not an isolated worktree. `worktree.baseRef` is `fresh`, so
+  an isolated worktree branches from `origin/main`: its agent reads `main`, not the branch under
+  review, and its edits land in the worktree rather than the project root. In this checkout:
+  - Run read-only agents as needed
+  - Run an agent whose only file changes are Edit and Write tool calls one at a time. Never
+    dispatch two such agents at once: each would read the other's half-finished changes, and
+    committing one agent's work would sweep up the other's
+  - `/doc-review`'s collator and recording agents, which write only the review file, run here too,
+    each under the rules `/doc-review` gives it
+- Use an isolated worktree only for an agent that must run a command that writes, such as a test
+  run, a build or a git operation. Its worktree starts at `origin/main`, so its prompt must first
+  check out the commit under review (`git checkout --detach <sha>`, with the SHA resolved by the
+  dispatching session), or it tests `main` instead of the change
 - In any session, exercise the git aliases that delete branches (`git cleanup`, `git bclean`,
-  `git bdone`, `git pc`) only in disposable `git init` repositories under the scratchpad;
-  `git bdone` and `git pc` pull before pruning, so give them a second disposable repository as
-  `origin`
+  `git bdone`, `git pc`) only in disposable repositories under the scratchpad. `git bdone` and
+  `git pc` pull before pruning, so `git init` a second disposable repository, create the test
+  branches in it and `git clone` the test repository from it: a branch checked out from `origin`
+  tracks it, while one created in the clone has no upstream and its pull fails
