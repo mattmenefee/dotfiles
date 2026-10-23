@@ -8,25 +8,49 @@ changelogs and open a pull request.
 This command automates the full dependency update workflow:
 
 1. Determine the branch name and PR title
-2. Create a feature branch from `main`
-3. Update Ruby dependencies using `gem_update`
-4. Update JavaScript dependencies using `yarn up`
+2. Create a feature branch from `main`, or from a Rails upgrade in flight
+3. Update Ruby dependencies using `gem_update`, then Bundler and any Git-sourced gems
+4. Update JavaScript dependencies using `yarn up`, then re-resolve every transitive dependency with
+   `yarn up -R`
 5. Decide Terraform provider and module version bumps, if the repo uses Terraform
 6. Re-resolve and verify the Terraform lock files
-7. Handle RuboCop version bumps
-8. Handle haml-lint version bumps
-9. Build the final commit message with anchored changelog links
-10. Commit, push and open a PR
+7. Update tool and image pins that live outside the package manifests
+8. Handle RuboCop version bumps
+9. Handle haml-lint version bumps
+10. Build the final commit message with anchored changelog links
+11. Commit, push and open a PR
 
 ## Process
 
 ### Step 1: Determine the Branch Name and PR Title
 
-Check whether any `update-dependencies-*` branches already exist for the current month:
+Count this month's earlier runs from history, which survives a branch deleted on merge:
 
 ```bash
-git branch -r --list "origin/update-dependencies-*$(date +%B-%Y | tr '[:upper:]' '[:lower:]')"
+git fetch origin main
+git log origin/main --format='%h  %ad  %s' --date=short --no-merges \
+  --since="$(date +%Y-%m-01) 00:00" -i --grep="update the app's dependencies"
 ```
+
+Each subject it prints is one earlier run this month. The explicit `00:00` matters: Git fills a
+date-only `--since` with the current time of day, which drops every run committed earlier on the
+1st. `-i` also catches a run whose subject begins `Upgrade Rails to … and update the app's
+dependencies` (see [Step 11](#step-11-commit-push-and-create-the-pr)). Then list this month's run
+branches on the remote itself, since local remote-tracking refs can be stale:
+
+```bash
+git ls-remote --heads origin "update-dependencies-*$(date +%B-%Y | tr '[:upper:]' '[:lower:]')"
+```
+
+Count a listed branch as an open run only when `git merge-base --is-ancestor <its-sha> origin/main`
+exits 1. Exit 0 means it is already merged and counted above, as it is in a repository that keeps
+branches after merging; exit 128 means the commit is not local yet, so `git fetch origin <branch>`
+and check again.
+
+Counting branches alone undercounts: a repository that deletes branches on merge keeps only the
+runs still open, so after a merged run the check reports "first of the month" and the new run
+reuses its branch name and commit subject. Add the two counts and take the qualifier for the next
+run.
 
 **Naming rules:**
 
@@ -49,6 +73,30 @@ Examples:
 
 ### Step 2: Create the Feature Branch
 
+First check whether a Rails upgrade is in flight — an open pull request or a local branch preparing
+one:
+
+```bash
+gh pr list --state open --search 'Rails in:title' --json number,title,headRefName
+git branch --list '*rails*'
+```
+
+If one is, ask the user whether this run should ship with it. When they agree, the upgrade ships in
+the dependency PR **ahead of the dependency commit**, on a branch made from the upgrade's own:
+
+```bash
+git fetch origin <upgrade-branch>
+git checkout -b <branch-name> origin/<upgrade-branch>
+```
+
+Keep every commit the upgrade branch carries, in order, and leave them as they are. If it is behind
+`main`, ask the user before rebasing it, since a stale base means the run resolves against an old
+tree. The `@rails/*` npm bumps belong in the upgrade commit rather than this one; if it lacks them,
+stop and ask the user whether to amend it (see [Version-Locked Packages](#version-locked-packages)).
+Tell the user the upgrade's own pull request should be closed in favor of this one once it is open,
+and say so in this PR's body, so the same commits cannot merge twice. Otherwise start from an
+up-to-date `main`:
+
 ```bash
 git checkout main && git pull
 git checkout -b <branch-name>
@@ -62,6 +110,9 @@ Run `gem_update` to update all Ruby gems and get an initial draft of the depende
 gem_update 2>&1 | tee /tmp/gem-update-output.txt
 ```
 
+The pipeline's status is `tee`'s, so read `gem_update`'s own: `${pipestatus[1]}` in zsh,
+`${PIPESTATUS[0]}` in bash, not `$?`. A non-zero value means `gem_update` failed.
+
 `gem_update` is the CLI provided by the `gem_updater` gem (installed via `gem install gem_updater`)
 that runs `bundle update` internally and outputs a formatted changelog with version diffs and
 changelog links. Capture this output — it will be the starting point for the commit message body. If
@@ -71,26 +122,196 @@ the `Gemfile.lock` diff.
 A successful run prints a list of gem updates with version diffs. If no gems were updated, the
 output will indicate that the bundle is already up to date.
 
+`gem_update` lists only gems whose version number moved, which misses two kinds of Ruby change.
+
+#### Update Bundler
+
+`bundle update` moves gems but never the lock file's `BUNDLED WITH` line, so Bundler stays wherever
+it was. Production installs whichever Bundler that line names, so update it explicitly:
+
+```bash
+bundle update --bundler
+git diff Gemfile.lock | grep -E -A2 'BUNDLED WITH'
+```
+
+If the line moved, add a `bundler <old> → <new>` entry to the commit message, alphabetized with the
+others, and mention it in the PR summary. If it did not, Bundler is already current. See
+[Known Changelog Quirks](#known-changelog-quirks) for where its release notes live.
+
+#### Check Git-Sourced Gems
+
+A gem pinned to a Git branch (`gem 'name', github: 'owner/repo', branch: 'main'`) follows the
+branch head. It moves as a `revision:` change in the lock file's `GIT` block while its version
+number stays put, so `gem_update` lists nothing:
+
+```bash
+git diff -U4 Gemfile.lock | grep -E '^[ +-] +(remote|revision):'
+```
+
+For each `revision:` that moved, read what changed between the two commits — the `lib/` files and
+any changelog — with `gh api repos/<owner>/<repo>/compare/<old>...<new>`, and give it its own
+commit-message entry. There is no changelog anchor to cite, so link the comparison:
+
+```text
+* name <old-sha> → <new-sha>
+[compare](https://github.com/<owner>/<repo>/compare/<old-sha>...<new-sha>)
+```
+
 ### Step 4: Update JavaScript Dependencies
 
-Update all JavaScript packages:
+Skip this step if the repository has no `yarn.lock`. Run every command in it from the repository
+root, where Yarn keeps the lock file, and read the Yarn version and the repository's own release-age
+gate first:
 
 ```bash
-yarn up '*'
+cd "$(git rev-parse --show-toplevel)"
+yarn --version
+yarn config get npmMinimalAgeGate
 ```
 
-After updating, identify which **direct dependencies** (packages listed in `package.json`) changed
-version by inspecting the `yarn.lock` diff:
+If `yarn --version` prints `1.x`, stop and tell the user: this step needs Yarn 2 or later, and
+Yarn Classic has no `yarn up`.
+
+#### Run Yarn with a Release-Age Gate and No Install Scripts
+
+The commands below take the newest release of every package in the tree, including releases
+published minutes ago. Every `yarn` command in this step and in
+[Version-Locked Packages](#version-locked-packages) that resolves packages — `yarn up` in any form —
+carries one of two prefixes, so a malicious release has had time to be caught and pulled before it
+can land, and no newly resolved package runs code on this machine:
+
+- **The gated prefix**, `YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d`, for every command
+  that can take a release the repository does not yet commit
+- **The restore prefix**, `YARN_ENABLE_SCRIPTS=false`, only for putting a hold back at an exact
+  version the repository already commits (see the hold restore below)
+
+Commands that resolve nothing — `yarn --version`, `yarn config get`, `yarn why` — take neither. The
+two variables:
+
+- **`YARN_NPM_MINIMAL_AGE_GATE=3d`** skips any release younger than three days and takes the newest
+  one old enough. `yarn config get npmMinimalAgeGate` printed the repository's own gate in minutes:
+  drop the variable when that is `4320` or more, so a longer gate stands. A `0` is not a reason to
+  drop it — a repository that turns the gate off for everyday `yarn add` still gets one during a
+  dependency run. Yarn older than 4.10 has no gate, so drop the variable there and say so in the PR
+  body (see [Step 11](#step-11-commit-push-and-create-the-pr)). The gate guards against taking a
+  new release, which is why the restore prefix leaves it out. If it refuses a version a gated
+  command needs, stop and tell the user rather than dropping the gate.
+- **`YARN_ENABLE_SCRIPTS=false`** stops postinstall and build scripts. Nothing later in this command
+  builds the app, so the only cost is that a package with a build step stays unbuilt until the next
+  plain `yarn install` on a developer machine.
+
+Each command runs in a fresh shell, where an `export` would not carry over, so write the prefix out
+on every command.
+
+#### Update the Direct Dependencies and Restore Holds
 
 ```bash
-git diff yarn.lock
+YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d yarn up '*'
 ```
 
-Only direct dependencies listed in `package.json` should appear in the commit message — ignore
-transitive dependency changes in `yarn.lock`.
+`yarn up '*'` rewrites the range of every direct dependency, in every workspace manifest, to
+`^<latest>`, where `latest` is the package's `latest` dist-tag. That undoes deliberate holds in two
+ways that print no warning:
 
-Before proceeding, verify version-locked packages. See
-[Version-Locked Packages](#version-locked-packages) below for Playwright and Cocooned constraints.
+- **It widens operators.** An exact pin (`3.7.1`) or a tilde (`~3.0.1`) becomes a caret (`^4.0.0`,
+  `^3.0.1`)
+- **It can move a package down.** When `latest` lags the tag a project tracks — a prerelease line,
+  or a package whose `latest` was never moved forward — the new range names an older release
+  (`1.0.0-beta.7` becomes `1.0.0-beta.4`)
+
+Read the manifest diff for both:
+
+```bash
+git diff -- package.json '**/package.json'
+```
+
+Restore every operator that changed and every version that moved down, unless the project's
+`CLAUDE.md` or README says that hold has ended; ask the user when unsure. For a prerelease or a
+version that moved down, `npm view <pkg> dist-tags --json` shows which tag the project was tracking.
+Then check the [Version-Locked Packages](#version-locked-packages), which name the version a hold
+must take, and put every hold back in one call with the restore prefix:
+
+```bash
+YARN_ENABLE_SCRIPTS=false yarn up '<pkg>@<spec>' '<pkg>@<spec>'
+```
+
+This call leaves out the age gate on purpose. With the gate on, a hold bumped in the last three days
+is quarantined, and Yarn fails the whole call over it, restoring none of the holds. An exact spec
+restores a version the repository already commits, so it takes nothing new. A restored range — a
+tilde, or a caret on a prerelease — can resolve to a release younger than three days; the gated
+re-resolution below moves it back. A hold that must move to a version the repository does not yet
+commit (a re-pin under [Version-Locked Packages](#version-locked-packages)) is a new release: run it
+in its own call, with the gated prefix.
+
+Holds can also live outside the direct ranges. A `resolutions` block in `package.json` survives the
+re-resolution below. A hold the lock file alone keeps — a transitive package left below its newest
+release with no `resolutions` entry — does not, so if the project's `CLAUDE.md` or README documents
+one, ask the user whether to move it into `resolutions` before going on.
+
+#### Re-resolve the Lock File
+
+`yarn up '*'` re-resolves direct dependencies only. A transitive dependency whose range did not
+change keeps the version the lock file already records, even when a newer release satisfies it. Once
+every manifest holds its final ranges, re-resolve every range in the lock file:
+
+```bash
+YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d yarn up -R '*'
+```
+
+That is the gated prefix. `-R` re-resolves every range matching the pattern, transitive ones
+included, and leaves the manifests alone. It produces the same lock file as deleting `yarn.lock` and
+reinstalling, without the moment where the repository has none. A `resolutions` block still applies.
+Under the age gate, a transitive package the lock file holds at a release younger than three days
+moves back to the newest one old enough; that is the gate working, not a regression to report.
+
+If it exits non-zero, `yarn.lock` still holds the result of the commands above, including any
+restored range the ungated restore resolved. If any restored hold is a range, re-run those restores
+in one call with the gated prefix, and tell the user if the gate refuses one. Then tell the user the
+re-resolution failed and why, note it for the PR body (see
+[Step 11](#step-11-commit-push-and-create-the-pr)) and carry on with the hold check and Record the
+Direct Dependency Changes below, which work from the lock file as it stands. If the error is
+`YN0028` (the lockfile would be modified), Yarn has turned on immutable installs because it believes
+it is running in CI; retry once with `YARN_ENABLE_IMMUTABLE_INSTALLS=false` added to the prefix.
+
+Re-resolve here, before the changelog and commit steps (Steps 10 and 11), so they work from the
+lock file that ships.
+
+Then check that every hold survived. For each version-locked package and each hold restored above,
+list every resolved copy:
+
+```bash
+yarn why <pkg>
+```
+
+Every copy should be at the held version. If the held package itself moved, restore it with `yarn up
+'<pkg>@<spec>'` and the restore prefix, and repeat the check. A second copy at another version is
+reported to the user, not worked around: a transitive range the hold used to satisfy can now resolve
+higher — a `jquery: >=1.11` dependency taking jQuery 4 beside a held 3.7.1 — and only the user can
+say whether it needs a `resolutions` entry.
+
+#### Record the Direct Dependency Changes
+
+The `yarn.lock` diff is now mostly transitive changes, so start from the manifests. Every direct
+dependency whose range changed is listed by:
+
+```bash
+git diff -- package.json '**/package.json'
+```
+
+For each, read the old and new `version:` of its entry — the line beginning `"<name>@npm:` — in
+`git diff yarn.lock`, and skip any whose resolved version did not change. Then look for direct
+dependencies that moved without a manifest change: those sourced from Git or a URL follow a branch
+or tag, and only their lock entry shows it:
+
+```bash
+git diff yarn.lock | grep -E '^\+  resolution: ' | grep -vE '@(npm|workspace|patch):'
+```
+
+Record each line that names a direct dependency as a direct change.
+
+Only direct dependencies appear in the commit message's dependency list — leave transitive changes
+out. When `yarn.lock` changed at all, [Step 10](#step-10-build-the-final-commit-message) adds one
+line saying the lock file was re-resolved, which stands in for them.
 
 For each direct JavaScript dependency that changed version, build a changelog entry in the same
 format as `gem_update` output:
@@ -119,8 +340,8 @@ git ls-files --full-name ':/*.tf' ':(top,exclude)*.terraform/*'
 This exits 0 whether or not it matched, so read its output rather than its status. It does not see
 `.tf.json` files, untracked files or files inside submodules; handle those by hand in the rare repo
 that has them. The exclude keeps the module copies that `terraform init` vendors into `.terraform/`
-out of every listing in this step, matching Steps 6 and 10 — without it you can end up editing a
-vendored copy that Step 10 then refuses to stage. See
+out of every listing in this step, matching Steps 6 and 11 — without it you can end up editing a
+vendored copy that Step 11 then refuses to stage. See
 [Terraform Update Notes](#terraform-update-notes) for why the pathspecs and flags in this step are
 written the way they are.
 
@@ -267,9 +488,25 @@ has no `^{}` line, and the ID on its own line is already the commit.
 
 Confirm the CLI is available before editing anything: `terraform version` should print a version and
 exit 0. If it is not on `PATH` you get exit 127; under a version manager you may instead get a shim
-error such as `mise ERROR No version is set for shim: terraform` until a version is selected. Either
-way, stop and tell the user rather than making `.tf` edits you cannot re-resolve — and if you have
-already made them, revert them first:
+error such as `mise ERROR No version is set for shim: terraform`.
+
+A shim error does not always mean a missing CLI. When the version is pinned in a mise file
+(`mise.toml`, `.mise.toml`) or `.tool-versions` *below* the repository root — beside the Terraform
+configuration, say — the shim resolves no version from the root but works from that directory. Look
+for one first:
+
+```bash
+git ls-files --full-name ':/*mise.toml' ':/*mise/config.toml' ':/*.tool-versions'
+```
+
+If one sits above the Terraform directory, the CLI is fine and only the working directory is wrong.
+Run every `terraform` command in Steps 5 and 6 from that directory in a subshell, with `-chdir`
+relative to it, so the rest of the step stays at the root — for a pin in `infra/mise.toml` and a
+root module at `infra/prod`, `(cd infra && terraform -chdir=prod version)`. The `git` queries keep
+their `:/` prefix, which already works from any directory.
+
+If no such file explains it, stop and tell the user rather than making `.tf` edits you cannot
+re-resolve — and if you have already made them, revert them first:
 
 ```bash
 git restore --source=HEAD --staged --worktree -- <the exact .tf files you edited>
@@ -391,7 +628,7 @@ Only stop for failures you cannot resolve locally. Stopping means dropping that 
 Terraform work, not abandoning the run: revert that root module's `.tf` edits and any lock-file
 changes with the `git restore`/`git clean` pair from
 [Step 5](#step-5-decide-terraform-version-bumps), naming the exact files, then **continue with
-Steps 7–10 for the remaining updates**. Say in the PR body which root modules were skipped and
+Steps 7–11 for the remaining updates**. Say in the PR body which root modules were skipped and
 why, and omit the `terraform` label if no Terraform change remains. `gem_update` and `yarn up` have
 already rewritten the tree by this point, and those updates are validated and worth shipping.
 Abandon the whole run only when the tree cannot be returned to a consistent state.
@@ -401,7 +638,7 @@ wrote into one that was already there — Terraform does not report that — and
 cache: it holds the selected workspace name in `.terraform/environment` and the initialized backend
 configuration in `.terraform/terraform.tfstate`. Deleting it silently drops the operator back to the
 `default` workspace, so the next `terraform apply` they run believing they are on `staging` is not.
-[Step 10](#step-10-commit-push-and-create-the-pr) already excludes `.terraform/` from the commit, so
+[Step 11](#step-11-commit-push-and-create-the-pr) already excludes `.terraform/` from the commit, so
 removing it buys nothing. If the repository does not gitignore it, say so in your report and let the
 user decide.
 
@@ -440,7 +677,7 @@ git ls-files -z --full-name ':/*.tf' ':(top,exclude)*.terraform/*' \
 Treat a candidate as a root module if it declares a `backend` or `cloud` block, declares a
 `provider` block or is simply a directory you would run `terraform apply` in, and run
 `init -upgrade` in every one. If the repo clearly uses providers but tracks no lock files at all,
-check `.gitignore` and say in the PR body that lock files are not tracked — otherwise Step 10's
+check `.gitignore` and say in the PR body that lock files are not tracked — otherwise Step 11's
 `git add -- ':/*.terraform.lock.hcl'` aborts with `fatal: pathspec … did not match any files` and
 leaves your `.tf` changes unstaged.
 
@@ -450,13 +687,18 @@ Run this once per root module, quoting the directory in case it contains spaces:
 terraform -chdir="<terraform-directory>" init -upgrade -input=false
 ```
 
-Check the exit status, not just the output. A successful run exits 0 and reports "Terraform has been
-successfully initialized!" — and, when a provider selection actually moved, also notes that it
-changed the selections recorded in `.terraform.lock.hcl`. A module bump succeeds without that second
-message, which is expected rather than a sign the run did nothing — the lock file records nothing
-about modules. Its evidence is the `Downloading <source> <version> for <name>` line in the output
-instead. Copy that line out as you go: no file in the repository will show that the module moved, so
-it is the only thing [Step 9](#step-9-build-the-final-commit-message) has to cite.
+Check the exit status, not just the output — and do not pipe `init` or `plan` into `tail` or `grep`
+to shorten it. A pipeline's status is its last command's, so `… | tail -8; echo $?` prints `0`
+whatever `init` did, and a shim error on stderr never reaches the pipe at all. Run it unpiped, or
+read the first command's own status (`${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash), and
+then confirm with the lock-file check below either way. A successful run exits 0 and reports
+"Terraform has been successfully initialized!" — and, when a provider selection actually moved, also
+notes that it changed the selections recorded in `.terraform.lock.hcl`. A module bump succeeds
+without that second message, which is expected rather than a sign the run did nothing — the lock
+file records nothing about modules. Its evidence is the `Downloading <source> <version> for <name>`
+line in the output instead. Copy that line out as you go: no file in the repository will show that
+the module moved, so it is the only thing [Step 10](#step-10-build-the-final-commit-message) has to
+cite.
 
 Terraform installs the providers it can reach before failing, so `Installed …` lines in the output
 of a failed run do not mean the lock file was written. Confirm with both of these — a brand-new root
@@ -471,6 +713,13 @@ If `init` fails on backend credentials rather than on providers, retry with `-ba
 still installs providers and writes the lock file. It leaves the backend uninitialized either way,
 so `terraform plan` in that directory will report `Backend initialization required` — note in the PR
 body that you could not plan it.
+
+`Currently selected workspace "default" does not exist` is not a dependency failure either. A
+backend that declares `workspaces { prefix = … }` has no `default` workspace, so in a checkout whose
+`.terraform/environment` names none, every `init` stops there, with or without `-backend=false`. Do
+not `terraform workspace select` past it: that writes `.terraform/environment` and changes which
+state the operator's next command touches, for the reason the `.terraform/` warning above gives. If
+`init` cannot get past it, drop that root module's Terraform work as described above.
 
 Read the lock file diff, but be clear about what it can tell you. The `version` and `constraints`
 lines and the set of `provider "<host>/<namespace>/<name>"` blocks are checkable — confirm each
@@ -514,14 +763,29 @@ which of its modules this run bumped:
   such module, its old and new version and the credentials the session holds. If they decline,
   treat the root module as one you could not plan
 
-Then plan:
+A bare `plan` often has no credentials, because the repository loads them through its own wrapper —
+a script under any `scripts/` or `bin/` directory, a `Makefile` target or whatever the project's
+`CLAUDE.md` or README names — which may also write gitignored variable files the plan needs. Look
+for one first:
+
+```bash
+git ls-files | grep -iE '(^|/)(scripts|bin)/[^/]*terraform'
+```
+
+Read it, and plan through it, using only its plan action. Otherwise plan directly:
 
 ```bash
 terraform -chdir="<terraform-directory>" plan -input=false -lock=false
 ```
 
 `-lock=false` matters here: `plan` takes a state lock by default, and a dependency PR has no
-business contending with a real `apply` that a colleague may be running.
+business contending with a real `apply` that a colleague may be running. Pass it through the
+wrapper too if the wrapper accepts plan flags.
+
+A plan shows drift as well as the bump. When it reports changes, compare each one against the
+release notes of every version crossed. A change no release note explains — a firewall rule someone
+added through a provider's console, say — is existing drift, not an effect of the bump. Report it
+separately in the PR body, so the plan checkbox speaks only to what the bump does.
 
 `plan` needs real provider and backend credentials, so `No valid credential sources found` or
 `Backend initialization required` where they are absent is not a dependency problem. `Error:
@@ -539,15 +803,90 @@ credentials in this environment" is the entire message. To evidence the plan che
 one-line summary (`Plan: 0 to add, 3 to change, 0 to destroy`) and nothing else.
 
 Then stage the lock file along with the `.tf` changes (see
-[Step 10](#step-10-commit-push-and-create-the-pr)), and record each version change for the commit
-message (see [Step 9](#step-9-build-the-final-commit-message)).
+[Step 11](#step-11-commit-push-and-create-the-pr)), and record each version change for the commit
+message (see [Step 10](#step-10-build-the-final-commit-message)).
 
-### Step 7: Handle RuboCop Updates
+### Step 7: Update Tool and Image Pins
 
-**Stop first if nothing changed.** Steps 3 through 6 are the only steps that update dependencies, so
-whether there is anything to ship is known now. If `git status --porcelain` prints nothing, tell the
-user that no dependency moved, offer to delete the empty branch from
-[Step 2](#step-2-create-the-feature-branch) and stop here.
+Many repositories pin versions where no package manager looks: a tool version manager, CI and
+Compose image tags, provisioning roles. Left out of the run they go stale silently; bumped by hand
+and left out of the commit message, they ship unrecorded. List the candidates:
+
+```bash
+git ls-files --full-name ':/*mise.toml' ':/*mise/config.toml' ':/*.tool-versions' \
+  ':/*.node-version' ':/*.nvmrc' ':/*requirements.yml'
+git grep -nE --full-name '^[[:space:]]*(-[[:space:]]+)?image:' -- ':/.circleci/*.yml' \
+  ':/.github/workflows/*.yml' ':/.github/workflows/*.yaml' ':/*docker-compose*.y*ml' \
+  ':/*compose.y*ml'
+```
+
+`git ls-files` exits 0 either way, and `git grep` exits 1 when it finds nothing, which is not an
+error here; read the output. The optional list dash in the `image:` pattern is what catches
+CircleCI, which lists its Docker images as sequence items (`- image: cimg/ruby:<tag>`). Add any pin
+the project's `CLAUDE.md` or README names elsewhere, such as a service version in a provisioning
+playbook.
+
+For each pin, look up the newest stable upstream release and bump to it, following these rules:
+
+- **The same pin in several files moves together.** An image tag that appears in both the CI config
+  and the Compose file, or a tool pinned in two mise files, takes one version everywhere
+- **An image that names a language runtime follows that runtime's version file.** A Ruby image
+  (`cimg/ruby`, `ruby`) stays at `.ruby-version`'s version and is left alone with it; a Node image
+  (`cimg/node`, `node`) moves only with `.node-version` or `.nvmrc`, to the same version. Bumping
+  the image alone runs CI on a runtime the app does not pin
+- **A major waits for the user.** Bump within the current major without asking. Stop and ask before
+  a major, naming what its release notes say breaks, as
+  [Step 5](#step-5-decide-terraform-version-bumps) does for a Terraform major
+- **A Terraform CLI pin must still satisfy every `required_version`** found in Step 5. Never widen
+  `required_version` to fit a new CLI
+- **Leave `.ruby-version` and CI orb versions alone** unless the user asks: a Ruby upgrade is its
+  own change, and orbs follow their own release process
+
+Two lookup traps are recorded under [Known Changelog Quirks](#known-changelog-quirks): tags that do
+not start with a digit, and release pages that only point elsewhere.
+
+Record every bump for the commit message with its upstream release notes, in the same format as the
+other entries. [Step 11](#step-11-commit-push-and-create-the-pr) checks that every staged pin
+change has one.
+
+#### Verify the Bumps
+
+After bumping a mise pin, install it and run it from the directory that holds the pin — `mise
+install`, then `<tool> --version`, which should print the new version. If the Terraform CLI moved,
+Steps 5 and 6 ran `init` and any plan with the old one, so re-run Step 6's `init -upgrade` in every
+root module with the new CLI, and plan again wherever Step 6 did. Otherwise the lock files and plan
+in the PR come from a CLI it no longer pins.
+
+#### Close Open Security Alerts
+
+Check the repository's open security alerts, so the run neither closes one silently nor skips the
+one bump that would close it:
+
+```bash
+gh api 'repos/{owner}/{repo}/dependabot/alerts?state=open' --paginate \
+  --jq '.[] | [.number, .dependency.package.name,
+               (.security_vulnerability.first_patched_version.identifier // "no fix")] | @tsv'
+```
+
+Bump anything with a fix that this run has not already reached, like any other update: a gem with
+`bundle update <gem> --conservative`, a transitive npm package with the gated
+`yarn up -R '<pkg>'` and a direct one with the gated `yarn up '<pkg>'` (both from
+[Step 4](#step-4-update-javascript-dependencies)). If the fix lies outside every range that holds
+the package, tell the user rather than adding a `resolutions` entry. Record each bump like any
+other, and note every alert the run closes for the PR summary in
+[Step 11](#step-11-commit-push-and-create-the-pr). Never dismiss an alert without the user's
+say-so. A `403` or `404` means alerts are off or out of reach for this token; say so and carry on.
+
+#### Stop If Nothing Changed
+
+Steps 3 through 7 are the only steps that update dependencies, so whether there is anything to ship
+is known now. If `git status --porcelain` prints nothing, tell the user that no dependency moved,
+offer to delete the empty branch from [Step 2](#step-2-create-the-feature-branch) and stop here. If
+it lists only `yarn.lock` — no gem, direct package, Terraform pin or tool pin moved, only the
+transitive dependencies Step 4 re-resolved — ask the user whether to ship a lock-file-only refresh.
+If they decline, run `git restore yarn.lock`, offer to delete the branch and stop.
+
+### Step 8: Handle RuboCop Updates
 
 Check the `gem_update` output or `git diff Gemfile.lock` for changes to `rubocop` or any `rubocop-*`
 gem. Which of them changed decides how much of this step to run.
@@ -556,14 +895,21 @@ If `rubocop` itself was updated, whether or not any plugin was too:
 
 1. Run `bin/rubocop -A` to auto-fix any new violations.
 2. Review the output for violations that could not be auto-fixed and manually fix them.
-3. After **all** violations are resolved, run:
+3. After **all** violations are resolved, regenerate `.rubocop_todo.yml` (if it exists). Blank it
+   first: `.rubocop.yml` inherits from the todo, so regenerating it in place treats every offense
+   it excludes as already handled and writes a todo with no rules — un-grandfathering them all, so
+   a plain `bin/rubocop` fails even though `bin/rubocop -A` just reported clean:
 
    ```bash
+   printf '# Placeholder\n' > .rubocop_todo.yml
    bin/rubocop --auto-gen-config --auto-gen-only-exclude --exclude-limit 1000
+   bin/rubocop   # must still report no offenses
    ```
 
-   This updates the timestamp and version in `.rubocop_todo.yml` (if it exists).
-4. Note the RuboCop fixes for inclusion in the commit message body (see Step 9).
+   The diff should be the header (version and timestamp) plus any real shrinkage. If `bin/rubocop`
+   reports offenses, the regeneration lost exclusions: restore the file with
+   `git restore .rubocop_todo.yml` and investigate before going on.
+4. Note the RuboCop fixes for inclusion in the commit message body (see Step 10).
 
 If only `rubocop-*` plugins were updated (for example `rubocop-rails`), run items 1, 2 and 4 but
 **not** item 3. The `.rubocop_todo.yml` header records only the core RuboCop version, so
@@ -577,18 +923,24 @@ git restore --source=HEAD --staged --worktree .rubocop_todo.yml
 A clean `bin/rubocop -A` run exits 0 and reports "no offenses detected" or lists only auto-corrected
 offenses. Any remaining offenses must be fixed manually before proceeding.
 
-### Step 8: Handle haml-lint Updates
+### Step 9: Handle haml-lint Updates
 
 Check the output or diff for changes to the `haml_lint` gem (CLI: `haml-lint`).
 
 If haml-lint was updated:
 
 1. Run `bin/rails lint:haml` and manually fix any violations.
-2. If `.haml-lint_todo.yml` exists, run:
+2. If `.haml-lint_todo.yml` exists, regenerate it and confirm afterwards:
 
    ```bash
    bin/haml-lint --auto-gen-config --auto-gen-exclude-limit 1000
+   bin/rails lint:haml   # must still report no offenses
    ```
+
+   Unlike `.rubocop_todo.yml` in [Step 8](#step-8-handle-rubocop-updates), the haml-lint todo
+   survives an in-place regeneration, so it needs no blanking first. The regeneration can exit
+   non-zero over a file the `lint:haml` task does not lint, such as a generator template under
+   `lib/templates/`; judge it by `bin/rails lint:haml`.
 
    Then edit line 2 of `.haml-lint_todo.yml` to replace the full regeneration command (which
    includes all flags and options) with just:
@@ -597,22 +949,46 @@ If haml-lint was updated:
    # `bin/haml-lint --auto-gen-config --auto-gen-exclude-limit 1000`
    ```
 
-3. Note the haml-lint fixes for inclusion in the commit message body (see Step 9).
+3. Note the haml-lint fixes for inclusion in the commit message body (see Step 10).
 
 A successful `bin/rails lint:haml` run exits 0 with no reported offenses. Any violations must be
 fixed manually before proceeding.
 
-### Step 9: Build the Final Commit Message
+### Step 10: Build the Final Commit Message
+
+#### Read the Changelogs for Behavior Changes
+
+A minor or patch release can change behavior that matters, so do not reserve release-note scrutiny
+for majors. Before building the message, read the changelog of every **direct** dependency that
+changed — gems, npm packages, Bundler, Git-sourced gems and tool pins — for entries marked
+`WARNING`, `BREAKING`, `security` or `deprecat`. For any flagged entry in an authorization,
+authentication, sanitization or serialization library, find where the app uses the behavior it
+describes and decide whether the app is affected. Run the specs that cover that usage, not only the
+linters. Each conclusion goes into the commit body, and each check you ran is a verification result
+for the sub-agent below.
+
+#### Draft the Message
 
 Launch a **documentation-expert** sub-agent (using the Agent tool) to refine the commit message.
-Give it the `gem_update` output from Step 3, any JavaScript dependency changes from Step 4, the
-conventions below and, if Terraform changed, the evidence Steps 5 and 6 collected:
+Give it:
 
-- Each lock file's version changes against the Step 5 baseline, including transitive providers that
-  no `required_providers` block names
-- The `Downloading <source> <version> for <name>` lines captured from `init -upgrade` in Step 6,
-  the only record of a module bump
-- Each Git module's resolved commit SHA from Step 5
+- The `gem_update` output from Step 3, with the Bundler and Git-sourced gem entries, any JavaScript
+  dependency changes from Step 4 and any tool and image pin bumps from Step 7
+- The conventions below, and the whole [Known Changelog Quirks](#known-changelog-quirks) section, so
+  it does not rediscover a known quirk
+- **Every verification result from this run** — specs run, plans run and their summary lines, usage
+  audits and their conclusions — and the instruction that every behavioral claim in its prose must
+  either cite one of these results or be phrased as what the changelog says. Without them it writes
+  from the changelogs alone and can state as fact what this session has already shown to be false
+- If Terraform changed, the evidence Steps 5 and 6 collected:
+  - Each lock file's version changes against the Step 5 baseline, including transitive providers
+    that no `required_providers` block names
+  - The `Downloading <source> <version> for <name>` lines captured from `init -upgrade` in Step 6,
+    the only record of a module bump
+  - Each Git module's resolved commit SHA from Step 5
+
+When the draft comes back, check each claim in its prose against those results before Step 11, and
+correct any it cannot support.
 
 The agent should:
 
@@ -627,6 +1003,9 @@ The agent should:
      repository (`curl -fsS "https://registry.terraform.io/v1/providers/$ns/$name" | jq -r .source`,
      or `/v1/modules/$ns/$name/$provider` for a module); use its releases page or changelog file.
      A Git module's changelog lives in the repository its `source` points at
+   - A Git-sourced gem keeps the `[compare]` link from Step 3 in place of a changelog
+   - A tool or image pin from Step 7 links its upstream release page, minding the traps in
+     [Known Changelog Quirks](#known-changelog-quirks)
 
    **Prefer GitHub releases** if the repo uses them (link to the specific release tag page).
    Otherwise, fall back to whichever changelog or history document the repo uses. Common file names
@@ -648,16 +1027,24 @@ The agent should:
    heading source to find the correct slug. For GitHub releases links, link directly to the specific
    release tag (e.g. `https://github.com/org/repo/releases/tag/v1.2.0`).
 
-4. Add any JavaScript and Terraform dependency version changes in the same format, interleaved
-   alphabetically with the Ruby dependencies. Name a provider by its source address and a module by
-   its block name and source type, and give a Git module's commit SHA beside its version:
+4. Add any JavaScript, Terraform, Bundler, Git-sourced gem and tool or image pin changes in the same
+   format, interleaved alphabetically with the Ruby dependencies. Name a provider by its source
+   address and a module by its block name and source type, and give a Git module's commit SHA beside
+   its version:
 
    ```text
    * hashicorp/aws 5.80.0 → 5.81.0
    * vpc module (Git) v1.2.3 → v1.4.0 (commit <sha>)
    ```
 
-5. If multi-version jumps occurred for a dependency, list each version's changelog on its own line
+5. If `yarn.lock` changed, add this line after the dependency list, which names direct dependencies
+   only:
+
+   ```text
+   Re-resolve yarn.lock so transitive dependencies take the newest versions their ranges allow.
+   ```
+
+6. If multi-version jumps occurred for a dependency, list each version's changelog on its own line
    with a version prefix:
 
    ```text
@@ -666,7 +1053,7 @@ The agent should:
    [v1.2.0 changelog](url)
    ```
 
-6. If RuboCop or haml-lint fixes were needed (Steps 7 and 8), append to the end of the commit body,
+7. If RuboCop or haml-lint fixes were needed (Steps 8 and 9), append to the end of the commit body,
    keeping only the sections that apply:
 
    ```text
@@ -677,7 +1064,7 @@ The agent should:
    - LinterName: Brief description of the fix
    ```
 
-### Step 10: Commit, Push and Create the PR
+### Step 11: Commit, Push and Create the PR
 
 Stage all files changed during this workflow:
 
@@ -685,10 +1072,12 @@ Stage all files changed during this workflow:
 # Manifests and linter configuration. Stage each file only if it exists: git add validates every
 # pathspec before staging anything, so one missing file (no yarn.lock in a repo without JavaScript,
 # no .haml-lint_todo.yml without Haml) aborts the whole invocation and stages nothing.
-# .rubocop_todo.yml changes only when the rubocop gem itself was bumped (see Step 7).
+# .rubocop_todo.yml changes only when the rubocop gem itself was bumped (see Step 8).
 for f in Gemfile Gemfile.lock package.json yarn.lock .rubocop_todo.yml .haml-lint_todo.yml; do
   if [ -e "$f" ]; then git add -- "$f"; fi
 done
+# Workspace manifests that yarn up rewrote below the root (none outside a workspace repository)
+git diff --name-only -- '**/package.json' | while IFS= read -r f; do git add -- "$f"; done
 # Plus any source files modified by bin/rubocop -A or bin/rails lint:haml
 
 # Changed Terraform manifests and the lock files rewritten by terraform init -upgrade.
@@ -701,10 +1090,24 @@ done
 # repository root so the commands behave the same from any directory.
 git add -- ':/*.tf' ':(top,exclude)*.terraform/*'
 git add -- ':/*.terraform.lock.hcl' ':(top,exclude)*.terraform/*'
+
+# Plus the exact files Step 7 bumped (mise files, CI and Compose files, requirements.yml, ...)
 ```
 
-Then use the `/commit` command to create the commit. Provide the changelog body from Step 9 as
-context so `/commit` can incorporate it into the commit message.
+Then make sure every pin that changed has an entry in the message. List the staged changes outside
+the lock files:
+
+```bash
+git diff --cached --stat -- . ':!*.lock' ':!yarn.lock' ':!*.terraform.lock.hcl'
+```
+
+Every version that moved in those files — a manifest pin, a Terraform constraint, a Step 7 tool or
+image pin — needs an entry in the commit body from Step 10. Add any that is missing before going on.
+
+Then use the `/commit` command to create the commit. Provide the changelog body from Step 10 as
+context so `/commit` can incorporate it into the commit message. If a Rails upgrade ships in this PR
+(see [Step 2](#step-2-create-the-feature-branch)), its commit stays first and this one goes after
+it.
 
 Push and create the PR with appropriate labels:
 
@@ -716,7 +1119,7 @@ Determine which labels to apply:
 
 - Always include `dependencies`
 - Include `ruby` if any Ruby gems were updated
-- Include `javascript` if any npm packages were updated
+- Include `javascript` if any npm packages were updated or `yarn.lock` changed
 - Include `terraform` if any Terraform providers or modules were updated
 
 Only use labels that exist in the repository. `gh label list --search` ranks by fuzzy relevance
@@ -737,7 +1140,7 @@ Create the PR with a summary body:
 gh pr create --title "<title>" --body "$(cat <<'EOF'
 ## Summary
 
-- Updated N Ruby dependencies, M JavaScript packages, and P Terraform providers and modules
+- Updated N Ruby dependencies and M JavaScript packages, plus P Terraform providers and modules
 - [Notable updates, e.g. "Rails 8.1.1 → 8.1.2", "RuboCop 1.85 → 1.86 (with auto-fixes)"]
 
 ## Test plan
@@ -750,9 +1153,24 @@ EOF
 
 Omit any category (Ruby, JavaScript, Terraform) that had no changes. Tailor the summary bullets to
 highlight the most notable updates (major version bumps, security patches, linter upgrades that
-required code changes, etc.). If any Terraform providers **or modules** changed, add a
+required code changes, etc.). Also add a bullet for each of these that applies: a Bundler bump
+([Step 3](#step-3-update-ruby-dependencies)), tool and image pin bumps
+([Step 7](#step-7-update-tool-and-image-pins)), the security alerts this run closes and a Rails
+upgrade shipping in this PR — which also goes in the title, as
+`Upgrade Rails to <version> and update the app's dependencies - {qualifier }{Month} {Year}`. If any
+Terraform providers **or modules** changed, add a
 `- [ ] terraform plan shows no unexpected resource changes` checkbox to the test plan — a module
 major changes inputs and outputs, which is at least as plan-visible as a provider bump.
+
+Step 4 decides what the PR body says about JavaScript. Add each that applies; a `yarn.lock` change
+alone counts as a JavaScript change, so do not omit the category for it:
+
+- **`yarn.lock` changed** — a summary bullet:
+  `- Re-resolved yarn.lock so transitive dependencies take the newest versions their ranges allow`
+- **No release-age gate** — the repository's Yarn is older than 4.10, so the run took releases of
+  any age ([Step 4](#step-4-update-javascript-dependencies))
+- **The re-resolution failed** — and why, so the reviewer knows transitive dependencies did not move
+  ([Step 4](#step-4-update-javascript-dependencies))
 
 Steps 5 and 6 also decide what else the PR body must say about Terraform. Add each that applies,
 summarized and never pasted from Terraform's output, as
@@ -786,30 +1204,57 @@ interleaved together in one list.
 ## Version-Locked Packages
 
 Some packages must be updated in tandem because their versions must match across ecosystems. After
-updating, verify these constraints and revert any that break them.
+updating, verify these constraints and revert any that break them. Each `yarn up` here takes one of
+the two prefixes from [Step 4](#step-4-update-javascript-dependencies): the restore prefix when the
+target is the version the repository already commits, and the gated prefix otherwise. Make these
+changes before Step 4's re-resolution — inside Step 4's single restore call when the prefix is the
+restore prefix — so `yarn up -R '*'` and the `yarn why` check see them.
 
 ### Playwright
 
-The `playwright` npm package (pinned to an exact version in `package.json`) and the
-`playwright-ruby-client` gem (pinned with `~>` in `Gemfile`) must have **matching major.minor
-versions**. The npm package often releases days or weeks before the Ruby gem catches up.
+The `playwright` npm package and the `playwright-ruby-client` gem must match **exactly**, patch
+included. The gem supports one driver version, which it names in
+`Playwright::COMPATIBLE_PLAYWRIGHT_VERSION`, and the npm package must equal it. The gem is often not
+in the `Gemfile` at all — it can arrive through `capybara-playwright-driver` — so read the version
+from the installed gem rather than from a manifest. The npm package usually releases first, and a
+newer npm **patch** is as much a mismatch as a newer minor.
 
-After updating, check whether both sides landed on the same version:
+After [Step 3](#step-3-update-ruby-dependencies) and `yarn up '*'` have moved both sides, compare
+them as installed:
 
-1. If `yarn up` bumped `playwright` to a version that doesn't yet have a matching
-   `playwright-ruby-client` gem, revert the npm package:
+```bash
+bundle exec ruby -e 'require "playwright"; puts Playwright::COMPATIBLE_PLAYWRIGHT_VERSION'
+npx playwright --version   # prints "Version <x.y.z>"
+```
+
+1. If they differ, the gem's value wins. Move the npm side to it, which writes an exact pin:
 
    ```bash
-   yarn up playwright@<matching-version>
+   YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d yarn up playwright@<compatible-version>
    ```
 
-2. If both updated successfully to the same new version, update the pinned version constraints in
-   both manifest files:
-   - `package.json`: update the exact `playwright` version
-   - `Gemfile`: update the `~>` constraint for `playwright-ruby-client`
+   That is the gated prefix, for a version the repository does not yet commit. When the gem did not
+   move and `<compatible-version>` is the version already committed, use the restore prefix instead,
+   in Step 4's restore call.
 
-3. Do **not** hold back the Ruby gem if the npm package already matches — only revert the npm side
-   when it gets ahead.
+   Do **not** hold back the Ruby gem to match an older npm package — only the npm side moves.
+
+2. If the `Gemfile` declares the gem (`grep -n playwright-ruby-client Gemfile`), update its `~>`
+   constraint to the new version. If it does not, there is nothing to edit there.
+
+3. Run the repository's own check, if it has one:
+
+   ```bash
+   grep -rl COMPATIBLE_PLAYWRIGHT_VERSION spec
+   bin/rspec <each file it lists>
+   ```
+
+   With no such spec, rerun the comparison above; it is the check.
+
+4. Before running any system spec locally, install the browser build the new version expects, with
+   the repository's own script if it has one (for example `yarn playwright:install`). Nothing
+   installs it when the npm version changes, and install scripts are off during this command. A CI
+   image that bundles its own browsers is unaffected.
 
 ### Cocooned
 
@@ -822,16 +1267,45 @@ When a new version is available:
    other:
 
    ```bash
-   # If the npm package got ahead:
-   yarn up @notus.sh/cocooned@<gem-version>
+   # If the npm package got ahead (writes an exact pin). The gated prefix, unless <gem-version> is
+   # the version already committed — then the restore prefix, in Step 4's restore call:
+   YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d yarn up @notus.sh/cocooned@<gem-version>
 
-   # If the gem got ahead:
+   # If the gem got ahead, first set the cocooned constraint in Gemfile to <npm-version> exactly:
+   # bundle update never moves a gem below what the Gemfile already allows
    bundle update cocooned --conservative
    ```
 
-2. Update the pinned version constraints in both manifest files:
-   - `Gemfile`: update the `~>` constraint for `cocooned`
-   - `package.json`: update the `^` constraint for `@notus.sh/cocooned`
+2. Update the version constraints in both manifest files:
+   - `Gemfile`: while the sides differ, keep the exact version from item 1; once they match, use a
+     `~>` constraint for `cocooned`
+   - `package.json`: while the sides differ, keep the exact pin from item 1; once they match,
+     restore the project's usual operator (`^` or `~`) for `@notus.sh/cocooned`. A range must not
+     stand in for a hold: Step 4's re-resolution sends it to the newest release it admits, which is
+     the version the hold blocks
+
+### Rails JavaScript Packages
+
+The `@rails/*` npm packages the app uses (`@rails/actioncable`, `@rails/actiontext`,
+`@rails/activestorage` and the like) track the `rails` gem. Rails encodes the gem's version on npm
+with the patch multiplied by 100 and any fourth segment added to it: gem 8.1.4 is npm `8.1.400`, and
+the security release 8.1.2.1 is npm `8.1.201`. A prerelease gem does not follow that rule: gem
+`8.1.0.beta1` is npm `8.1.0-beta1`, so for one, read the matching npm version from `npm view
+@rails/actioncable versions --json` rather than deriving it. Their `latest` dist-tag is sometimes
+left behind on an older release line, and `yarn up '*'` follows it down — walking an app on Rails
+8.1 back to `^7.2.302` with no warning. After Step 4's restore, check each against the gem:
+
+```bash
+bundle exec rails --version
+grep -n '"@rails/' package.json
+```
+
+Restore any whose range no longer starts at the gem's npm version with
+`yarn up '@rails/<name>@^<npm-version>'`, using the matching prefix: the restore prefix when that
+version is already committed, and the gated prefix when it is not — after a Rails bump in Step 3,
+for one. When a Rails upgrade ships in the same PR ([Step 2](#step-2-create-the-feature-branch)),
+these bumps belong in the upgrade commit, not the dependency commit. If the upgrade commit does not
+already carry them, stop and ask the user whether to amend it; never rewrite it on your own.
 
 ## Terraform Update Notes
 
@@ -925,12 +1399,54 @@ lockstep source. It is a separate release train whose changelog can lag the comp
 versions, so the entry for the version being shipped may simply not exist there yet. Reach for it
 only for host-specific notes that the Dart Sass changelog does not cover.
 
+### Bundler
+
+Since 4.0.0, Bundler and RubyGems share version numbers and release tags. Link the joint release
+page, `https://github.com/ruby/rubygems/releases/tag/v<version>`. The notes are also in the root
+`CHANGELOG.md` of `ruby/rubygems`, under each version's `### Bundler` subsection.
+`CHANGELOG-bundler.md` no longer exists on `master`; pre-4.0 history is in
+`doc/CHANGELOG-bundler-2.x.md`.
+
+### google-protobuf
+
+The gem's `4.<x>.<y>` maps to the protobuf release tag `v<x>.<y>`: 4.35.0 is
+`https://github.com/protocolbuffers/protobuf/releases/tag/v35.0`.
+
+### Gems with no changelog
+
+`playwright-ruby-client` and `capybara-playwright-driver` publish no changelog and no GitHub
+releases, so link [Diffend](https://my.diffend.io) as Step 10 describes.
+`active_storage_validations` is not one of them: it keeps `CHANGES.md` and publishes releases.
+
+### Changelogs without usable anchors
+
+- **`msgpack`** keeps a plain-text `ChangeLog` with no headings to anchor, so link the file itself
+- **`ssrf_filter`** puts the release date in each heading, so its slugs carry the date as well as
+  the version — 1.6.0 slugs to the form `#160-982026`. Read the slug from the rendered page rather
+  than deriving it
+
+### Changelogs on another branch or repository
+
+- **`appsignal`** 4.10.x patch releases are documented only on the `4.x-stable` branch, not `main`
+- **`cancancan`** has moved to `coorasse/cancancan`. The old URLs redirect, but link the new home
+
+### Tool and image pins
+
+- **`jq`** tags its releases `jq-1.8.2`, so a `^v?[0-9]` tag filter returns nothing. Match the
+  `jq-` prefix
+- **Elasticsearch**'s GitHub release page is only a pointer. Link the real notes on `elastic.co`
+
 ## Important Notes
 
-- **Start from an up-to-date `main`** — see [Step 2](#step-2-create-the-feature-branch).
-- **Changelog links are required** — see [Step 9](#step-9-build-the-final-commit-message).
-- **Never skip linter checks** — see [Step 7](#step-7-handle-rubocop-updates) and
-  [Step 8](#step-8-handle-haml-lint-updates).
+- **Start from an up-to-date `main`**, or from a Rails upgrade the user chose to ship alongside —
+  see [Step 2](#step-2-create-the-feature-branch).
+- **Count this month's runs from history, not branches** — see
+  [Step 1](#step-1-determine-the-branch-name-and-pr-title).
+- **Every pin that moved gets a commit-message entry**, including Bundler, Git-sourced gems and tool
+  and image pins — see [Step 11](#step-11-commit-push-and-create-the-pr).
+- **Changelog links are required** — see [Step 10](#step-10-build-the-final-commit-message).
+- **Never skip linter checks** — see [Step 8](#step-8-handle-rubocop-updates) and
+  [Step 9](#step-9-handle-haml-lint-updates).
 - **Run `terraform init -upgrade` in every root module whenever the repo has `.tf` files** — even
   with no `.tf` edits, since range constraints and transitive providers move on their own, and a
   skipped root module leaves a stale lock file that makes `terraform plan` fail. See
@@ -940,4 +1456,5 @@ only for host-specific notes that the Dart Sass changelog does not cover.
   [Step 6](#step-6-re-resolve-and-verify-terraform-lock-files).
 - **Version-locked packages** — see [Step 4](#step-4-update-javascript-dependencies) and
   [Version-Locked Packages](#version-locked-packages).
-- If no dependencies changed at all, inform the user and stop.
+- If no dependencies changed at all, inform the user and stop. A change to `yarn.lock` alone is put
+  to the user first — see [Stop If Nothing Changed](#stop-if-nothing-changed).
