@@ -37,14 +37,14 @@ it is committed. Deleted files are left out, since there is nothing to read.
 
 Keep the **documents** among the changed files: names ending `.md`, `.mdx`, `.markdown`, `.txt`,
 `.rst`, `.adoc` or `.pdf`, compared case-insensitively. Drop the working files these commands write
-to the project root — `local-review*.md`, `*-DOC-REVIEW*.md`, `*-HANDOFF.md` and `*PLAN.md` — which
+to the project root — `*local-review*.md`, `*-DOC-REVIEW*.md`, `*-HANDOFF.md` and `*PLAN.md` — which
 are a run's output rather than documentation.
 
 A named path is reviewed as given, with one exception: in a project that has `/local-review`, its
-output `local-review.md` is not a valid target unless the user explicitly asks for it in a later
-turn. `/local-review` forbids its own documentation-expert from reviewing the file mid-run, and the
-rule binds whoever points this command at it just as much. Drop it from the scope, say so and review
-the rest.
+output `local-review.md`, or a carried `*-local-review.md` on a stacked branch, is not a valid
+target unless the user explicitly asks for it in a later turn. `/local-review` forbids its own
+documentation-expert from reviewing the file mid-run, and the rule binds whoever points this command
+at it just as much. Drop it from the scope, say so and review the rest.
 
 **Confirm a described scope before dispatching.** Show the user the documents to review, how many
 there are and that each gets its own reviewer; every changed file the filter left out, so they can
@@ -437,7 +437,8 @@ than implying every finding must be fixed. Use one of:
 
 - **Implement** — worth doing in this revision; benefit clearly exceeds cost
 - **Defer** — legitimate, but better as a follow-up (out of scope, needs a broader rewrite or not
-  urgent)
+  urgent). A 🔴 Critical or a 🟠 High Sensitive Information finding is held to a stricter bar; see
+  "A defect disguised as an observation" under What Is Not Written
 - **Skip** — not worth doing; the cost (churn, review time, risk of introducing new errors)
   outweighs the gain. Prefer this over a half-hearted "could fix" when the value is marginal
 
@@ -469,9 +470,13 @@ rather than smoothing it over.
   an ℹ️ observation on the section it protects; everything else is silence.
 - **A defect disguised as an observation.** Severity is judged on the problem, not on whether the
   revision under review introduced it. A pre-existing problem is a finding at its severity, usually
-  recommended **Defer** with the reason — never an ℹ️ because it is "out of scope". One severe
-  enough to block the revision on its own takes **Implement**, and one not worth doing takes
-  **Skip**.
+  recommended **Defer** with the reason — never an ℹ️ because it is "out of scope", and one not
+  worth doing takes **Skip**. A 🔴 Critical, or a 🟠 High under Sensitive Information, is the
+  exception: it is recommended **Implement** however old it is, since its severity says it must not
+  ship as it stands. Where fixing it in this revision would genuinely bury the change, recommend
+  **Defer** only with a rationale naming the follow-up that must land before this revision merges,
+  so the walkthrough puts it to the user and it is declined deliberately rather than by default.
+  PR Comment Format names a deferred one to the user again before posting.
 
 ### Numbered Findings
 
@@ -522,14 +527,11 @@ choice they do not see.
 
 - **Document** — `README.md`
 - **Location** — Quick Start
-- **Issue** — The Quick Start documents the native install only and links to Installation, which
-  presents Docker as an equal path. Both scopes are defensible; the document has to pick one.
+- **Issue** — The Quick Start documents the native install only and links to Installation, which presents Docker as an equal path. Both scopes are defensible; the document has to pick one.
 - **Options**
   - **(a) Document both paths.** Complete for every reader, but roughly doubles the section.
-  - **(b) Native only, linking to Installation for Docker.** Stays short, but Docker users leave the
-    Quick Start at its first step.
-- **Recommended** — (b), because the Quick Start exists to be short and Installation already covers
-  Docker in full.
+  - **(b) Native only, linking to Installation for Docker.** Stays short, but Docker users leave the Quick Start at its first step.
+- **Recommended** — (b), because the Quick Start exists to be short and Installation already covers Docker in full.
 ```
 
 When a suggestion quotes Markdown that itself contains a fenced code block, open and close the outer
@@ -575,6 +577,12 @@ the first place.
 This section reaches the collator only, in its extract, which also carries the criteria and
 `## Reviewer Output` (see Composing the Prompts). These rules govern the file the collator writes,
 which the orchestrator and the recording agents later edit under the same rules.
+
+Write each paragraph, bullet, table row and checklist item of the review file on one line, never
+hard-wrapped at 100 columns as this command file is. The file may be posted verbatim as a pull
+request comment, where GitHub shows every line break, so a wrap appears as a ragged break
+mid-sentence; an editor wraps a long line for display on its own. The examples in this file follow
+the rule inside their fences, whatever their width.
 
 ### File Name
 
@@ -1211,8 +1219,9 @@ there is no "Skipped" status (see Status Records a Decision, Not a Recommendatio
 #### 1. Decisions and open questions
 
 Every ❓ ⚖️ Decision with no ruling, in checklist order, then any other question the review left for
-the user: a handed-back check outside the allowed set that waits on their go-ahead, and a finding
-with no ruling whose reviewers split between Implement and Defer or Skip. Put a split finding as
+the user: a handed-back check outside the allowed set that waits on their go-ahead, a finding with
+no ruling whose reviewers split between Implement and Defer or Skip, and any dependent still ❓ with
+no ruling under a ⚖️ ruled ⏸️ on an earlier run (see below). Put a split finding as
 phase 2 puts its findings — both reviewers' recommendations with their reasons, then the
 orchestrator's own, with Implement, Defer (⏸️) and Ignore (🚫) offered — and record its ruling in
 this phase's batch as phase 2 records one; phase 2 does not ask it again. For a ⚖️, the finding's
@@ -1241,7 +1250,10 @@ the user in turn straight after it, offering Defer (⏸️), Ignore (🚫) and "
 recommending Defer alongside the decision. Implement is not offered: it would work the dependent
 against a decision nobody has made. Deferring a decision usually defers what hangs on it, and a
 dependent recommended Implement would otherwise never be asked or worked, holding its group open for
-good. One the user leaves open keeps waiting until the user reopens the ⚖️.
+good. One the user leaves open keeps waiting, and every later run asks it again here, the same way
+and recommending Defer: the file records the ⏸️ and the dependent still at ❓, not what was said in
+the session that left it, and without the question a dependent left open once would hold its group
+open and bar "all clear" for good, with nothing raising it.
 
 #### 2. Not recommended for this revision
 
@@ -1253,6 +1265,11 @@ beyond that, only here does the command solicit ⏸️ or 🚫, and that is deli
 were advised against, so without a ruling they sit at ❓ indefinitely and bar "all clear", while
 asking once, with both recommendations in view and Implement offered on equal terms, lets them leave
 the pre-merge path without being closed on advice alone.
+
+A 🔴 Critical, or a 🟠 High under Sensitive Information, that reached this phase leans Implement,
+for the reason given under "A defect disguised as an observation" in What Is Not Written, and the
+summary says its severity is why. A reviewer rationale naming a follow-up that must land before
+merge is the one case for recommending Defer instead, and then the summary names that follow-up.
 
 A ⏸️ or 🚫 ruling checks the item where it stands, with the user's reason. An **Implement** ruling
 moves the finding into the group whose edit it shares — same edit, section or root cause, per
@@ -1399,27 +1416,33 @@ on F5, and "all" would take G2 and G4.
 <!-- Keep in sync with a project's /ship-it, where one exists: Step 8 of
      .claude/commands/ship-it.md in some projects, and in the dotfiles repository Step 6 of
      .claude/skills/ship-it/SKILL.md with the patterns in scripts/scrub.sh beside it, whose header
-     lists the differences from this section that are intended. Each restates the stats-line rule
-     and carries its own copy of the scrub -->
+     lists the differences from this section that are intended; update that list whenever this
+     section changes, and re-derive it before syncing in either direction. Each restates the
+     stats-line rule
+     and carries its own copies of the scrub pattern set (with the placeholder exemption built into
+     `paths`), the cleared-lines rule and the Sensitive Information withholding -->
+
+<!-- Keep in sync with Step 8 of another project's .claude/commands/ship-it.md, where the amended
+     `keys`, `schemes` and `secrets` set below was tested against credential samples and harmless
+     negatives -->
 
 When posting review findings as a PR comment (e.g. during `/ship-it` or when explicitly asked),
 build a temporary file with a collapsible `<details><summary>` wrapper and post it with
 `--body-file` to avoid heredoc quoting issues.
 
-A review comment records how the review ended, not a snapshot of one in progress. Before building
-the comment, check the review file for findings with no ruling, with the same two checks `/ship-it`
-runs:
+A review comment records how the review ended, not a snapshot of one in progress. The post block
+below opens with the same two checks `/ship-it` runs for findings still open, a ❓ summary row or a
+`- [ ]` checklist item, and refuses to post while either finds one. When it refuses, name the open
+findings to the user: one with a **Ruling** line or an Implement recommendation needs its group
+worked, and any other needs the user's ruling. Never mark a finding yourself to get past the check.
+A review that quotes a summary row or an unchecked item at the start of a line can never pass it;
+tell the user that is why, rather than loosening it.
 
-```bash
-review_file="$(git rev-parse --show-toplevel)/<name>-DOC-REVIEW.md"
-[ -r "$review_file" ] || { echo "cannot read $review_file" >&2; exit 1; }
-command grep -nE '^\| F[0-9]+ \|.*\| ❓ \|' /dev/null "$review_file"; a=$?
-command grep -n '^- \[ \]' /dev/null "$review_file"; b=$?
-[ "$a" -le 1 ] && [ "$b" -le 1 ] || { echo "could not read $review_file" >&2; exit 1; }
-```
-
-If either grep printed anything, do not post: name the open findings to the user and wait for their
-rulings. Never mark a finding yourself to get past this check.
+Before posting, also name to the user every ⏸️ Deferred 🔴 Critical finding, whatever its category,
+and every ⏸️ Deferred 🟠 High finding under Sensitive Information, each with the follow-up its
+**Status** or **Recommendation** line names, or say that it names none. Each is off the pre-merge
+path but still describes a weakness the comment would publish. A Sensitive Information finding is
+then withheld or cleared under Ask before withholding, below.
 
 Scrub the review document before building the comment. This artifact is written by an agent reading
 a developer machine, and a finding that traces where a global command or a user-level agent resolves
@@ -1430,7 +1453,7 @@ stage, because this is the step that publishes:
 review_file="$(git rev-parse --show-toplevel)/<name>-DOC-REVIEW.md"
 [ -r "$review_file" ] || { echo "scrub: cannot read $review_file" >&2; exit 1; }
 
-command grep -nE '/Users/|/home/|/private/tmp/|/var/folders/' /dev/null "$review_file"
+LC_ALL=C command grep -nE '/Users/|/home/|/private/tmp/|/var/folders/' /dev/null "$review_file"
 rc=$?
 [ "$rc" -le 1 ] || { echo "scrub FAILED (grep exit $rc) — do not post" >&2; exit 1; }
 ```
@@ -1453,43 +1476,75 @@ scrub and do not post — which is what the readability check, the exit-code bra
 file list below are each there to make visible.
 
 When scrubbing a set of artifacts rather than one named file, match them with `find` rather than a
-shell glob, and match `local-review*.md` rather than the exact name:
+shell glob, and match `*local-review*.md` rather than the exact name, since a review carried onto a
+stacked branch is named `<source-branch>-carried-local-review.md`:
 
 ```bash
 root="$(git rev-parse --show-toplevel)"
 me="$(id -un | sed 's/[][\.*^$+?(){}|/]/\\&/g')"
+cleared=/dev/null  # or the file of lines the user cleared, below
+[ -r "$cleared" ] || { echo "scrub: cannot read $cleared" >&2; exit 1; }
+! command grep -qx '[[:space:]]*' "$cleared" \
+  || { echo "scrub: $cleared has a blank line" >&2; exit 1; }
 
 # One pattern set, used by every pass, so the passes cannot drift apart.
-paths='/users/|/home/|/tmp/|/var/folders/|/volumes/|/root/|-users-'
-paths="$paths"'|[a-z]:\\users|\\wsl|\$\{?home|~[a-z_][a-z0-9_-]*/|\.(internal|local|corp|lan)'
-hosts='(^|[^0-9.])(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.0\.0\.1)'
-ident="$paths|$hosts|(^|[^a-z0-9])$me([^a-z0-9]|$)|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
-keys='api\\?[_-]?key|access\\?[_-]?key|secret|token|passw(or)?d|pwd|credential|auth|bearer'
+paths='(^|[^a-z0-9._/~-])(/users/([^<]|$)|/home/([^<]|$)|/private/tmp/|/private/var/'
+paths="$paths"'|/var/folders/|/volumes/|/root/)|file:/+(users|home)/([^<]|$)'
+paths="$paths"'|(^|[^a-z0-9])-users-([^<]|$)|[a-z]:\\users|\\wsl'
+paths="$paths"'|\$\{?home|~[a-z_][a-z0-9_-]*/'
+paths="$paths"'|[a-z0-9-]\.(internal|corp|lan)([^a-z0-9_-]|$)|[a-z0-9-]\.local(:[0-9]+)?/'
+hosts='(^|[^0-9.])(10(\.[0-9]{1,3}){3}|127(\.[0-9]{1,3}){3}|192\.168(\.[0-9]{1,3}){2}'
+hosts="$hosts"'|172\.(1[6-9]|2[0-9]|3[01])(\.[0-9]{1,3}){2})([^0-9]|$)'
+ident="$paths|$hosts|/$me(/|\$)|<$me>|(^|[^a-z0-9._%+-])$me@"
+ident="$ident"'|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}'
+keys='api\\?[_-]?key|access\\?[_-]?(key|id)|(secret|master|private)\\?[_-]?key(\\?_base)?'
+keys="$keys"'|secret|token|passw(or)?d|pwd|credential|auth|bearer|pepper'
+schemes='postgres(ql)?|mysql2?|rediss?|amqps?|mongodb(\+srv)?'
 secrets='-----begin [a-z ]*private key-----'
-secrets="$secrets|($keys)[\"'\`\\\\]*[[:space:]]*(\\|[[:space:]]*[^|[:space:]]|[:=])"
-secrets="$secrets"'|authorization:[[:space:]]*(basic|bearer|token)[[:space:]]'
-secrets="$secrets"'|[a-z][a-z0-9+.-]*://[^[:space:]/]+:[^[:space:]@]+@'
-secrets="$secrets"'|gh[pousr]_[a-z0-9]{30,}|github_pat_[a-z0-9_]{20,}'
+secrets="$secrets|($keys)[\"'\`\\\\]*[[:space:]]*[:=]"
+secrets="$secrets|\\|[[:space:]]*[a-z0-9_.-]*($keys)[a-z0-9_.-]*[[:space:]]*\\|"
+secrets="$secrets"'[[:space:]]*[^|[:space:]]'
+secrets="$secrets"'|authorization:[[:space:]]*(basic|bearer|token|apikey)[[:space:]]'
+secrets="$secrets"'|[a-z][a-z0-9+.-]*://[^[:space:]/@:]*:[^[:space:]/@]+@'
+secrets="$secrets|($schemes)://[^[:space:]@/]*:[^[:space:]@]+@"
+secrets="$secrets"'|gh[pousr]_[a-z0-9]{30,}|github_pat_[a-z0-9_]{20,}|hrku-[a-z0-9_-]{20,}'
 secrets="$secrets"'|(^|[^a-z0-9])(akia|asia)[0-9a-z]{16}([^0-9a-z]|$)|xox[abprs]-[a-z0-9-]{10,}'
 secrets="$secrets"'|[sr]k_live_[a-z0-9]{10,}|(^|[^a-z0-9])sk-(ant-|proj-)?[a-z0-9_-]{20,}'
 secrets="$secrets"'|(^|[^a-z0-9])aiza[0-9a-z_-]{35}|glpat-[a-z0-9_-]{20,}|npm_[a-z0-9]{36}'
-secrets="$secrets"'|sg\.[a-z0-9_-]{16,}\.[a-z0-9_-]{16,}'
+secrets="$secrets"'|sg\.[a-z0-9_-]{16,}\.[a-z0-9_-]{16,}|ccipat_[a-z0-9_]{20,}'
+secrets="$secrets"'|do[opr]_v1_[a-f0-9]{64}|lin_(api|oauth)_[a-z0-9]{32,}'
 secrets="$secrets"'|eyj[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.|bearer[[:space:]]+[a-z0-9._~+/=-]{16,}'
 
 artifacts() {
   find "$root" -maxdepth 1 \
-    \( -name 'local-review*.md' -o -name '*-DOC-REVIEW*.md' \
+    \( -name '*local-review*.md' -o -name '*-DOC-REVIEW*.md' \
        -o -name '*-HANDOFF.md' -o -name '*PLAN.md' \) "$@"
 }
 
-# A hit is exempt only when the segment is angle-bracketed: /Users/<name>/…
-scan() { artifacts -exec grep -inE "$ident|$secrets" /dev/null {} + \
-         | command grep -viE '/(users|home)/<[^>]+>/'; }
+# Drop a hit only when its text after `<file>:<line>:` is exactly a line the user cleared.
+uncleared() {
+  awk 'FILENAME == ARGV[1] { ok[$(0)]; next }
+       { c = $(0); sub(/^[^:]*:[0-9]+:/, "", c) } !(c in ok)' "$cleared" -
+}
+
+# grep runs under sh so that find fails only on a failed read (above 1), never on a clean file (1).
+grep_artifacts() {
+  artifacts -exec sh -c 'LC_ALL=C grep -inE "$@"; [ $? -le 1 ]' sh "$@" /dev/null {} +
+}
+
+# Secret hits pass through uncleared; identifying hits never do, since only a secret is cleared.
+scan() {
+  secret_hits="$(grep_artifacts -e "$secrets")" && ident_hits="$(grep_artifacts -e "$ident")" \
+    || { echo "scrub FAILED (grep could not read an artifact) — do not post" >&2; return 2; }
+  [ -z "$secret_hits" ] || printf '%s\n' "$secret_hits" | uncleared || return 2
+  [ -z "$ident_hits" ] || printf '%s\n' "$ident_hits"
+}
 
 scanned="$(artifacts -print)"
 [ -n "$scanned" ] || { echo "scrub: no artifacts under $root — nothing was scanned" >&2; exit 1; }
 printf 'scrub: scanned these files\n%s\n' "$scanned"
-scan
+scan || echo "scrub FAILED — do not post" >&2
+scrub_pid=$$
 ```
 
 Run `grep` as `command grep` wherever the shell invokes it. An interactive shell can wrap `grep` in
@@ -1497,7 +1552,9 @@ a function or alias — ugrep with `--ignore-files`, for one — and review arti
 gitignored, so a wrapper that honors ignore files would skip exactly the files the scrub exists to
 read, and the two scrub forms would silently run different tools. `command` bypasses functions and
 aliases; `find -exec grep` already runs the binary directly and needs no prefix. Never give the
-scrub a flag or tool that honors ignore files.
+scrub a flag or tool that honors ignore files. Run every scrub `grep` under `LC_ALL=C` as well: in a
+UTF-8 locale macOS `grep` matches nothing on a line holding an invalid byte, so a credential after
+one reads as clean.
 
 `find` does the matching so the shell never expands the glob. An unmatched `*-DOC-REVIEW.md` inside
 a single `grep` command aborts that command outright under zsh, and `2>/dev/null` does not suppress
@@ -1526,26 +1583,47 @@ prefix rewrite is not sufficient: usernames also appear dash-encoded inside path
 own per-project directories take the form `-Users-<name>--some-repo` — and a line carrying one is
 caught by the scan, then passes clean after a `~`-prefix rewrite while still naming the user twice.
 A remediation its own verifier certifies as safe is worse than none, because it ends the reviewer's
-attention. `$me` is in the pattern set for exactly this reason.
+attention. The `-users-` term catches the dash-encoded form for exactly this reason.
 
-Match the account name as a whole word, bounded by anything that is not a letter or digit. A bare
-substring fires inside ordinary words — an account named `ann` blocks on "annual" and "planning" —
-so the scrub stops clean posts, and a gate that routinely cries wolf teaches the reader to override
-it. The boundary still catches every form that names the user: `/Users/<name>/`, dash-encoded
-`-Users-<name>--repo`, `<name>@host` and the bare name in prose. The name is escaped before it
-enters the pattern, since an account name can contain `.` or other characters `grep -E` would
-otherwise read as syntax.
+Match the account name only where it names the machine: as a path segment, `/<name>/`, or as the
+local part of an address, `<name>@host`. Those are the forms that identify a home directory or a
+mailbox, and the path and address terms catch most of them already; the account-name term covers a
+path or host the other terms miss. Never match it as a word in prose. There it is the author's
+name, which the pull request already shows, and ruling attributions use it constantly
+(`confirmed by <name>`), so a word match stops nearly every walked review and its rewrite to
+`<user>` erases who ruled. A gate that routinely cries wolf teaches the reader to override it. The
+name is escaped before it enters the pattern, since an account name can contain `.` or other
+characters `grep -E` would otherwise read as syntax.
+
+Every other term is bounded the same way, so that it fires on the machine rather than on the
+repository text a review quotes. A path term must start a path, so `app/views/users/` passes while
+`/Users/…` does not. A bare `/tmp/…` path names no machine, so only the per-user temp roots macOS
+prints, `/private/tmp/`, `/var/folders/` and its resolved form under `/private/var/`, are matched.
+A `file://` URL's home path is matched too, though the `/` before it would fail the bound. An
+address must be a full dotted quad, so `10.years` passes. A host suffix must end its name, and
+`.local` must carry a port or path, so `.env.test.local`, `settings.local.json` and
+`Time.zone.local(` pass, at the cost of a bare `host.local` in prose.
 
 **Re-run `scan` after rewriting, and treat any remaining output as blocking.** The rewrite step is
 performed by the same agent that is judging whether it worked, so without a second pass its belief
 that the document is clean is never tested against the document as it now stands. A detect-and-fix
 step with no re-detect is a fix nobody checked.
 
-The placeholder exemption is **syntactic, not a judgment call**: a hit is exempt only when the
-segment after `/Users/` or `/home/` is enclosed in angle brackets, as `/Users/<name>/…` quoted from
-the rule itself is. Any other value is treated as real, however generic it looks. This is what the
-`grep -viE '/(users|home)/<[^>]+>/'` filter in `scan` implements, so the exemption is applied by the
-command rather than decided by the agent running it.
+The placeholder exemption is **syntactic, not a judgment call**: an occurrence is exempt only when
+the segment after `/Users/`, `/home/` or `-Users-` opens with an angle bracket, as `/Users/<name>/…`
+and `-Users-<name>-…` quoted from the rule itself do. Any other value is treated as real, however
+generic it looks, and the bracketed word must not be the account name itself: `<$me>` is its own
+term, so `/Users/<login>/` still fires when the login is real. The `([^<]|$)` after each of those
+terms in `paths` implements it, so the exemption is applied by the pattern rather than decided by
+the agent running it — and applied to the occurrence, not the line. A filter that drops every line
+holding a placeholder also drops whatever else that line carries, so a real home path or a
+credential sharing a line with `/Users/<name>/` would pass both gates. Gate 2 also runs `secrets`
+and `ident` as separate passes, each passed to `grep` with `-e` because `secrets` begins with
+`-----` and would otherwise be read as an option, and branches on each `grep`'s own exit status,
+since a status piped through a later filter is the filter's and an unreadable comment would read as
+clean. `scan` runs the same two passes over the artifacts: only the `secrets` pass goes through
+`uncleared`, so a cleared line still shows its path hits, and `grep_artifacts` turns a failed read,
+never a clean file, into a failed `find`.
 
 The reason it is mechanical is that the failure is asymmetric. `/Users/<name>/…` and
 `/Users/dev/work/thing` produce identical adjacent hit lines, and nothing tells an agent whether
@@ -1557,7 +1635,26 @@ routine is where habituation sets in.
 `scan` matches secret-shaped content as well as paths, and those hits are **reported to the user and
 block the post — never rewritten.** Rewriting a credential in the artifact hides the evidence
 without rotating the secret, which leaves the reader believing a disclosure was handled when only
-its trace was removed.
+its trace was removed. Secret shapes are a credential-named key followed by `:` or `=` or filling a
+table cell, alone or inside a longer name such as `DATABASE_PASSWORD`, a URL carrying a password
+(including the empty-user form a hosted Redis prints), a private-key header, an `Authorization`
+header or bearer credential, a JWT and a token by its prefix: GitHub, AWS, Slack, Stripe, Heroku,
+OpenAI or Anthropic, Google, GitLab, npm, SendGrid, CircleCI, DigitalOcean and Linear. The generic
+URL term forbids `/` in the password, so `registry.npmjs.org:443/@scope/pkg` is not read as
+`user:password@`, and the database and queue schemes get a second term that allows it.
+
+A blocked hit is not always a credential: code quotes `api_key:` and `password:` keys that hold
+none. Show the user each hit and ask which lines are not credentials. Only the user clears a line,
+and only one they were shown. Write each cleared line verbatim, trailing spaces included, exactly as
+`grep` printed it after its `<file>:<line>:` prefix, one per line, to a file of its own
+(`cleared=$(mktemp -t scrub-cleared)`), set `cleared` to that path and run the block again. A hit is
+cleared only when its content, with the `<file>:<line>:` prefix stripped, matches a cleared line
+exactly, so any edit to the line, including an appended value, puts it back in front of the user,
+and both gates still run every other check. A substring match would not do: a cleared key with
+nothing after it would also clear a later line holding the same key and a real value. The block
+refuses a cleared file with a blank line, since no hit is blank and such a line means the file was
+written wrong. Clear only secret-shaped hits; a path, host, address or username hit is rewritten. If
+the user does not clear a hit, nothing is posted.
 
 The earlier claim that a credential reaches this step only by sharing a line with a path was wrong,
 and load-bearing while it stood: it was the justification for matching paths only. A bare
@@ -1582,36 +1679,66 @@ finding to the user with its number, title and Location, and say whether its tex
 locates one, describes one without locating it or names none, where a value is anything Redacting
 Sensitive Evidence lists. A finding that quotes, locates or describes a value is withheld without a
 question. That holds for a ✅ Fixed finding or an ℹ️ Observation too: a fixed finding still says
-where the value was. A Sensitive Information finding filed elsewhere, such as an observation under
-`## Observations`, is classified and withheld the same way. Ask about each finding that names no
-value with `AskUserQuestion`:
+where the value was. A Sensitive Information finding filed elsewhere is classified and withheld the
+same way. The block's number check finds one by its summary row's Category cell, so an observation
+under `## Observations`, whose row names no category, must be moved under
+`## Sensitive Information` in the review file first, with the user's agreement. Ask about each
+finding that names no value with `AskUserQuestion`:
 
 - **Withhold it** (the default)
 - **Post it in full**: its text names no value and points at none
 
 Only the user's answer to this question clears a finding, never the reviewer's category or wording.
 
-**Then withhold the body of every Sensitive Information finding the user has not cleared from the
-comment.** The redaction rule keeps the *value* out of the artifact but it does not remove the
-*pointer*, and the pointer is enough: a published finding reading "the connection string at line 42
-of `deploy.md` is live" is a targeting instruction for anyone with repository access, and it
-survives in the comment's edit history even if the comment is deleted. Report those findings to the
-user in conversation, and represent them in the comment as a neutral count only:
+**Then withhold every trace of each Sensitive Information finding the user has not cleared**, not
+only its section entry. The redaction rule keeps the *value* out of the artifact but it does not
+remove the *pointer*, and the pointer is enough: a published finding reading "the connection string
+at line 42 of `deploy.md` is live" is a targeting instruction for anyone with repository access, and
+it survives in the comment's edit history even if the comment is deleted. Each finding appears in
+more places than its section — its Consolidated Summary row names its category, description and
+location, its Pre-Merge Checklist item names it again, and the Overall Assessment may describe it —
+and any one of them is the pointer. Report the withheld findings to the user in conversation. Then
+copy the review file to a path of its own and print it:
+
+```bash
+review_file="$(git rev-parse --show-toplevel)/<name>-DOC-REVIEW.md" \
+  && post_file=$(mktemp -t doc-review-post) && cp -- "$review_file" "$post_file" \
+  && echo "$post_file"
+```
+
+Then, in the copy only, delete each withheld finding's section entry, summary row, checklist item,
+any assessment sentence describing it and any other mention of its number — a Review History entry,
+a cross-reference in another finding or a group's reason line — and any group heading or reason
+line that describes it in words: the whole group when it was the only member, otherwise a reworded
+heading and reason that no longer describe it. Put a neutral count where the withheld findings
+stood:
 
 ```text
 1 Sensitive Information finding — withheld from this comment; see the local artifact
 ```
 
-Everything else about a withheld finding goes too, its summary row, checklist item and any other
-mention of its number included. A cleared finding is posted like any other, with its section entry,
-summary row and checklist item. When some are cleared and some are not, the section heading stays
-for the cleared ones and the count line sits beneath it; when all are cleared, no count line is
-needed.
+A cleared finding is posted like any other, with its section entry, summary row and checklist item.
+When some are cleared and some are not, the section heading stays for the cleared ones and the
+count line sits beneath it; when all are cleared, no count line is needed.
 
-Excise the section before the body is assembled, not after — the block below pipes the artifact in
-whole, so a rule applied to the finished comment has already published what it meant to withhold.
-This is the one finding category where succeeding at the job is what creates the exposure: the
-command is most dangerous exactly when it works.
+Write the numbers the user cleared, one per line, to a file of their own
+(`cleared_findings=$(mktemp -t doc-review-cleared-findings)`), so the block below knows which
+numbers may stay in the comment.
+
+The local artifact keeps every finding, as the count line says; only the copy is posted. Withhold
+before the body is assembled, not after — the block below reads the copy whole, so a rule applied to
+the finished comment has already published what it meant to withhold — and the block refuses the
+post while any withheld finding's number is left in a part. A category check alone would miss the
+checklist item, which carries the number but no category, and a number check alone misses a group
+heading or reason line that describes the finding without it, so reread those against each withheld
+finding's location and subject before running the block. Set `post_file` in the block to the path
+printed, or to `"$review_file"` when nothing is withheld, and `cleared_findings` to its path, or to
+`/dev/null` when the user cleared none; each command runs in a fresh shell, so a value set in an
+earlier command does not carry over. After any later rewrite of the review file, remake the copy
+and withhold again before running the block, since it reads the copy, not the review file. Once
+every part is posted, the block deletes the copy and both list files. This is the one finding
+category where succeeding at the job is what creates the exposure: the command is most dangerous
+exactly when it works.
 
 Then build and post the comment. **The gate lives inside this block, not before it.** Order was
 previously carried only by prose position and the words "Then build the comment", while the final
@@ -1619,26 +1746,48 @@ fenced block was self-contained — it opened with `{`, ended with `gh pr commen
 scrub. An agent that scrolls to the executable block, which is the normal way a command file gets
 used, published without ever running the scrub and nothing signaled that a step had been skipped. A
 control an agent can skip by copying the obvious block is not a control, so the re-verification and
-the post now share one block and one exit path:
+the post now share one block and one exit path. The block also leans on the artifact-set scrub
+block above — its functions, its pattern variables and the `scrub_pid` it sets last — so run the
+two as one command, scrub block first. The block sets its own `review_file`, `post_file` and
+`cleared_findings`, so nothing else it reads comes from elsewhere. Its guard refuses to go on unless
+all of that is in place: in a fresh shell Gate 1 would pass on a `scan` that printed nothing, and
+Gate 2 would read the withheld numbers from an empty path, which macOS `awk` takes as standard
+input, so the withholding check would pass without checking anything. `typeset -f` accepts only a
+shell function, never an executable or alias of the same name, and `scrub_pid` matches `$$` only in
+the shell that ran the scrub block, never in one that inherited the variable:
 
 ```bash
+review_file="$(git rev-parse --show-toplevel)/<name>-DOC-REVIEW.md"
+post_file=<the withheld copy, or "$review_file" when nothing is withheld>
+repo=<OWNER/NAME of the repository the pull request is in>
+cleared_findings=<the file of finding numbers the user cleared, or /dev/null>
+[ "${scrub_pid-}" = "$$" ] && typeset -f scan uncleared artifacts grep_artifacts >/dev/null \
+  && [ -n "$root" ] && [ -n "$secrets" ] && [ -n "$ident" ] && [ -n "$cleared" ] \
+  && [ -r "$review_file" ] && [ -r "$post_file" ] && [ -r "$cleared_findings" ] \
+  || { echo "scrub block not run in this shell, or a value is unset — do not post" >&2; exit 1; }
+! command grep -vxE 'F[0-9]+' "$cleared_findings" \
+  || { echo "cleared findings must be one finding number per line — do not post" >&2; exit 1; }
+command grep -nE '^\| F[0-9]+ \|.*\| ❓ \|' /dev/null "$review_file"; a=$?
+command grep -n '^- \[ \]' /dev/null "$review_file"; b=$?
+[ "$a" -eq 1 ] && [ "$b" -eq 1 ] \
+  || { echo "open findings above, or $review_file unreadable — do not post" >&2; exit 1; }
 work_dir="$(mktemp -d -t pr-comment)"
 trap 'rm -rf "$work_dir"' EXIT
 
 # Gate 1 — the artifacts, after any rewrites. Nothing may remain.
-remaining="$(scan)"
+remaining="$(scan)" || { echo "scrub FAILED — do not post" >&2; exit 1; }
 [ -z "$remaining" ] || { echo "scrub: unresolved hits — do not post" >&2
                          printf '%s\n' "$remaining" >&2; exit 1; }
 
-body="$(cat "$review_file")" || { echo "cannot read $review_file" >&2; exit 1; }
+body="$(cat "$post_file")" || { echo "cannot read $post_file" >&2; exit 1; }
 [ -n "$body" ] || { echo "review body is empty — refusing to post" >&2; exit 1; }
 title="$(sed -n '1s/^# //p' "$review_file")"
 [ -n "$title" ] || { echo "review file has no title on its first line — refusing to post" >&2
                      exit 1; }
 
 # Resolve the destination once, show it, and post to exactly that pull request.
-pr_url="$(gh pr view --json url --jq .url)" \
-  || { echo "no pull request found for this branch — do not post" >&2; exit 1; }
+pr_url="$(gh pr view "$(git branch --show-current)" --repo "$repo" --json url --jq .url)" \
+  || { echo "no pull request found for this branch in $repo — do not post" >&2; exit 1; }
 echo "posting to $pr_url" >&2
 
 # Split at headings so no comment exceeds GitHub's 65,536-character body limit.
@@ -1668,7 +1817,7 @@ for part in "$work_dir"/part-*; do
     if [ "$i" -eq 1 ]; then
       printf '## %s (`%s`) — [status summary]\n' "$title" "$(basename "$review_file")"
       echo ""
-      echo "**[N findings — X fixed, R refuted, Y deferred, Z ignored, W open, V observations]**"
+      echo "**[N findings — X fixed, R refuted, Y deferred, Z ignored, V observations]**"
       echo ""
     fi
     echo "<details>"
@@ -1681,11 +1830,28 @@ for part in "$work_dir"/part-*; do
 done
 
 # Gate 2 — what is actually posted, a superset of the files scanned above. Check every part first.
+ids="$(awk 'FILENAME == ARGV[1] { ok[$(0)]; next }
+            { id = "" }
+            /^## / { s = /^## Sensitive Information/ }
+            s && /^### F[0-9]+ / { id = $(2) }
+            /^\| F[0-9]+ \|/ { n = split($(0), c, /[[:space:]]*\|[[:space:]]*/)
+                             if (n > 4 && c[4] == "Sensitive Information") id = c[2] }
+            id != "" && !(id in ok) && !(id in seen) { seen[id]; print id }' \
+  "$cleared_findings" - < "$review_file")" \
+  || { echo "cannot read $review_file — do not post" >&2; exit 1; }
 for comment in "$work_dir"/comment-*; do
-  posted="$(command grep -inE "$ident|$secrets" /dev/null "$comment" \
-            | command grep -viE '/(users|home)/<[^>]+>/')"
-  [ -z "$posted" ] || { echo "scrub: assembled comment still has hits — do not post" >&2
-                        printf '%s\n' "$posted" >&2; exit 1; }
+  for id in $(printf '%s\n' "$ids"); do
+    ! LC_ALL=C command grep -qE "(^|[^0-9a-z])$id([^0-9]|\$)" "$comment" \
+      || { echo "withhold: $id is still in the comment — do not post" >&2; exit 1; }
+  done
+  found="$(LC_ALL=C command grep -inE -e "$secrets" /dev/null "$comment")"
+  [ $? -le 1 ] || { echo "scrub FAILED (grep could not read $comment) — do not post" >&2; exit 1; }
+  found="$(printf '%s\n' "$found" | uncleared)"
+  [ $? -le 1 ] || { echo "scrub FAILED (could not read $cleared) — do not post" >&2; exit 1; }
+  posted="$(LC_ALL=C command grep -inE -e "$ident" /dev/null "$comment")"
+  [ $? -le 1 ] || { echo "scrub FAILED (grep could not read $comment) — do not post" >&2; exit 1; }
+  [ -z "$found$posted" ] || { echo "scrub: assembled comment still has hits — do not post" >&2
+                              printf '%s\n' "$found" "$posted" | command grep . >&2; exit 1; }
 done
 
 i=0
@@ -1694,6 +1860,10 @@ for comment in "$work_dir"/comment-*; do
   gh pr comment "$pr_url" --body-file "$comment" \
     || { echo "posting stopped at part $i of $total; earlier parts are already posted" >&2
          exit 1; }
+done
+[ "$post_file" = "$review_file" ] || rm -f -- "$post_file"
+for list in "$cleared" "$cleared_findings"; do
+  [ "$list" = /dev/null ] || rm -f -- "$list"
 done
 ```
 
@@ -1711,7 +1881,7 @@ earlier comment for the same file and updates it instead of posting a second one
 
 Read the body into a variable and assert it before wrapping it. Inside the group, a failing `cat`
 sends its error to stderr and the group's exit status is the trailing `echo`'s, so an unreadable
-`$review_file` still produces a well-formed comment with a complete `<details>` scaffold, an empty
+`$post_file` still produces a well-formed comment with a complete `<details>` scaffold, an empty
 body and a heading confidently claiming N findings — posted with no failure signal in stdout or exit
 status. Checking the finished file with `[ -s ]` does not help, because the scaffold is non-empty;
 the body itself is what has to be non-empty.
@@ -1738,19 +1908,18 @@ already public.
 
 **Resolve the destination before posting.** `gh pr comment` with no argument infers its pull request
 from the branch's upstream, and in a fork-and-upstream layout that can be the public upstream rather
-than the private fork — a different audience from the same command. The block resolves the pull
-request's URL once, prints it and passes it to every `gh pr comment`, so the target is visible
-before anything is sent and cannot change between parts.
+than the private fork — a different audience from the same command. The block names the repository
+with `--repo`, which `gh pr view` accepts only with the branch named, resolves the pull request's URL
+once, prints it and passes it to every `gh pr comment`, so the target is visible before anything is
+sent and cannot change between parts.
 
 The `<summary>` line should include the total finding count and a breakdown that names every bucket
-separately (e.g. "24 findings — 12 fixed, 2 ignored, 2 open, 8 observations"), omitting any bucket
-that is empty — the template's placeholder lists them all only so none is forgotten. A ⚖️ Decision
-still awaiting the user is named on its own — "2 open (1 decision)" — because it needs a person, not
-a fix; one with a **Ruling** line needs only its edit, so it counts as open, not as a decision. A
-finding a handed-back check refuted is struck ✅ Refuted and counted as refuted, never as fixed: no
-edit was made, the reviewer was wrong. Deferred and ignored findings are off the pre-merge path but
-they are not resolved, so they never fold into the fixed count, and neither do findings still ❓
-Open. Reserve "all clear" for a review in which every actionable finding is ✅, fixed or refuted: "24
-findings — 14 fixed, 2 refuted, 8 observations — all clear". That holds for every severity and for
-decisions alike: a 🟢 Low still ❓ Open or ⏸️ Deferred bars "all clear" as surely as a 🔴 Critical
-does.
+separately (e.g. "24 findings — 12 fixed, 2 deferred, 2 ignored, 8 observations"), omitting any
+bucket that is empty — the template's placeholder lists them all only so none is forgotten. The
+open-findings check means a posted review has no ❓ finding, so there is no open bucket. A finding a
+handed-back check refuted is struck ✅ Refuted and counted as refuted, never as fixed: no edit was
+made, the reviewer was wrong. Deferred and ignored findings are off the pre-merge path but they are
+not resolved, so they never fold into the fixed count. Reserve "all clear" for a review in which
+every actionable finding is ✅, fixed or refuted: "24 findings — 14 fixed, 2 refuted, 8 observations
+— all clear". That holds for every severity and for decisions alike: a 🟢 Low ⏸️ Deferred or 🚫
+Ignored bars "all clear" as surely as a 🔴 Critical does.

@@ -52,7 +52,7 @@ either.
 
 `/ship-it` posts review and plan artifacts whole and then deletes them: `*local-review*.md` (an
 identifier may sit on either side of the name, as in `payments-local-review.md` or
-`local-review-2.md`), `*-DOC-REVIEW.md` and `*-PLAN.md` (or a legacy `PLAN.md`).
+`local-review-2.md`), `*-DOC-REVIEW*.md` and `*-PLAN.md` (or a legacy `PLAN.md`).
 
 A handoff is treated differently. `/ship-it` posts only its durable sections — **Decisions &
 Rationale**, **Insights & Learnings**, **Dead Ends**, still-open **Open Questions** and
@@ -276,7 +276,7 @@ that exists nowhere on disk — a snippet the user supplied, or a command output
 — which must be included verbatim or it is lost.
 
 **Do not lean on another working artifact without saying it may be gone.** `*local-review*.md` and
-`*-DOC-REVIEW.md` are untracked, `*-PLAN.md` (or a legacy `PLAN.md`) is tracked but stripped from
+`*-DOC-REVIEW*.md` are untracked, `*-PLAN.md` (or a legacy `PLAN.md`) is tracked but stripped from
 the branch history at ship time, and `/ship-it` deletes all of them once it has posted them to the
 pull request — so a handoff that names one as its authoritative record is describing a file that
 shipping will remove. Mark any such reference as branch-local and deletable, and carry the
@@ -440,7 +440,7 @@ clobber it:
 1. Refresh **Verification** — re-run the recorded commands, or mark each result "not re-run since
    `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
-1. Re-check every working artifact this handoff points at — `*local-review*.md`, `*-DOC-REVIEW.md`,
+1. Re-check every working artifact this handoff points at — `*local-review*.md`, `*-DOC-REVIEW*.md`,
    `*-PLAN.md` (or a legacy `PLAN.md`; tracked, but stripped by `/ship-it`) and anything else
    untracked. If one is gone, say so where it is referenced and promote what it was carrying. If one
    is still there but the handoff leans on it for substance, promote the load-bearing parts now and

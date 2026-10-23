@@ -20,19 +20,18 @@
 # printed them after the "<file>:<line>:" prefix. A hit is cleared only by an exact match, so an
 # edited or appended line is put back in front of the user. Only secret hits can be cleared.
 #
-# These patterns derive from the PR Comment Format section of home/.claude/commands/doc-review.md.
-# They differ from it on purpose, and a sync in either direction keeps these differences:
-#   - Paths and hosts are bounded on the left and right, so this repository's own home/ directory,
-#     ~/.local, settings.local.json and version numbers do not fire.
-#   - Only /private/tmp/ and /var/folders/ are temp roots; a bare /tmp/ path names no machine.
-#   - The account name fires only as a path segment or the local part of an address, never as a
-#     word: in prose it is the author's name, which the pull request already shows.
+# These patterns derive from the PR Comment Format section of home/.claude/commands/doc-review.md,
+# which shares their bounds, temp roots, account-name forms, secret set and LC_ALL=C. They differ
+# from it on purpose, and a sync in either direction keeps these differences; re-derive the list
+# before one:
 #   - The shell's home variable is not a term. It names nobody, and rewriting it breaks quoted code.
 #   - Placeholders are exempt only in the fixed forms /Users/<user>, <name> or <username>, removed
-#     per match before scanning rather than by dropping the whole line.
+#     per match before scanning, where doc-review.md exempts in-pattern any angle-bracketed segment
+#     but the account name.
 #   - git@ remotes and example.com, .org and .net addresses are exempt.
-#   - The secret set adds provider token formats and tolerates a quote, backtick, backslash or table
-#     pipe between a keyword and its value.
+#   - A .local host fires before any character that cannot continue its name, not only before a
+#     port or path.
+#   - --narrow and the exit codes above serve callers of this script.
 
 narrow=
 if [ "${1-}" = --narrow ]; then
@@ -80,16 +79,22 @@ ident="${paths}|${hosts}|/${me}(/|\$)|(^|[^a-z0-9._%+-])${me}@"
 ident="${ident}|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
 [ -z "${narrow}" ] || ident=${paths}
 
-keys='api\\?[_-]?key|access\\?[_-]?key|secret|token|passw(or)?d|pwd|credential|auth'
+keys='api\\?[_-]?key|access\\?[_-]?(key|id)|(secret|master|private)\\?[_-]?key(\\?_base)?'
+keys="${keys}"'|secret|token|passw(or)?d|pwd|credential|auth|bearer|pepper'
+schemes='postgres(ql)?|mysql2?|rediss?|amqps?|mongodb(\+srv)?'
 secrets='-----begin [a-z ]*private key-----'
-secrets="${secrets}|(${keys})[\"'\`\\\\]*[[:space:]]*(\\|[[:space:]]*[^|[:space:]]|[:=])"
-secrets="${secrets}"'|authorization:[[:space:]]*(basic|bearer|token)[[:space:]]'
-secrets="${secrets}"'|[a-z][a-z0-9+.-]*://[^[:space:]/]+:[^[:space:]@]+@'
-secrets="${secrets}"'|gh[pousr]_[a-z0-9]{30,}|github_pat_[a-z0-9_]{20,}'
+secrets="${secrets}|(${keys})[\"'\`\\\\]*[[:space:]]*[:=]"
+secrets="${secrets}|\\|[[:space:]]*[a-z0-9_.-]*(${keys})[a-z0-9_.-]*[[:space:]]*\\|"
+secrets="${secrets}"'[[:space:]]*[^|[:space:]]'
+secrets="${secrets}"'|authorization:[[:space:]]*(basic|bearer|token|apikey)[[:space:]]'
+secrets="${secrets}"'|[a-z][a-z0-9+.-]*://[^[:space:]/@:]*:[^[:space:]/@]+@'
+secrets="${secrets}|(${schemes})://[^[:space:]@/]*:[^[:space:]@]+@"
+secrets="${secrets}"'|gh[pousr]_[a-z0-9]{30,}|github_pat_[a-z0-9_]{20,}|hrku-[a-z0-9_-]{20,}'
 secrets="${secrets}"'|(^|[^a-z0-9])(akia|asia)[0-9a-z]{16}([^0-9a-z]|$)|xox[abprs]-[a-z0-9-]{10,}'
 secrets="${secrets}"'|[sr]k_live_[a-z0-9]{10,}|(^|[^a-z0-9])sk-(ant-|proj-)?[a-z0-9_-]{20,}'
 secrets="${secrets}"'|(^|[^a-z0-9])aiza[0-9a-z_-]{35}|glpat-[a-z0-9_-]{20,}|npm_[a-z0-9]{36}'
-secrets="${secrets}"'|sg\.[a-z0-9_-]{16,}\.[a-z0-9_-]{16,}'
+secrets="${secrets}"'|sg\.[a-z0-9_-]{16,}\.[a-z0-9_-]{16,}|ccipat_[a-z0-9_]{20,}'
+secrets="${secrets}"'|do[opr]_v1_[a-f0-9]{64}|lin_(api|oauth)_[a-z0-9]{32,}'
 secrets="${secrets}"'|eyj[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.|bearer[[:space:]]+[a-z0-9._~+/=-]{16,}'
 
 # `command grep` bypasses a wrapper that might honor ignore files, and these artifacts are
