@@ -314,5 +314,38 @@
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: Corporation for Interest Rate Management (CIRM) — GitHub org `cirm-github`",
+      "**Cloud provider(s)**: DigitalOcean (droplets, managed PostgreSQL, Spaces, VPC, firewalls, reserved IPs, volumes), managed via Terraform (Terraform Cloud remote state) and Ansible/Packer",
+      "**Repository visibility**: private (cirm-github/alice, confirmed via gh)",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: Rails encrypted credentials (`config/credentials.yml.enc`, `config/master.key`), per-worktree `config/credentials/*.key` symlinked from the main worktree, CI secrets `GITHUB_TOKEN` and `RAILS_MASTER_KEY`",
+      "**Default / protected branches**: `main` is the default branch; ruleset `Main branch` (active) protects it — treat as protected even though classic branch-protection lists no entries",
+      "**CI/CD deploy targets**: Capistrano deploys to DigitalOcean droplets (staging and production workspaces); CircleCI runs the test suite on non-draft PRs",
+      "**Network posture**: None configured",
+      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine with open internet",
+      "**Source control**: The trusted repo (cirm-github/alice) and its remote(s) only (no additional orgs configured)",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: None configured",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: `.env*` files (except `.env.development`, `.env.test`, `.env.development.local.sample`), `config/master.key`, `config/credentials/*.key`, `config/credentials.yml.enc`, `tmp/development_secret.txt`, `tmp/local_secret.txt`, Terraform state (`infrastructure/terraform/.terraform/terraform.tfstate`) and `.terraform.lock.hcl`, and any CIRM client/trade/loan data in the database or ORE output files — share only with audiences cleared at the [named+specifics] bar",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: DigitalOcean `production` Terraform workspace and droplets; any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment",
+      "**Protected deployment namespaces / environments**: DigitalOcean `production` Terraform workspace (droplet, managed PostgreSQL primary + replica, Spaces bucket, firewalls) — fall back to the Sensitive remote targets heuristic otherwise",
+      "**Protected IaC scopes**: `infrastructure/terraform/*.tf` (firewalls, database, network, reserved IPs, Spaces), `infrastructure/ansible/` SSH/user roles; IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development (Rails app for CIRM operations management, with ORE/QuantLib derivatives valuation pipeline)",
+      "**Trusted repo**: cirm-github/alice (private) — this repo's working directory and its `origin` remote (https://github.com/cirm-github/alice.git)",
+      "**Org-specific CLIs**: `doctl` (DigitalOcean CLI), `terraform` (via `infrastructure/scripts/run_terraform.sh` wrapper), `packer`, Ansible (via `infrastructure/scripts/run_ansible_against_extant_web_server.sh`), `bin/rspec`, `bin/rails`, `cmake --build` for the sibling ORE engine checkout"
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Bash(terraform apply:*) — scope to infrastructure/terraform/ production workspace",
+      "Bash(doctl databases:*) — destructive database operations (dump/restore/delete) against DigitalOcean managed PostgreSQL"
+    ]
+  }
 }
