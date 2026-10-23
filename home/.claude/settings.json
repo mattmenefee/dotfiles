@@ -170,6 +170,13 @@
     ],
     "defaultMode": "auto"
   },
+  "skillOverrides": {
+    "anthropic-skills:canvas-design": "off",
+    "anthropic-skills:docx": "off",
+    "anthropic-skills:import-memory": "off",
+    "anthropic-skills:learn": "off",
+    "anthropic-skills:pptx": "off"
+  },
   "hooks": {
     "Notification": [
       {
@@ -284,13 +291,6 @@
     "design@synced": false,
     "engineering@synced": false,
     "productivity@synced": false
-  },
-  "skillOverrides": {
-    "anthropic-skills:canvas-design": "off",
-    "anthropic-skills:docx": "off",
-    "anthropic-skills:import-memory": "off",
-    "anthropic-skills:learn": "off",
-    "anthropic-skills:pptx": "off"
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
