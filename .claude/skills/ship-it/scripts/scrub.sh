@@ -30,7 +30,8 @@
 #     but the account name.
 #   - git@ remotes and example.com, .org and .net addresses are exempt.
 #   - A .local host fires before any character that cannot continue its name, not only before a
-#     port or path.
+#     port or path. A dotenv name such as .env.test.local is exempt from it, as doc-review.md
+#     passes one by requiring that port or path.
 #   - --narrow and the exit codes above serve callers of this script.
 
 narrow=
@@ -117,10 +118,15 @@ if [ -n "${found}" ]; then
 fi
 
 # The exempt forms are removed from a copy of each line before the identifying pass, so a real path
-# beside a placeholder on the same line still fires. Line numbers are unchanged.
+# beside a placeholder on the same line still fires. Line numbers are unchanged. A dotenv name takes
+# only a listed environment, since a free-form one could be a machine name, and its edges mirror the
+# .local host term's so that nothing after it loses the character another term needs.
 exempt=$(perl -pe 's{/(users|home)/<(user|name|username)>}{<home>}gi;
                    s{-users-<(user|name|username)>}{<home>}gi;
                    s{(^|[^a-z0-9._%+-])git\@}{$1<git>}gi;
+                   s{(^|[^a-z0-9_.\x80-\xff-])
+                     \.env(\.(development|dev|test|production|prod|staging|ci))?
+                     \.local(?![a-z0-9_\@-]|:[0-9]|\.[a-z0-9])}{$1<dotenv>}gix;
                    s{[a-z0-9._%+-]+\@example\.(com|org|net)\b}{<example>}gi' "${file}") || {
   echo "scrub FAILED: could not prepare ${file}" >&2
   exit 2
