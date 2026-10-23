@@ -497,8 +497,9 @@ For each finding, include:
 - **Issue** — Clear description of the problem
 - **Suggestion** — One concrete fix or improvement. When more than one fix is defensible and the
   choice changes what the document says, the finding is a ⚖️ Decision instead, with the fixes as its
-  **Options**: the walkthrough does not ask about findings recommended Implement, so alternatives
-  offered in a Suggestion leave the choice to whoever makes the edit, not the user
+  **Options**: the walkthrough asks about a finding recommended Implement only when its group is
+  worked, after the order is set, so alternatives offered in a Suggestion reach the user late and
+  leave no ruling in the review file
 - **Recommendation** — Implement / Defer / Skip, plus a one-line rationale (every actionable finding
   other than a ⚖️ Decision)
 - **Options** and **Recommended** — For a ⚖️ Decision only, in place of the Recommendation: the
@@ -1173,8 +1174,9 @@ file by hand, then delete the extract directory and display the review.
 ### Walkthrough and Finding Selection
 
 <!-- Keep in sync with Walkthrough and Finding Selection in a project's
-     .claude/commands/local-review.md, where one exists. The rules match; the vocabulary, the file
-     name and the worked example differ. -->
+     .claude/commands/local-review.md, where one exists. The rules match, except the open-choice
+     check before group work under 3. Proposing an order, not yet ported there; the vocabulary, the
+     file name and the worked example differ. -->
 
 After displaying all review output, take the user through three phases. Phases 1 and 2 put findings
 to the user one at a time — decisions and open questions first, then the findings under Not
@@ -1186,7 +1188,8 @@ Phases 1 and 2 ask only about ❓ Open findings that have no ruling yet. A findi
 already ruled on — ✅, ⏸️, 🚫 or a **Ruling** line (see Tracking Finding Status) — is never
 re-offered, because putting it back reopens a decision they made; if the user reopens one, it
 rejoins its phase. Open findings recommended **Implement** are not asked about one by one, except
-the dependents of a ⚖️ the user defers (see phase 1): they already sit in groups, nobody has
+the dependents of a ⚖️ the user defers (see phase 1) and a choice a Suggestion leaves open, which is
+asked before its group is edited (see phase 3): they already sit in groups, nobody has
 questioned them, and asking about each would turn the walkthrough into a vote on uncontested work.
 They reach the user as groups in the order proposal, and a ruling the user volunteers about one —
 "defer F7" — is recorded like any other.
@@ -1361,6 +1364,17 @@ it means before editing anything. A group identifier or "all" takes every member
 finding alone; a waiting one is refused, with the reason; an unruled ⚖️ named here is put to the
 user as phase 1 puts it, never selected; and naming a Not recommended finding still at ❓ is an
 Implement ruling on it — confirm it, then record and group it as phase 2 does.
+
+Before editing a group, read each chosen finding's **Suggestion** for a choice it leaves open — an
+"or", an "either", a "pick one" or two alternative wordings — and watch for a structural choice the
+edit raises, such as where a moved section goes. Put each to the user as Putting each item to the
+user describes, recommended option first, offering the alternatives, Defer (⏸️) and "Leave open for
+now", before that finding is edited. A finding whose choice is left open is not edited this run and
+the rest of the group is worked; a ⏸️ is recorded as Recording the rulings describes. Name the
+alternative taken in the finding's ✅ Status line when the fix lands. A choice that a ⚖️ ruling in
+the same group already settles, such as a dependent's "add or drop, per F5", is not a choice: edit
+to the ruling and do not ask again. An Implement ruling, or the user's selection (a group, a
+finding number or "all"), agrees to the fix, not to whichever alternative the agent would pick.
 
 Work the chosen groups one at a time by editing the document. As each fix lands, record it as ✅ in
 all four places as soon as no recording agent is running and no batch is waiting (see Recording the

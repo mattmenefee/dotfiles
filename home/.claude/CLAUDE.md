@@ -1,9 +1,9 @@
 <!-- User-wide Claude Code instructions, linked into ~/.claude and read in every project. Rules
-     for the dotfiles repository alone go in its root CLAUDE.md -->
+     for the dotfiles repository alone go in its root CLAUDE.md. -->
 
 # Workflow
 
-- When creating Pull Requests or Linear issues, assign them to me by default
+- When creating pull requests or Linear issues, assign them to me by default
 - Never add AI attribution to anything pushed to a repository: no `Co-Authored-By` trailers, no
   `Claude-Session` lines and no "Generated with" footers or session links in pull request or issue
   descriptions. Commits are authored by me alone
@@ -27,6 +27,10 @@
   use repository-relative or `~` paths instead (see Public Repositories)
 - In chat replies, write the first mention of a pull request or issue as a Markdown link with its
   identifier as the link text
+- When walking me through findings or decisions one at a time, ask for each ruling with
+  `AskUserQuestion` when its options fit the tool. Put the explanation and any recommendation in
+  your reply before the question, put a recommended option first, labeled "(Recommended)", and end
+  with an option that leaves the item undecided
 - Wrap text meant for me to paste into another session in a `text` fence whose first and last lines
   are the markers, with no commentary inside them:
 
@@ -104,9 +108,9 @@ When filing or linking Linear issues:
 - Post a review file to a pull request, issue or release only once every actionable finding in it is
   ✅, ⏸️ or 🚫, with no ❓ row and no open box; a working list goes stale within hours and reads as
   the record. A handoff's still-open questions are the exception `/ship-it` posts by design
-- When posting review findings (local review, doc review, etc.) as a PR comment, wrap the full
-  content in a `<details><summary>` block so only a summary line is visible by default. Name the
-  review file in the heading so a later post can find and update the comment:
+- When posting review findings (local review, doc review, etc.) as a pull request comment, wrap the
+  full content in a `<details><summary>` block so only a summary line is visible by default. Name
+  the review file in the heading so a later post can find and update the comment:
 
   ```markdown
   ## [Review Type] (`[review file's base name]`) — [status summary]
@@ -178,9 +182,9 @@ messages are the strictest case: once merged they cannot be edited.
 
 # Writing & Copy Conventions
 
-- Use American English spelling everywhere — code, comments, commit messages, PR descriptions, issue
-  descriptions and user-facing copy. Write "behavior" not "behaviour", "favor" not "favour", "color"
-  not "colour", "organize" not "organise"
+- Use American English spelling everywhere — code, comments, commit messages, pull request
+  descriptions, issue descriptions and user-facing copy. Write "behavior" not "behaviour", "favor"
+  not "favour", "color" not "colour", "organize" not "organise"
 - Generally prefer spelling terms out over abbreviating, though it can depend on the context — for
   example, write "DigitalOcean" rather than "DO"
 - Write lists without the serial comma: "a, b and c". When editing a file that mixes styles, remove
