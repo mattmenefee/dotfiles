@@ -42,11 +42,14 @@
   ```
   ````
 
+- Run `/handoff` on your own initiative when it fits: after a substantial round of work, before a
+  likely context break or when a review round closes. A command that changes or publishes shared
+  state, such as a project's `/ship-it`, runs only when I start it.
 - Put rules meant for an agent where agents read them: CLAUDE.md, a command or an agent file. Never
   put them in a `.gitignore`, a dotfile or a configuration comment. A comment warning any reader, as
-  Code Style allows, is not such a rule; an instruction addressed to an agent is
+  Code Style allows, is not such a rule; an instruction addressed to an agent is.
 - Don't run linters on memory files under `~/.claude/projects/*/memory/`, and ignore hook lint
-  errors reported on them
+  errors reported on them.
 
 ## Verifying Claims
 
@@ -191,11 +194,14 @@ messages are the strictest case: once merged they cannot be edited.
   the serial comma; if dropping one makes a sentence ambiguous, restructure the sentence instead
 - Write `e.g.` and `i.e.` with no following comma
 - In prose, write "changelog" in lowercase. Write `CHANGELOG.md` only when naming the file, and keep
-  a proper name such as "Keep a Changelog" capitalized
+  a proper name such as "Keep a Changelog" capitalized.
+- Write dates month-first ("October 4 to October 21"), never day-first ("4 to 21 October"), in
+  prose, team messages, issues and release notes. ISO dates (2026-10-24) stay as they are where a
+  document uses them.
 - Write a Teams message as a finished artifact: summary first, then decisions, then reference. Save
   it to a file and deliver it with `teams-copy <file>`, which copies it as rich text, rather than as
   terminal text. Don't hard-wrap it, and use only the Markdown `teams-copy` supports (see
-  `teams-copy --help`)
+  `teams-copy --help`).
 
 # Testing (RSpec)
 
