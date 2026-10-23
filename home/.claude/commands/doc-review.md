@@ -1406,6 +1406,21 @@ When posting review findings as a PR comment (e.g. during `/ship-it` or when exp
 build a temporary file with a collapsible `<details><summary>` wrapper and post it with
 `--body-file` to avoid heredoc quoting issues.
 
+A review comment records how the review ended, not a snapshot of one in progress. Before building
+the comment, check the review file for findings with no ruling, with the same two checks `/ship-it`
+runs:
+
+```bash
+review_file="$(git rev-parse --show-toplevel)/<name>-DOC-REVIEW.md"
+[ -r "$review_file" ] || { echo "cannot read $review_file" >&2; exit 1; }
+command grep -nE '^\| F[0-9]+ \|.*\| ❓ \|' /dev/null "$review_file"; a=$?
+command grep -n '^- \[ \]' /dev/null "$review_file"; b=$?
+[ "$a" -le 1 ] && [ "$b" -le 1 ] || { echo "could not read $review_file" >&2; exit 1; }
+```
+
+If either grep printed anything, do not post: name the open findings to the user and wait for their
+rulings. Never mark a finding yourself to get past this check.
+
 Scrub the review document before building the comment. This artifact is written by an agent reading
 a developer machine, and a finding that traces where a global command or a user-level agent resolves
 from will cite an absolute path under the home directory. Check here rather than trusting the review

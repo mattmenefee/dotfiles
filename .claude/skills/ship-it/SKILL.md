@@ -352,7 +352,8 @@ Compose the title and body from the branch's commits and diff, never from memory
   the method matters; leave open only what was not run. A CI item is ticked only from `gh pr checks`
   showing green on the current head.
 - No status claim that was not read from `gh` or the repository in this step
-- No manual line wrapping; GitHub reflows the body
+- No manual line wrapping; GitHub renders each line break in the body, so a hard wrap shows as
+  ragged lines
 - No AI attribution of any kind: no trailers, footers or session links
 - No home directory path, not even as a search pattern in a test-plan item, and no name of a private
   repository or client project. Describe such a check in words.
