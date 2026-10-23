@@ -56,6 +56,21 @@ expect 1 'Slack token' "$(printf 'xo')xb-${x16}"
 expect 1 'JWT' "$(printf 'ey')J${x16}.${x16}.sig"
 expect 1 'private key header' "-----BEGIN RSA $(printf 'PRI')VATE KEY-----"
 expect 1 'password in a URL' "postgres://app:$(printf 'hu')nter2@db.example.com/app"
+expect 1 'Rails secret key base' "SECRET_$(printf 'KE')Y_BASE=${x36}"
+expect 1 'Rails master key' "RAILS_MASTER_$(printf 'KE')Y=${x36}"
+expect 1 'table cell naming a password' "| DATABASE_PASS$(printf 'WO')RD | hunter2 |"
+expect 1 'table cell naming a master key' "| RAILS_MASTER_$(printf 'KE')Y | ${x36} |"
+expect 1 'credential after an invalid byte' "x $(printf '\377') api_$(printf 'ke')y: abc123"
+expect 1 'empty-user Redis URL' "$(printf 're')diss://:${x16}@host.example:6380"
+expect 1 'slash in a database password' "$(printf 'pos')tgres://u:pa/${x16}@db.example/app"
+expect 1 'Heroku token' "$(printf 'HR')KU-${x36}"
+expect 1 'DigitalOcean token' "$(printf 'do')p_v1_$(printf 'a1%.0s' $(seq 1 32))"
+expect 1 'Linear key' "$(printf 'li')n_api_${x36}"
+expect 1 'CircleCI token' "$(printf 'CC')IPAT_${x36}"
+expect 1 'ApiKey authorization header' "Authorization: $(printf 'Api')Key ${x16}"
+expect 1 'pepper assignment' "$(printf 'pep')per: ${x16}"
+expect 1 'access id assignment' "spaces_access_$(printf 'i')d = ${x16}"
+expect 1 'bearer key with a colon' "$(printf 'bea')rer: ${x16}"
 
 # Identifying text blocks.
 expect 1 'home path' "${home_root}/someone/code"
@@ -81,10 +96,17 @@ expect 0 'home variable' "\$$(printf 'HO')ME/.zshrc"
 expect 0 'Homebrew prefix variable' "\$$(printf 'HO')MEBREW_PREFIX/bin"
 expect 0 'SSH remote' 'git@github.com:owner/repo.git'
 expect 0 'example address' 'you@example.com'
+expect 0 'summary row with a key word in a description' "| F3 | 🟠 High | Security | Token handling is unclear | ✅ |"
+expect 0 'table header row' "| Finding | Type | Category | Description | Status |"
 expect 0 'listed placeholder' "${home_root}/<name>/x"
 expect 0 'version number' 'version 10.2'
 expect 0 'word containing sk-' 'task-management-improvements-for-everyone'
 expect 0 'author label' 'the author: someone'
+expect 0 'npm registry URL with a port' 'https://registry.npmjs.org:443/@scope/pkg'
+expect 0 'Rails foreign key option' 'foreign_key: :user_id'
+expect 0 'Redis URL with no password' 'redis://localhost:6379/1'
+expect 0 'review table row naming a credential' '| F4 | High | Security | Rotate the OAuth token | open |'
+expect 0 'prose about a pepper grinder' 'a pepper grinder'
 expect 0 'email in narrow mode' 'someone@company.io' --narrow
 
 # Usage errors are failures to check, never hits.

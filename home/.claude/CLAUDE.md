@@ -19,7 +19,7 @@
   amend, reset, rebase or force-push
 - After a push or merge mishap, recommend a server-side guardrail (a GitHub ruleset or branch
   protection) over client-side git configuration, and leave existing local configuration alone
-- Never add review or working documents (`*local-review*.md`, `*-DOC-REVIEW*.md`, `*-PLAN.md`,
+- Never add review or working documents (`*local-review*.md`, `*-DOC-REVIEW*.md`, `*PLAN.md`,
   `*-HANDOFF.md`) to `.gitignore`. Commit one only where the project's `/ship-it` expects it;
   otherwise leave it untracked
 - Before changing an open-source project, read its `CONTRIBUTING.md` (or `.github/CONTRIBUTING.md`)
@@ -103,8 +103,9 @@ When filing or linking Linear issues:
 - `gh pr merge --delete-branch` deletes the local branch as well as the remote one, so run from the
   pull request's own checkout it first switches that checkout to the default branch. Run it with
   `--repo` from another directory, and check `git reflog` before describing local state afterwards
-- Post a review or other working document to a pull request, issue or release only once every open
-  item in it has a ruling. A working list goes stale within hours and reads as the record
+- Post a review file to a pull request, issue or release only once every actionable finding in it is
+  ✅, ⏸️ or 🚫, with no ❓ row and no open box; a working list goes stale within hours and reads as
+  the record. A handoff's still-open questions are the exception `/ship-it` posts by design
 - When posting review findings (local review, doc review, etc.) as a PR comment, wrap the full
   content in a `<details><summary>` block so only a summary line is visible by default. Name the
   review file in the heading so a later post can find and update the comment:
