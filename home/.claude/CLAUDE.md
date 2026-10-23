@@ -1,4 +1,5 @@
-<!-- Claude Code project instructions for dotfiles and related projects -->
+<!-- User-wide Claude Code instructions, linked into ~/.claude and read in every project. Rules
+     for the dotfiles repository alone go in its root CLAUDE.md -->
 
 # Workflow
 
@@ -6,17 +7,11 @@
 - Never add AI attribution to anything pushed to a repository: no `Co-Authored-By` trailers, no
   `Claude-Session` lines and no "Generated with" footers or session links in pull request or issue
   descriptions. Commits are authored by me alone
-- Use hyphens, not slashes, in branch names: `fix-login-redirect`, not `fix/login-redirect`
 - Route every change after a repository's initial commit through a branch and pull request, even in
   a new or solo repository
 - Never merge a pull request unless I have asked you to merge that specific pull request in this
   conversation. Otherwise stop at "ready to merge" and report CI for the head commit. An approval
   never carries over to another pull request, a later push or a later session
-- When a local branch has diverged from its remote, inspect it with
-  `git log --left-right <branch>...origin/<branch>` and ask before any `reset --hard`. The
-  divergence may be a deliberate rebase
-- Several sessions can share one checkout, so re-check the current branch in the same command as an
-  amend, reset, rebase or force-push
 - After a push or merge mishap, recommend a server-side guardrail (a GitHub ruleset or branch
   protection) over client-side git configuration, and leave existing local configuration alone
 - Never add review or working documents (`*local-review*.md`, `*-DOC-REVIEW*.md`, `*PLAN.md`,
@@ -44,7 +39,8 @@
   ````
 
 - Put rules meant for an agent where agents read them: CLAUDE.md, a command or an agent file. Never
-  put them in a `.gitignore`, a dotfile or a configuration comment
+  put them in a `.gitignore`, a dotfile or a configuration comment. A comment warning any reader, as
+  Code Style allows, is not such a rule; an instruction addressed to an agent is
 - Don't run linters on memory files under `~/.claude/projects/*/memory/`, and ignore hook lint
   errors reported on them
 
@@ -73,11 +69,11 @@ When filing or linking Linear issues:
 
 - Before filing an issue, search Linear with two or three keyword queries. Comment on or attach to a
   match, and check its linked pull request, instead of filing a duplicate
-- A Linear issue identifier in a pull request body moves that issue through the team's PR workflow
-  statuses (by default In Progress when the PR opens), even after `Refs`, `part of` or `toward`;
-  those only skip the merge-to-Done step. For an issue the pull request does not implement, write
-  `Related to <ID>`, which links it with no status change. Attaching a PR from inside Linear has
-  been seen to move the issue too
+- A Linear issue identifier in a pull request body moves that issue through the team's pull request
+  workflow statuses (by default In Progress when the pull request opens), even after `Refs`,
+  `part of` or `toward`; those only skip the merge-to-Done step. For an issue the pull request does
+  not implement, write `Related to <ID>`, which links it with no status change. Attaching a pull
+  request from inside Linear has been seen to move the issue too
 
 ## Pull Requests
 
@@ -96,13 +92,14 @@ When filing or linking Linear issues:
   `gh` command. Otherwise `gh` may resolve to the parent repository and fail, or silently act on the
   wrong pull request
 - Confirm CI with `gh pr view --json headRefOid,statusCheckRollup` and name the commit it ran on. A
-  CircleCI run cancelled on purpose reports as a failed status, so `gh pr checks` shows it as
+  CircleCI run canceled on purpose reports as a failed status, so `gh pr checks` shows it as
   "fail"; a run far shorter than usual is a cancellation. Before calling a branch green or merging
   it, check that `git ls-remote origin refs/heads/<branch>` equals local `HEAD` and the rollup's
   commit
-- `gh pr merge --delete-branch` deletes the local branch as well as the remote one, so run from the
-  pull request's own checkout it first switches that checkout to the default branch. Run it with
-  `--repo` from another directory, and check `git reflog` before describing local state afterwards
+- `gh pr merge --delete-branch` deletes the local branch as well as the remote one, so when run from
+  the pull request's own checkout it first switches that checkout to the default branch. Run it
+  with `--repo` from another directory, and check `git reflog` before describing local state
+  afterwards
 - Post a review file to a pull request, issue or release only once every actionable finding in it is
   ✅, ⏸️ or 🚫, with no ❓ row and no open box; a working list goes stale within hours and reads as
   the record. A handoff's still-open questions are the exception `/ship-it` posts by design
@@ -182,7 +179,7 @@ messages are the strictest case: once merged they cannot be edited.
 
 - Use American English spelling everywhere — code, comments, commit messages, PR descriptions, issue
   descriptions and user-facing copy. Write "behavior" not "behaviour", "favor" not "favour", "color"
-  not "colour", "organize" not "organise".
+  not "colour", "organize" not "organise"
 - Generally prefer spelling terms out over abbreviating, though it can depend on the context — for
   example, write "DigitalOcean" rather than "DO"
 - Write lists without the serial comma: "a, b and c". When editing a file that mixes styles, remove
@@ -219,7 +216,7 @@ messages are the strictest case: once merged they cannot be edited.
 - No TTY is available, so any command that opens an editor or waits for input will hang — supply
   input via flags instead (`git commit -F <file>`, `gh pr create --title --body`). Common offenders:
   bare `git commit`, `git commit --squash`, `git add -i`/`-p`, `docker run -it`/`kubectl exec -it`,
-  REPLs (`psql`, `rails console`) and `yarn upgrade-interactive`.
+  REPLs (`psql`, `rails console`) and `yarn upgrade-interactive`
 - `-i` is not itself the hazard: `git rebase -i` runs fine when its editors are neutralized
   (`GIT_SEQUENCE_EDITOR=true`), which some commands prescribe
 - When writing slash commands, agent files or docs that prescribe shell commands, prescribe the
@@ -264,6 +261,12 @@ The shell is zsh, not bash, and each of these has broken commands before:
 - Assume the latest Git. Prefer readable modern porcelain (`git branch --show-current`) over
   plumbing kept only for old-version portability (`git symbolic-ref --short HEAD`). Use plumbing
   where it earns its place, such as a stable output contract in a checked-in script
+- Use hyphens, not slashes, in branch names: `fix-login-redirect`, not `fix/login-redirect`
+- When a local branch has diverged from its remote, inspect it with
+  `git log --left-right <branch>...origin/<branch>` and ask before any `reset --hard`. The
+  divergence may be a deliberate rebase
+- Several sessions can share one checkout, so re-check the current branch in the same command as an
+  amend, reset, rebase or force-push
 - `rebase.autosquash` is on in my git config, so an interactive rebase, including one run with
   `GIT_SEQUENCE_EDITOR=true`, silently folds `fixup!`, `amend!` and `squash!` commits. Pass
   `--no-autosquash` when the branch carries fixups meant to stay separate. The setting does not
