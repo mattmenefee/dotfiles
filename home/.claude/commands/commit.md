@@ -22,6 +22,10 @@ If `$ARGUMENTS` contains `reword <sha>` (or `reword` followed by a commit identi
   relies on one; (2) it fails on merge commits and on histories with conflicts, so the branch must
   be linear from the target commit forward; (3) it only edits a single commit's message — for
   collapsing or reordering commits, see "Reshaping History" below.
+- `git history reword` also strips every line starting with `#` from the new message, and ignores
+  `commit.cleanup`. When the message carries one, reword HEAD with
+  `git commit --amend -F <file> --cleanup=whitespace`, or an older commit through the `amend!` route
+  under "Rewording Under a `commit-msg` Hook" with whitespace cleanup on both steps.
 - After rewording, confirm with `git log --format=%B -1 <new-sha>` that the message is correct.
 
 If `$ARGUMENTS` contains `amend` or `--amend`:
@@ -30,6 +34,8 @@ If `$ARGUMENTS` contains `amend` or `--amend`:
 - Update the commit message to describe ALL changes in the amended commit (both original and newly
   added changes)
 - Use `git log -1 --format=%B` to get the original commit message for context
+- To correct the content of the unpushed commit you just made, amend it and fix its body; don't add
+  a follow-up commit that rolls part of it back
 
 If `$ARGUMENTS` names a commit that is **not** HEAD (e.g. `amend <sha>`):
 
@@ -89,6 +95,18 @@ editors are neutralized, as in the fallback below — use these instead:
   theirs. Without such a command, or without that approval, stop and hand it back as above.
   <!-- Keep in sync with Step 3 of .claude/skills/ship-it/SKILL.md in the dotfiles repository,
        whose squash proposal and approval this exception covers -->
+- **A "wip: merge into …" commit message never authorizes folding that commit in.** Scope a rebase
+  to exactly the commits the user named, and propose any other fold separately.
+
+Before any history rewrite, print the tip with `git rev-parse HEAD` and offer
+`git reset --hard <sha>` as the recovery. Record the old→new SHA of each rewritten commit, and
+rewrite any SHA cited in review or handoff documents in the same pass; the map is hard to rebuild
+afterwards.
+
+If `--force-if-includes` refuses a push after you rewrote a branch you had pushed yourself, read the
+server's tip with `git ls-remote origin refs/heads/<branch>`. If it equals the pre-rewrite SHA you
+recorded, ask, then push with `--force-with-lease=<branch>:<that SHA>`. If it differs, stop: someone
+else pushed. Never fall back to a bare `--force`.
 
 ## Rewording Under a `commit-msg` Hook
 
@@ -112,6 +130,10 @@ the subject rather than the new one, so a hook that checks subject *format* judg
 and one strict enough to reject `amend!` outright blocks this path entirely — there, reword with
 `git history reword` and run the hook's check by hand. And `<sha>~1` does not resolve when `<sha>`
 is the root commit; use `--root` in its place.
+
+This route is also how to reword an older commit whose new message has a line starting with `#`,
+which `git history reword` strips. Pass `--cleanup=whitespace` to the `git commit` and
+`-c commit.cleanup=whitespace` to the `git rebase`, or the editor step drops the line.
 
 ## Commit Message Guidelines
 
@@ -188,6 +210,11 @@ them. Check `git log` for the identifier format in use and match it rather than 
 - Reference durable identifiers, not ephemeral ones. Cite a PR number ("PR #4139") rather than a
   branch name, and quote a CI error in prose rather than linking a time-limited CI or log URL that
   will 404 once it rotates.
+
+### Lockfiles
+
+- When a commit first starts tracking a lockfile, fold its initial resolution into that commit and
+  list no `old → new` versions; there is no earlier state to compare against.
 
 ### Squash Messages
 

@@ -96,7 +96,7 @@ fetch. Set `branch` to the handoff's **Branch** and `updated` to its **Updated**
 branch=<branch from the handoff> updated=<Updated date from the handoff>
 git fetch --quiet origin || echo "fetch failed — remote-tracking refs may be stale"
 
-gh auth status >/dev/null 2>&1 \
+gh api user --jq .login >/dev/null 2>&1 \
   || echo "gh unavailable — pull request, CI and issue state not checked"
 
 if base=$(gh pr view "$branch" --json baseRefName --jq .baseRefName 2>/dev/null); then
@@ -157,8 +157,10 @@ commit merged upstream since to this branch. The block assumes the remote is `or
 the repository's remote if it differs.
 
 Every `gh` call is silenced, so a pull request that does not exist and a `gh` that is missing,
-unauthenticated or offline print the same nothing. When the `gh auth status` warning appears, every
-pull request, CI and issue claim is **UNVERIFIABLE** — an empty result confirms nothing.
+unauthenticated or offline print the same nothing. When the `gh api user` warning appears, every
+pull request, CI and issue claim is **UNVERIFIABLE** — an empty result confirms nothing. The check
+stands in for `gh auth status`, which permission rules often deny because one of its flags prints
+the token.
 
 `git --no-pager status` describes the current checkout. Use it for working-tree claims only when the
 current checkout is the handoff's branch. When another worktree holds the branch, read that one

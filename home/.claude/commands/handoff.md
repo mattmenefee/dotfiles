@@ -74,7 +74,7 @@ row. Never hardcode `main`: this command runs against any repository, including 
 is the repository default, so confirm the base with the user or record it as assumed.
 
 ```bash
-gh auth status >/dev/null 2>&1 \
+gh api user --jq .login >/dev/null 2>&1 \
   || echo "gh unavailable — pull request, CI and issue state not checked"
 
 if base=$(gh pr view --json baseRefName --jq .baseRefName 2>/dev/null); then
@@ -118,9 +118,10 @@ upstream since, with its issue references, to this branch. The block assumes the
 substitute the repository's remote if it differs.
 
 Every `gh` call above is silenced, so a pull request that does not exist and a `gh` that is missing,
-unauthenticated or offline print the same nothing. The `gh auth status` check is what tells them
+unauthenticated or offline print the same nothing. The `gh api user` check is what tells them
 apart: when it prints its warning, record **Pull request** and **Issues** as "not checked", never
-"none opened" or "none".
+"none opened" or "none". It stands in for `gh auth status`, which permission rules often deny
+because one of its flags prints the token.
 
 The pull request body, the `closingIssuesReferences` field and commit trailers are where issue
 identifiers hide — harvest them for the **Issues** header row and **References** rather than
@@ -165,7 +166,9 @@ been run" is the honest signal the rest of this file demands.
 The sections appear as `###` headings here because they sit under this command file's own
 `## Document Structure`. **In the generated file the title is an H1, the Header table sits directly
 under it with no heading of its own and every other section below is an H2 in the order listed** —
-`## Start Here`, `## Objective`, `## Next Steps` and so on.
+`## Start Here`, `## Objective`, `## Next Steps` and so on. Likewise, the examples below wrap their
+items only to fit this file's 100 columns: the generated file writes each paragraph or bullet on one
+line, as Writing Guidelines requires.
 
 ### Header
 
@@ -289,6 +292,11 @@ deliberate choices.
 
 Attribute each decision — the user's call, or the agent's judgment. A user's decision should not be
 reopened without asking; an agent's may be revisited on new evidence.
+
+Record a decision as the user's only when they gave it themselves or said yes to that specific
+proposal. Tentative phrasing, or a "do this" that does not make clear which proposal it approves, is
+not a ruling. A choice made without one is the agent's judgment: record it here as such and, when
+the user's agreement still matters, add a non-blocking item under **Open Questions** asking for it.
 
 ### Insights & Learnings
 
@@ -444,7 +452,9 @@ clobber it:
 1. Preserve **Objective**, **Scope**, **Constraints & Preferences**, **Dead Ends**, **Decisions &
    Rationale** and **Insights & Learnings** in full. The first three hold the user's own words, so
    change one only when the user does in this session; the last three only ever accumulate, because
-   a dead end that is deleted is a dead end that gets retried
+   a dead end that is deleted is a dead end that gets retried. Preserving them does not mean keeping
+   an earlier pass's hard wrap: rejoin each wrapped paragraph or bullet onto one line, changing no
+   words
 
 ## Writing Guidelines
 
@@ -464,10 +474,11 @@ clobber it:
   that names a home directory.
 - **Keep it scannable.** A reader skims this file before doing anything; prefer short sections and
   bullets over prose walls.
-- **Wrap prose at 100 characters.** Let URLs and shell commands run past it rather than breaking
-  them — a wrapped URL stops being clickable and a wrapped command stops being pasteable. Put any
-  command long enough to need wrapping in a fenced block instead of a bullet, so it survives a copy
-  intact.
+- **Don't hard-wrap prose.** Write each paragraph or bullet of the handoff on one line. `/ship-it`
+  posts the durable sections verbatim to a pull request comment, where GitHub shows every line
+  break, so a wrap at 100 columns appears as a ragged break mid-sentence; an editor or terminal
+  wraps a long line for display on its own. Put any long command in a fenced block rather than
+  inline in a bullet: a fence gets a copy button on GitHub and nothing in it is read as Markdown.
 
 ## Process
 
@@ -479,7 +490,7 @@ clobber it:
 1. Re-run verification commands whose recorded results would otherwise be stale
 1. Draft the document, working backwards from **Next Steps** — deciding what the next agent must do
    first reveals which context it actually needs
-1. Write the file, ending it with a blank line
+1. Write the file, ending it with a single trailing newline
 1. Re-read what was written and ask, for each section, whether it survives without the conversation;
    rewrite anything that does not
 1. Report to the user: the file path, the status, a one-line summary of what is done and what is
