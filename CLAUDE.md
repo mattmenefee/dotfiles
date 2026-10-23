@@ -35,10 +35,13 @@
 
 # Subagents
 
-- Run agents that only read, such as `/doc-review`'s reviewer, in this checkout under its
-  Reviewing Without Editing rules, not in an isolated worktree: `worktree.baseRef` is `fresh`, so
-  an isolated worktree branches from `origin/main` and its agent reads `main`, not the branch under
-  review. Use a worktree only for an agent that must run something that writes, and exercise the
-  destructive git aliases (`git cleanup`, `git bclean`, `git bdone`, `git pc`) only in disposable
-  `git init` repositories under the scratchpad; `git bdone` and `git pc` pull first, so give them a
-  second disposable repository as `origin`
+- Run agents that only read in this checkout, not in an isolated worktree, and run `/doc-review`'s
+  collator and recording agents, which write only the review file, here too, each under the rules
+  `/doc-review` gives it: `worktree.baseRef` is `fresh`, so an isolated worktree branches from
+  `origin/main` and its agent reads `main`, not the branch under review, and a collator or recording
+  agent there would write the review file into the worktree rather than the project root. Use a
+  worktree only for an agent that must run a command that writes
+- In any session, exercise the git aliases that delete branches (`git cleanup`, `git bclean`,
+  `git bdone`, `git pc`) only in disposable `git init` repositories under the scratchpad;
+  `git bdone` and `git pc` pull before pruning, so give them a second disposable repository as
+  `origin`
