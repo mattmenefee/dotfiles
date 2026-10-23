@@ -79,6 +79,13 @@ expect 1 'file URL to a home path' "file://${home_root}/someone/x"
 expect 1 'private var folders' '/private/var/folders/ab/T/x'
 expect 1 'Bonjour hostname' 'Someones-MacBook-Pro.local'
 expect 1 'local host with port' 'http://devbox.local:3000'
+expect 1 'local host in prose' 'ssh to devbox.local now'
+expect 1 'local host whose last label before .local is env' 'a build.env.local host'
+expect 1 'local host beside a dotenv local file' 'load .env.local and ssh to devbox.local'
+expect 1 'machine name as a dotenv environment' 'copy .env.devbox.local over'
+expect 1 'unlisted dotenv environment' 'load .env.qa.local first'
+expect 1 'corp host after a dotenv local file' 'see .env.local.corp'
+expect 1 'address after a dotenv local file' '.env.local@acme-private.com'
 expect 1 'unlisted placeholder' "${home_root}/<${me}>/x"
 expect 1 'real path beside a placeholder' "${home_root}/<name>/x and ${home_root}/someone/y"
 expect 1 'private IP' 'thing at 192.168.1.4 here'
@@ -92,6 +99,17 @@ expect 0 'this repository home dir' 'dotfiles/home/.zshrc'
 # shellcheck disable=SC2088 # the tilde is the text under test, not a path to expand
 expect 0 'XDG local dir' '~/.local/share'
 expect 0 'local settings file' 'settings.local.json'
+expect 0 'dotenv local file for one environment' 'load .env.test.local first'
+expect 0 'dotenv local file with no environment' 'see .env.local'
+expect 0 'dotenv local file at the start of a line' '.env.local is loaded last'
+# shellcheck disable=SC2016 # the backticks are the text under test
+expect 0 'backticked dotenv local file' 'see `.env.test.local`'
+expect 0 'dotenv local file in a path' 'copy config/.env.development.local'
+expect 0 'dotenv local file ending a sentence' 'see .env.local.'
+expect 0 'dotenv local file before a colon' 'edit .env.local: add X'
+expect 0 'uppercase dotenv local file' 'LOAD .ENV.TEST.LOCAL FIRST'
+expect 0 'dotenv local file in narrow mode' 'load .env.test.local first' --narrow
+expect 0 'Rails duration' 'expire in 10.years'
 expect 0 'home variable' "\$$(printf 'HO')ME/.zshrc"
 expect 0 'Homebrew prefix variable' "\$$(printf 'HO')MEBREW_PREFIX/bin"
 expect 0 'SSH remote' 'git@github.com:owner/repo.git'
