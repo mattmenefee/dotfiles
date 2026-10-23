@@ -137,10 +137,9 @@ Instruct the documentation-expert to perform a thorough review covering:
 - **PII** — Flag personally identifiable information (names, emails, phone numbers) that may have
   been included accidentally
 
-Findings in this category are reported to the user in conversation and
-**withheld from any published comment** — see PR Comment Format. Flag them fully in the local
-artifact, redacting the sensitive value itself as Redacting Sensitive Evidence describes; the
-published record carries only a count.
+Findings in this category are reported to the user in conversation and **withheld from any published
+comment** — see PR Comment Format. Flag them fully in the local artifact, redacting the sensitive
+value itself as Redacting Sensitive Evidence describes; the published record carries only a count.
 
 ## Spelling and Grammar
 
@@ -199,8 +198,8 @@ grants and nothing in the harness refuses a write, so each says "you must not" r
 
 Write the review to a **Markdown file in the project root**. Derive the filename from the document
 being reviewed: lowercase the name, convert spaces to dashes, drop the original extension and append
-`-DOC-REVIEW.md` (e.g., `San Rafael Loan Agreement.pdf` →
-`san-rafael-loan-agreement-DOC-REVIEW.md`). This file is the working artifact for the review —
+`-DOC-REVIEW.md` (e.g., `San Rafael Loan Agreement.pdf`
+→ `san-rafael-loan-agreement-DOC-REVIEW.md`). This file is the working artifact for the review —
 update it in place as findings are addressed during the conversation.
 
 - **Create** the file if it doesn't exist
@@ -387,10 +386,10 @@ When the review file already exists:
 
 ### Severity and Finding Types
 
-The 🔴🟠🟡🟢 severity ladder and the ℹ️ and 💡 observations match `/local-review` (a code review command
-available in project repositories), so the two kinds of review scan alike. ❓ Open, the ⚖️ Decision,
-the implementation groups and the walkthrough have counterparts there, but a project's copy may
-predate them — do not assume a rule in this file holds in that one, or the reverse.
+The 🔴🟠🟡🟢 severity ladder and the ℹ️ and 💡 observations match `/local-review` (a code review
+command available in project repositories), so the two kinds of review scan alike. ❓ Open, the
+⚖️ Decision, the implementation groups and the walkthrough have counterparts there, but a project's
+copy may predate them — do not assume a rule in this file holds in that one, or the reverse.
 
 **Severities** (how much the issue matters):
 
@@ -543,8 +542,8 @@ document review quotes Markdown far more often than a code review does. A sugges
 ### Tracking Finding Status
 
 Every actionable finding carries a status recording what was decided about it. Mark decided findings
-visually while preserving the original content for reference. ℹ️ and 💡 Observation findings carry no
-status. When a 💡 action is taken, say so in the observation's prose; its Status cell stays `—`.
+visually while preserving the original content for reference. ℹ️ and 💡 Observation findings carry
+no status. When a 💡 action is taken, say so in the observation's prose; its Status cell stays `—`.
 
 **Status glyphs:**
 
@@ -664,8 +663,8 @@ A ⚖️ Decision follows the same rule with one difference: for it, the decisio
 enters at ❓ and stays there until the user rules. Once they do it is ✅, with the outcome in the
 parenthetical — "kept as-is" or "changed to …" — and if the ruling requires an edit, ✅ waits until
 that edit is in the document, with a **Ruling** line recording the ruling meanwhile (see Tracking
-Finding Status). ⏸️ records that the user pushed the decision to a follow-up. 🚫 is never written for
-a ⚖️: a decision cannot be ignored, only made or deferred. Because ✅ on a ⚖️ records the user's
+Finding Status). ⏸️ records that the user pushed the decision to a follow-up. 🚫 is never written
+for a ⚖️: a decision cannot be ignored, only made or deferred. Because ✅ on a ⚖️ records the user's
 ruling rather than a verifiable fact about the document, it is the one ✅ that may not be applied
 without asking — until a **Ruling** line holds the answer, after which only its edit is left to
 check, and a re-review may close it.
@@ -716,8 +715,8 @@ requires action. Items enter at `- [ ] ❓` — see Status Records a Decision, N
 
 A group is a set of findings that are revised together: the same edit, the same section, the same
 root cause or a dependency chain ("settle F5 first, then re-evaluate F9"). A flat list leaves the
-batches to be reconstructed from status lines after the fact — "folded into the F7 edit",
-"same edit fixes F1 and F2". The checklist states them up front instead.
+batches to be reconstructed from status lines after the fact — "folded into the F7 edit", "same edit
+fixes F1 and F2". The checklist states them up front instead.
 
 - **Membership.** Every finding recommended **Implement** belongs to exactly one group, as does
   every ⚖️ Decision. Findings recommended **Defer** or **Skip** are listed after the groups under
@@ -927,11 +926,11 @@ good. One the user leaves open keeps waiting until the user reopens the ⚖️.
 
 Every ❓ finding under that checklist heading, in order. Summarize it, give the reviewer's Defer or
 Skip recommendation with its reason and then the orchestrator's own, and ask for Implement, Defer
-(⏸️) or Ignore (🚫). Phase 1 also offers ⏸️ for a ⚖️ and asks a deferred ⚖️'s dependents for ⏸️ or 🚫;
-beyond that, only here does the command solicit ⏸️ or 🚫, and that is deliberate: these findings were
-advised against, so without a ruling they sit at ❓ indefinitely and bar "all clear", while asking
-once, with both recommendations in view and Implement offered on equal terms, lets them leave the
-pre-merge path without being closed on advice alone.
+(⏸️) or Ignore (🚫). Phase 1 also offers ⏸️ for a ⚖️ and asks a deferred ⚖️'s dependents for ⏸️ or
+🚫; beyond that, only here does the command solicit ⏸️ or 🚫, and that is deliberate: these findings
+were advised against, so without a ruling they sit at ❓ indefinitely and bar "all clear", while
+asking once, with both recommendations in view and Implement offered on equal terms, lets them leave
+the pre-merge path without being closed on advice alone.
 
 A ⏸️ or 🚫 ruling checks the item where it stands, with the user's reason. An **Implement** ruling
 moves the finding into the group whose edit it shares — same edit, section or root cause, per
@@ -1239,16 +1238,38 @@ reason the status rule is restated in the prompt at the top of this file — and
 `/ship-it` never reads this one. Duplication costs a few lines; a missing scrub costs a disclosure
 that cannot be undone once posted.
 
-**Withhold the body of every `## Sensitive Information` finding from the comment.** The redaction
-rule keeps the *value* out of the artifact but it does not remove the *pointer*, and the pointer is
-enough: a published finding reading "the connection string at line 42 of `deploy.md` is live" is a
-targeting instruction for anyone with repository access, and it survives in the comment's edit
-history even if the comment is deleted. Report those findings to the user in conversation, and
-represent them in the comment as a neutral count only:
+**Ask before withholding.** Reviewers file two kinds of finding under `## Sensitive Information`:
+ones that point at a value, and ones about what gets published that name no value, such as a comment
+heading that publishes a file name. Before assembling the comment, list each Sensitive Information
+finding to the user with its number, title and Location, and say whether its text quotes a value,
+locates one, describes one without locating it or names none, where a value is anything Redacting
+Sensitive Evidence lists. A finding that quotes, locates or describes a value is withheld without a
+question. That holds for a ✅ Fixed finding or an ℹ️ Observation too: a fixed finding still says
+where the value was. A Sensitive Information finding filed elsewhere, such as an observation under
+`## Observations`, is classified and withheld the same way. Ask about each finding that names no
+value with `AskUserQuestion`:
+
+- **Withhold it** (the default)
+- **Post it in full**: its text names no value and points at none
+
+Only the user's answer to this question clears a finding, never the reviewer's category or wording.
+
+**Then withhold the body of every Sensitive Information finding the user has not cleared from the
+comment.** The redaction rule keeps the *value* out of the artifact but it does not remove the
+*pointer*, and the pointer is enough: a published finding reading "the connection string at line 42
+of `deploy.md` is live" is a targeting instruction for anyone with repository access, and it
+survives in the comment's edit history even if the comment is deleted. Report those findings to the
+user in conversation, and represent them in the comment as a neutral count only:
 
 ```text
 1 Sensitive Information finding — withheld from this comment; see the local artifact
 ```
+
+Everything else about a withheld finding goes too, its summary row, checklist item and any other
+mention of its number included. A cleared finding is posted like any other, with its section entry,
+summary row and checklist item. When some are cleared and some are not, the section heading stays
+for the cleared ones and the count line sits beneath it; when all are cleared, no count line is
+needed.
 
 Excise the section before the body is assembled, not after — the block below pipes the artifact in
 whole, so a rule applied to the finished comment has already published what it meant to withhold.
@@ -1390,5 +1411,5 @@ edit was made, the reviewer was wrong. Deferred and ignored findings are off the
 they are not resolved, so they never fold into the fixed count, and neither do findings still
 ❓ Open. Reserve "all clear" for a review in which every actionable finding is ✅, fixed or refuted:
 "24 findings — 14 fixed, 2 refuted, 8 observations — all clear". That holds for every severity and
-for decisions alike: a 🟢 Low still ❓ Open or ⏸️ Deferred bars "all clear" as surely as a 🔴 Critical
-does.
+for decisions alike: a 🟢 Low still ❓ Open or ⏸️ Deferred bars "all clear" as surely as a
+🔴 Critical does.
