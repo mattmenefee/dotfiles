@@ -72,8 +72,9 @@ When filing or linking Linear issues:
 - A Linear issue identifier in a pull request body moves that issue through the team's pull request
   workflow statuses (by default In Progress when the pull request opens), even after `Refs`,
   `part of` or `toward`; those only skip the merge-to-Done step. For an issue the pull request does
-  not implement, write `Related to <ID>`, which links it with no status change. Attaching a pull
-  request from inside Linear has been seen to move the issue too
+  not implement, write `Related to <ID>`, which links it with no status change. This covers commit
+  trailers wherever they reach the pull request body, as `gh pr create --fill` copies a single
+  commit's. Attaching a pull request from inside Linear has been seen to move the issue too
 
 ## Pull Requests
 
@@ -275,7 +276,8 @@ The shell is zsh, not bash, and each of these has broken commands before:
   `push.autoSetupRemote = true` in my git config push to a same-named branch on origin and set it as
   upstream. Don't warn that it will push to `main`
 - Take any SHA passed to a pinning flag (`--match-head-commit`, `--force-with-lease=<ref>:<sha>`)
-  from `git rev-parse` or `gh … headRefOid` in the same command; never complete one from memory
+  from `git rev-parse`, `git ls-remote` or `gh … headRefOid` in the same command; never complete one
+  from memory
 - Find a git state path with `git rev-parse --git-path rebase-merge` (or `MERGE_HEAD`); a literal
   `.git/…` path is wrong in a linked worktree
 
