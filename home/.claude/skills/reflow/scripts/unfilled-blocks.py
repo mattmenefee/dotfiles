@@ -17,6 +17,7 @@ filled; exit status 1 means a file or row could not be read, so some blocks went
 
 import argparse
 import fnmatch
+import itertools
 import os
 import re
 import sys
@@ -176,7 +177,7 @@ def markdown_blocks(lines):
         stripped = inner.strip()
         indent = len(inner) - len(inner.lstrip())
         if fence:
-            if re.fullmatch(re.escape(fence[0]) + "{%d,}\\s*" % len(fence), stripped):
+            if re.fullmatch(re.escape(fence[0]) + f"{{{len(fence)},}}\\s*", stripped):
                 fence = None
             continue
         if html_end:
@@ -224,7 +225,7 @@ def markdown_blocks(lines):
             block_indent = indent
         start = prefix + (marker.end() if marker else indent)
         blocks.add(number, line, start)
-        if inner.endswith("  ") or inner.endswith("\\"):
+        if inner.endswith(("  ", "\\")):
             blocks.close()
     blocks.close()
     return blocks.done
@@ -315,7 +316,7 @@ def comment_blocks(lines, path):
 
 def check(block, limit, markdown):
     issues = []
-    for (number, line, own_start), (_, following, start) in zip(block, block[1:]):
+    for (number, line, own_start), (_, following, start) in itertools.pairwise(block):
         unit, rest = split_unit(following[start:])
         if not unit:
             continue
