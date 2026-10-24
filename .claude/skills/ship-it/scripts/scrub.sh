@@ -20,18 +20,18 @@
 # printed them after the "<file>:<line>:" prefix. A hit is cleared only by an exact match, so an
 # edited or appended line is put back in front of the user. Only secret hits can be cleared.
 #
-# These patterns derive from the PR Comment Format section of home/.claude/commands/doc-review.md,
-# which shares their bounds, temp roots, account-name forms, secret set and LC_ALL=C. They differ
-# from it on purpose, and a sync in either direction keeps these differences; re-derive the list
-# before one:
+# These patterns derive from PR Comment Format in home/.claude/skills/doc-review/posting.md, whose
+# pattern set lives in scripts/scrub-lib.sh beside it and shares their bounds, temp roots,
+# account-name forms, secret set and LC_ALL=C. They differ from it on purpose, and a sync in either
+# direction keeps these differences; re-derive the list before one:
 #   - The shell's home variable is not a term. It names nobody, and rewriting it breaks quoted code.
 #   - Placeholders are exempt only in the fixed forms /Users/<user>, <name> or <username>, removed
-#     per match before scanning, where doc-review.md exempts in-pattern any angle-bracketed segment
+#     per match before scanning, where /doc-review exempts in-pattern any angle-bracketed segment
 #     but the account name.
 #   - git@ remotes and example.com, .org and .net addresses are exempt.
 #   - A .local host fires before any character that cannot continue its name, not only before a
 #     port or path. A dotenv name such as .env.test.local and Rails's Time.zone.local are exempt
-#     from it, as doc-review.md passes both by requiring that port or path.
+#     from it, as /doc-review passes both by requiring that port or path.
 #   - --narrow and the exit codes above serve callers of this script.
 
 narrow=
@@ -85,7 +85,7 @@ keys="${keys}"'|secret|token|passw(or)?d|pwd|credential|auth|bearer|pepper'
 schemes='postgres(ql)?|mysql2?|rediss?|amqps?|mongodb(\+srv)?'
 secrets='-----begin [a-z ]*private key-----'
 secrets="${secrets}|(${keys})[\"'\`\\\\]*[[:space:]]*[:=]"
-secrets="${secrets}|\\|[[:space:]]*[a-z0-9_.-]*(${keys})[a-z0-9_.-]*[[:space:]]*\\|"
+secrets="${secrets}|\\|[[:space:]*\`]*[a-z0-9_.-]*(${keys})[a-z0-9_.-]*[[:space:]*\`]*\\|"
 secrets="${secrets}"'[[:space:]]*[^|[:space:]]'
 secrets="${secrets}"'|authorization:[[:space:]]*(basic|bearer|token|apikey)[[:space:]]'
 secrets="${secrets}"'|[a-z][a-z0-9+.-]*://[^[:space:]/@:]*:[^[:space:]/@]+@'
