@@ -88,6 +88,11 @@ When filing or linking Linear issues:
 - Use descriptive titles that summarize the overall change
 - Make a pull request a meaningful, coherent changeset; split it further only when the diff is too
   large to review. Ship docs and changelog entries with the behavior they describe
+- When the branch name, its pull request description or the issue it implements says a class of
+  issues will be handled on a later, dedicated branch, keep the change minimal. Fix what is in scope
+  properly. For an adjacent issue the later branch will handle, add only the smallest stopgap (e.g.
+  skipping a test whose failure belongs to the deferred work) and name the deferred work in the
+  commit or pull request. Ask before any refactor the scope does not call for
 - Include a Summary section with bullet points
 - Include a Test plan section with checkboxes. Tick `- [x]` each item you ran and saw pass, noting
   the evidence inline when the method matters, and leave open only what you did not run. A review
