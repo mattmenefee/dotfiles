@@ -22,18 +22,21 @@ If `$ARGUMENTS` contains `reword <sha>` (or `reword` followed by a commit identi
   New body, written literally.
   MSG
   test -s "$msg" && ! LC_ALL=en_US.UTF-8 grep -n '.\{73,\}' "$msg" \
-    && GIT_EDITOR="cp $msg" git history reword <sha>
+    && [ "$(git branch --show-current)" = <branch> ] \
+    && GIT_EDITOR="cp $msg" git history reword --update-refs=head <sha>
   ```
 
   Run it with the list indentation removed: the closing `MSG` must start its line, or the heredoc
   swallows the check and the reword.
 
-- `git history` is marked **EXPERIMENTAL** and has four caveats: (1) it does **not** run git hooks,
+- `git history` is marked **EXPERIMENTAL** and has five caveats: (1) it does **not** run git hooks,
   so it skips `commit-msg` validation — see "Rewording Under a `commit-msg` Hook" below if the
   project relies on one; (2) it fails on merge commits and on histories with conflicts, so the
   branch must be linear from the target commit forward; (3) it only edits a single commit's message
   — for collapsing or reordering commits, see "Reshaping History" below; (4) it strips every line
-  starting with `#` from the new message, and ignores `commit.cleanup`.
+  starting with `#` from the new message, and ignores `commit.cleanup`; (5) by default it rewrites
+  every local branch descended from the target, which is why the block passes `--update-refs=head` —
+  see the paragraph on it under "Reshaping History" below.
 - When the new message carries a `#` line, reword HEAD with `--amend --only`, which leaves anything
   staged out of the commit, in place of the last line of the block above:
   `&& [ "$(git branch --show-current)" = <branch> ] && git commit --amend --only -F "$msg" --cleanup=whitespace`.
@@ -71,13 +74,13 @@ editors are neutralized, as in the fallback below — use these instead:
   mechanical and safe to do unattended. Stage the change, then fold it into the target in one step:
 
   ```bash
-  git add <file>
-  git history fixup <sha>
+  git add <file> \
+    && [ "$(git branch --show-current)" = <branch> ] && git history fixup --update-refs=head <sha>
   ```
 
   This keeps the target's message, leaves unstaged changes alone, works even when `<sha>` is the
-  root commit, and refuses cleanly (`fixup would produce conflicts; aborting`) instead of dropping
-  you into a half-finished rebase. It needs Git 2.55+, is EXPERIMENTAL, and — like
+  root commit and refuses cleanly (`fixup would produce conflicts; aborting`) instead of dropping
+  you into a half-finished rebase. It needs Git 2.55+, is EXPERIMENTAL and — like
   `git history reword` — does **not** run hooks. Like any history rewrite it changes the SHA of the
   target and of every commit after it, so an already-pushed branch then needs
   `git push --force-with-lease --force-if-includes`.
@@ -111,15 +114,24 @@ editors are neutralized, as in the fallback below — use these instead:
 - **A "wip: merge into …" commit message never authorizes folding that commit in.** Scope a rebase
   to exactly the commits the user named, and propose any other fold separately.
 
-Several sessions can share one checkout, so every amend, rebase, reset and push in this file checks
-the current branch in the same command, as the blocks here do. Before any history rewrite, print the
-branch and tip with `git branch --show-current && git rev-parse HEAD`, and offer
-`[ "$(git branch --show-current)" = <branch> ] && git reset --keep <old tip>` as the recovery.
-`--keep` moves the branch back but refuses, rather than overwrites, when a file it would change has
-uncommitted edits; `--hard` would discard the unstaged work the rewrite itself left alone. After the
-rewrite, `git range-diff <old tip>...HEAD` pairs each old commit with its replacement: record that
-old→new SHA map, and rewrite any SHA cited in review or handoff documents in the same pass, since
-the map is hard to rebuild once the old tip is forgotten.
+`git history` rewrites every local branch descended from the target, not only the current one, so
+both `git history` blocks in this file pass `--update-refs=head`. Without it, a branch checked out
+in another worktree moves too, and after a `fixup` that worktree's index and files keep the old
+content, so it shows the change reverted as staged edits. A backup branch taken just before the
+rewrite moves as well and then backs up nothing. With the flag, a branch stacked on the target stays
+on the old commits; restacking it is reshaping, which is handed back to the user as above.
+
+Several sessions can share one checkout, so every amend, rebase, reset, push and `git history`
+rewrite in this file checks the current branch in the same command, as the blocks here do. Before
+any history rewrite, print the branch and tip with
+`git branch --show-current && git rev-parse HEAD`, and offer
+`[ "$(git branch --show-current)" = <branch> ] && git reset --soft <old tip>` as the recovery.
+`--soft` moves the branch back and leaves the index and files alone, so a change a fixup folded in
+returns as staged and unstaged work is untouched; `--keep` and `--hard` both rewrite files, and
+`--keep` drops the folded change from them. After the rewrite, `git range-diff <old tip>...HEAD`
+pairs each old commit with its replacement: record that old→new SHA map, and rewrite any SHA cited
+in review or handoff documents in the same pass, since the map is hard to rebuild once the old tip
+is forgotten.
 
 If `--force-if-includes` refuses a push after you rewrote a branch you had pushed yourself, read the
 server's tip with `git ls-remote origin refs/heads/<branch>`. If it differs from the pre-rewrite tip
