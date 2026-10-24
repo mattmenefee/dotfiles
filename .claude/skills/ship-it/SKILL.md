@@ -10,11 +10,11 @@ disable-model-invocation: true
 
 # Ship It
 
-Prepare the current branch for merge and publish it. This repository merges pull requests with
-**rebase and merge**, so every commit on the branch lands on `main` exactly as it is, and `main`'s
-ruleset rejects force pushes, so a commit message cannot be fixed once it merges. The repository is
-also **public**. Those three facts drive most of what follows: the history is shaped before it is
-pushed, and everything published is checked before it leaves the machine.
+Prepare the current branch for merge and publish it. This repository merges pull requests
+with **rebase and merge**, so every commit on the branch lands on `main` exactly as it is, and
+`main`'s ruleset rejects force pushes, so a commit message cannot be fixed once it merges. The
+repository is also **public**. Those three facts drive most of what follows: the history is shaped
+before it is pushed, and everything published is checked before it leaves the machine.
 
 1. Rebase onto `origin/main`
 1. Review each commit's changes against its message
