@@ -1,0 +1,6 @@
+# Match the repository's 100-column limit
+line-length = 100
+
+[lint]
+# Ruff's default rules leave out line length, so E501 is selected explicitly
+extend-select = ["E501", "W", "I"]

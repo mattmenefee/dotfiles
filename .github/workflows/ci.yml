@@ -35,6 +35,28 @@ jobs:
         # ships the python3 it runs on
         run: bash home/.claude/skills/reflow/scripts/test-unfilled-blocks.sh
 
+      - name: Test teams-copy's Markdown to HTML conversion
+        # --print-html skips the macOS clipboard, so the conversion runs on Linux
+        run: bash test/test-teams-copy.sh
+
+      - name: Lint teams-copy with Ruff
+        # Super-linter routes an extensionless file by what `file` reports, and the `file` in its
+        # image classifies this script as an HTML document, so its Ruff run never sees the file.
+        # This runs the Ruff from super-linter's own image, which the runner pulls while setting up
+        # the job, with the tag read from the step below, so the two Ruff runs cannot drift apart in
+        # version or default rules. Both read the root .ruff.toml.
+        run: |
+          tag=$(sed -n 's|^ *uses: super-linter/super-linter/slim@\(v[0-9.]*\)$|\1|p' \
+            .github/workflows/ci.yml)
+          if [ -z "${tag}" ]; then
+            echo "Found no super-linter/slim@ version in ci.yml; has the step changed shape?" >&2
+            exit 1
+          fi
+
+          docker run --rm --volume "${PWD}:/w" --workdir /w --entrypoint ruff \
+            "ghcr.io/super-linter/super-linter:slim-${tag}" \
+            check --no-cache home/.local/bin/teams-copy
+
       - name: Test the /rebase scripts
         run: bash home/.claude/skills/rebase/scripts/test-rebase.sh
 
@@ -113,6 +135,7 @@ jobs:
           VALIDATE_GIT_MERGE_CONFLICT_MARKERS: true
           VALIDATE_JSON: true
           VALIDATE_MARKDOWN: true
+          VALIDATE_PYTHON_RUFF: true
           VALIDATE_YAML: true
 
           LINTER_RULES_PATH: /
