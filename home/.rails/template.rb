@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 # Application template that ~/.railsrc passes to every `rails new`. It assumes the .railsrc flags:
-# esbuild through jsbundling-rails, no Minitest, no omakase RuboCop and no Solid Queue
+# PostgreSQL, esbuild through jsbundling-rails, no Minitest, no omakase RuboCop and no Solid Queue,
+# Cache or Cable. PostgreSQL must be running, since the template creates the app's databases.
+# --skip-kamal, --skip-ci and --skip-brakeman skip the steps they affect, and --skip-active-record
+# the database step.
 
 def source_paths
   # Keeps the generator's own paths, which later Rails steps (such as Kamal's) read templates from
@@ -98,6 +101,8 @@ def setup_sidekiq
 end
 
 def setup_kamal_redis
+  return if skip_kamal?
+
   # REDIS_URL carries the accessory's password, so it is a secret rather than clear env
   inject_into_file! 'config/deploy.yml', "    - REDIS_URL\n", after: "    - RAILS_MASTER_KEY\n"
   accessory = File.read(find_in_source_paths('kamal/redis_accessory.yml'))
@@ -117,6 +122,8 @@ def setup_kamal_secrets
 end
 
 def setup_kamal_job_role
+  return if skip_kamal?
+
   # Rails' commented job role runs Solid Queue's bin/jobs, which --skip-solid leaves out. It shares
   # the web host, where REDIS_URL's container name resolves. The bang raises if Rails changes the
   # block, rather than deploying with no worker.
@@ -137,6 +144,8 @@ def setup_haml_layouts
 end
 
 def setup_ci_workflow
+  return if skip_ci?
+
   # -T and --skip-rubocop drop Rails' lint and test jobs. These restore them from railties'
   # github/ci.yml.tt, adapted for RSpec, so they need Rails' changes to that template too.
   jobs = File.read(find_in_source_paths('github/ci_jobs.yml'))
@@ -148,13 +157,16 @@ def setup_bin_ci
   insert_into_file! 'config/ci.rb', <<~RUBY.indent(2), after: /^  step "Setup".*\n/
     step "Style: Ruby", "bin/rubocop"
   RUBY
-  insert_into_file! 'config/ci.rb', <<~RUBY.indent(2), after: /^  step "Security: Brakeman.*\n/
+  # Anchored on the closing comment, since --skip-brakeman removes the last security step
+  insert_into_file! 'config/ci.rb', <<~RUBY.indent(2), before: /\n  # Optional: set a green GitHub/
     step "Tests: RSpec", "bin/rails spec"
     step "Tests: Seeds", "env RAILS_ENV=test bin/rails db:seed:replant"
   RUBY
 end
 
 def setup_dependabot
+  return if skip_ci?
+
   # Rails' config covers bundler and github-actions, not the npm packages the template adds
   append_to_file '.github/dependabot.yml', <<~YAML
     - package-ecosystem: npm
@@ -166,6 +178,8 @@ def setup_dependabot
 end
 
 def setup_database
+  return if skip_active_record?
+
   # Writes db/schema.rb, which db:prepare skips without a migration and CI's db:test:prepare needs
   rails_command 'db:create db:migrate', abort_on_failure: true
 end
