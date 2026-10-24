@@ -1,0 +1,11 @@
+accessories:
+  redis:
+    image: valkey/valkey:8
+    # Keep on the web host: the app reaches it by container name over Kamal's Docker network, so
+    # moving it to another host means pointing REDIS_URL at that host instead. No port is
+    # published, which keeps it off the public interface
+    host: 192.168.0.1
+    # Append-only persistence, so queued Sidekiq jobs survive a restart
+    cmd: valkey-server --appendonly yes
+    directories:
+      - data:/data

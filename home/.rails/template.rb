@@ -68,6 +68,17 @@ def setup_sidekiq
   append_to_file 'Procfile.dev', "worker: bundle exec sidekiq\n"
 end
 
+def setup_kamal
+  service = YAML.load_file('config/deploy.yml').fetch('service')
+  # Kamal names the accessory container <service>-redis on the network it shares with the app
+  gsub_file 'config/deploy.yml', "  # clear:\n", <<~YAML.indent(2)
+    clear:
+      REDIS_URL: redis://#{service}-redis:6379/0
+  YAML
+  accessory = File.read(find_in_source_paths('kamal/redis_accessory.yml'))
+  append_to_file 'config/deploy.yml', "\n#{accessory}"
+end
+
 def setup_rubocop
   copy_file 'rubocop.yml', '.rubocop.yml'
   run 'bundle binstubs rubocop'
@@ -83,5 +94,6 @@ after_bundle do
   setup_bootstrap
   setup_postcss
   setup_sidekiq
+  setup_kamal
   setup_rubocop
 end
