@@ -206,7 +206,7 @@ Follow these commit message best practices:
   written to: `LC_ALL=en_US.UTF-8 grep -n '.\{73,\}' <message file>` must print nothing. Not
   `awk 'length > 72'`: macOS `awk` counts bytes, so an em dash adds two to its count and a compliant
   line fails, and `grep` does the same outside a UTF-8 locale, which is why the locale is pinned.
-  The Process commands below write, check and commit in one step
+  The Process commands below write, check and commit in one step.
 - Explain the **"why"** behind the change, not just the "what"
 - Always include a body with context — even for routine changes like dependency bumps. Only skip it
   for truly trivial changes (e.g. fixing a typo in a comment).
