@@ -636,7 +636,9 @@ organizations the copy and the comment header mention, the source's file name in
 the user, and ask whether each may be published. Ask the same about any `linear.app/` link, whose
 workspace slug names the employer. When the file name may not be published, leave its
 `` (`[base name]`) `` slot out of the heading and accept that the next run posts a second comment.
-The post block checks each `github.com/<owner>/<repo>` it finds and refuses one that is not public.
+The post block checks each `github.com/<owner>/<repo>` it finds, on any subdomain but
+`docs.github.com`, whose paths name documentation pages rather than repositories, and refuses one
+that is not public.
 
 ### Build, check and post
 
@@ -729,9 +731,10 @@ if [ -e "$work/$name.withheld" ]; then
     ! command grep -qiF -- "$t" "$comment" || { echo "withhold: '$t'" >&2; exit 1; }
   done < "$work/$name.withheld"
 fi
-command grep -oiE 'github\.com/[a-z0-9_.-]+/[a-z0-9_.-]+' "$comment" | sort -u > "$work/repos"
+command grep -oiE '([a-z0-9-]+\.)*github\.com/[a-z0-9_.-]+/[a-z0-9_.-]+' "$comment" |
+  tr '[:upper:]' '[:lower:]' | command grep -v '^docs\.github\.com/' | sort -u > "$work/repos"
 while IFS= read -r ref; do
-  slug=${ref#*/}; slug=${slug%.}; slug=${slug%.git}
+  slug=${ref#*github.com/}; slug=${slug%.}; slug=${slug%.git}
   [ "$(gh repo view "$slug" --json visibility -q .visibility 2>/dev/null)" = PUBLIC ] ||
     { echo "repository $slug is not public, or could not be checked" >&2; exit 1; }
 done < "$work/repos"
