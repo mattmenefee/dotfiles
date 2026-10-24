@@ -8,14 +8,19 @@ def source_paths
   [File.join(__dir__, 'files'), *super]
 end
 
+# Thor's uncomment_lines does nothing when the line has moved; this raises instead
+def uncomment_lines!(path, flag)
+  gsub_file! path, /^(\s*)#[[:blank:]]?(.*#{flag.source})/, '\1\2'
+end
+
 gem 'dartsass-rails'
 gem 'haml-rails'
 gem 'sidekiq'
 # Without Solid Cable, production Action Cable uses the Redis adapter
-uncomment_lines 'Gemfile', /gem "redis"/
+uncomment_lines! 'Gemfile', /gem "redis"/
 
 # A second gem_group for the same groups trips Bundler/DuplicatedGroup
-inject_into_file 'Gemfile', after: "group :development, :test do\n" do
+inject_into_file! 'Gemfile', after: "group :development, :test do\n" do
   <<~RUBY.indent(2)
     gem "factory_bot_rails"
     gem "rspec-rails"
@@ -37,7 +42,7 @@ end
 
 def setup_rspec
   generate 'rspec:install'
-  uncomment_lines 'spec/rails_helper.rb', %r{Rails\.root\.glob\('spec/support}
+  uncomment_lines! 'spec/rails_helper.rb', %r{Rails\.root\.glob\('spec/support}
   directory 'spec/support'
 end
 
@@ -47,7 +52,8 @@ def setup_esbuild
 end
 
 def setup_bootstrap
-  rails_command 'dartsass:install'
+  # Unlike run, rails_command doesn't abort on failure unless asked
+  rails_command 'dartsass:install', abort_on_failure: true
   run 'yarn add bootstrap @popperjs/core'
   append_to_file 'app/javascript/application.js', %(import "bootstrap"\n)
   # The stub shares the logical path application.css with the dartsass build, which it would shadow
@@ -73,7 +79,7 @@ end
 def setup_kamal
   service = YAML.load_file('config/deploy.yml').fetch('service')
   # Kamal names the accessory container <service>-redis on the network it shares with the app
-  gsub_file 'config/deploy.yml', "  # clear:\n", <<~YAML.indent(2)
+  gsub_file! 'config/deploy.yml', "  # clear:\n", <<~YAML.indent(2)
     clear:
       REDIS_URL: redis://#{service}-redis:6379/0
   YAML
@@ -86,7 +92,7 @@ def setup_kamal_worker
   # the web host, where REDIS_URL's container name resolves. The bang raises if Rails changes the
   # block, rather than deploying with no worker.
   gsub_file! 'config/deploy.yml', %r{^  # job:\n(?:  # .*\n)*?  #   cmd: bin/jobs\n} do |role|
-    role.gsub('  # ', '  ').sub('bin/jobs', 'bundle exec sidekiq')
+    role.gsub(/^  # /, '  ').sub('bin/jobs', 'bundle exec sidekiq')
   end
 end
 
