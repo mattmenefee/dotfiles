@@ -65,6 +65,8 @@ end
 
 def setup_sidekiq
   environment 'config.active_job.queue_adapter = :sidekiq'
+  # rspec-rails' job matchers need the test adapter, which also keeps specs from needing Redis
+  environment 'config.active_job.queue_adapter = :test', env: 'test'
   append_to_file 'Procfile.dev', "worker: bundle exec sidekiq\n"
 end
 
@@ -98,6 +100,18 @@ def setup_haml_layouts
   copy_file 'app/views/layouts/mailer.text.haml'
 end
 
+def setup_ci
+  # -T and --skip-rubocop drop Rails' lint and test jobs and bin/ci steps; these restore them
+  jobs = File.read(find_in_source_paths('github/ci_jobs.yml'))
+  append_to_file '.github/workflows/ci.yml', "\n#{jobs.indent(2)}"
+  insert_into_file! 'config/ci.rb', %(  step "Style: Ruby", "bin/rubocop"\n),
+                    after: /^  step "Setup".*\n/
+  insert_into_file! 'config/ci.rb', <<~RUBY.indent(2), after: /^  step "Security: Brakeman.*\n/
+    step "Tests: RSpec", "bin/rails spec"
+    step "Tests: Seeds", "env RAILS_ENV=test bin/rails db:seed:replant"
+  RUBY
+end
+
 def setup_rubocop
   copy_file 'rubocop.yml', '.rubocop.yml'
   run 'bundle binstubs rubocop'
@@ -116,5 +130,6 @@ after_bundle do
   setup_kamal
   setup_kamal_worker
   setup_haml_layouts
+  setup_ci
   setup_rubocop
 end
