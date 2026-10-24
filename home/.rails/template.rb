@@ -143,6 +143,17 @@ def setup_ci
   RUBY
 end
 
+def setup_dependabot
+  # Rails' config covers bundler and github-actions, not the npm packages the template adds
+  append_to_file '.github/dependabot.yml', <<~YAML
+    - package-ecosystem: npm
+      directory: "/"
+      schedule:
+        interval: weekly
+      open-pull-requests-limit: 10
+  YAML
+end
+
 def setup_database
   # Writes db/schema.rb, which db:prepare skips without a migration and CI's db:test:prepare needs
   rails_command 'db:create db:migrate', abort_on_failure: true
@@ -168,6 +179,7 @@ after_bundle do
   setup_kamal_worker
   setup_haml_layouts
   setup_ci
+  setup_dependabot
   setup_database
   setup_rubocop
 end
