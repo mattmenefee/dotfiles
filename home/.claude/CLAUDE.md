@@ -82,6 +82,11 @@ When filing or linking Linear issues:
   not implement, write `Related to <ID>`, which links it with no status change. This covers commit
   trailers wherever they reach the pull request body, as `gh pr create --fill` copies a single
   commit's. Attaching a pull request from inside Linear has been seen to move the issue too.
+- Link every mention of a Linear issue identifier to the issue, in chat replies and in any document
+  written for people (briefings, plans, handoffs, pull request bodies), not only the first. In a
+  Markdown document, use a reference-style link (`[ENG-412][eng-412]`, with the definitions at the
+  end) so lines stay within the column limit. In a public repository, write the identifier without
+  its URL: the URL's workspace slug names the client (see Public Repositories).
 
 ## Pull Requests
 
