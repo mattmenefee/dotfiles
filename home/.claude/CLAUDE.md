@@ -14,9 +14,9 @@
   never carries over to another pull request, a later push or a later session.
 - After a push or merge mishap, recommend a server-side guardrail (a GitHub ruleset or branch
   protection) over client-side git configuration, and leave existing local configuration alone
-- Never add review or working documents (`*local-review*.md`, `*-DOC-REVIEW*.md`, `*PLAN.md`,
-  `*-HANDOFF.md`) to `.gitignore`. Commit one only where the project's `/ship-it` expects it;
-  otherwise leave it untracked.
+- Never add review or working documents (`*local-review*.md`, `*-DOC-REVIEW*.md`, `*-REVIEW*.md`,
+  `*PLAN.md`, `*-HANDOFF.md`) to `.gitignore`. Commit one only where the project's `/ship-it`
+  expects it; otherwise leave it untracked.
 - Before changing an open-source project, read its `CONTRIBUTING.md` (or `.github/CONTRIBUTING.md`)
   and follow its conventions exactly. Add a changelog entry only for a change the library's users
   would notice, not for CI or tooling.
@@ -50,6 +50,24 @@
   Code Style allows, is not such a rule; an instruction addressed to an agent is.
 - Don't run linters on memory files under `~/.claude/projects/*/memory/`, and ignore hook lint
   errors reported on them.
+
+## Development Workflow
+
+Take every change other than a trivial one through these stages, in order. A trivial change, such as
+a typo or a one-line configuration fix, skips the plan and the review stages:
+
+1. Create a plan and save it in the project root as `<branch>-PLAN.md`
+1. Build according to the plan, run the Task Completion Checklist and commit with `/commit`
+1. Open a draft pull request assigned to me, labeled `wip` where the repository has that label
+1. Review the changes: the project's `/local-review` for code where one exists, and `/doc-review`
+   for documentation. Otherwise, have the relevant agents from `~/.claude/agents/` review them and
+   save a report shaped like `/doc-review`'s in the project root as `<branch>-REVIEW.md`, with its
+   header table, Branch row included.
+1. Walk me through the findings as `/doc-review`'s walkthrough does, then fix the groups I select,
+   in the order we agree
+1. Offer to run the reviews again only if warranted; run `/handoff` once a review round closes
+1. Stop and wait for me to start the project's `/ship-it` (see Workflow); where there is none, stop
+   at "ready to merge"
 
 ## Verifying Claims
 
@@ -142,8 +160,6 @@ When filing or linking Linear issues:
 
 - Always use the `/commit` slash command when writing or editing a commit message — this includes
   creating new commits, amending commits and editing commit messages
-- Consider using the `/doc-review` slash command after writing or updating a significant amount of
-  documentation
 
 ## Task Completion Checklist
 
