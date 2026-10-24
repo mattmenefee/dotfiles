@@ -128,14 +128,12 @@ When filing or linking Linear issues:
   `gh` command. Otherwise `gh` may resolve to the parent repository and fail, or silently act on the
   wrong pull request.
 - Confirm CI with `gh pr view --json headRefOid,statusCheckRollup` and name the commit it ran on. A
-  CircleCI run canceled on purpose reports as a failed status, so `gh pr checks` shows it as
-  "fail"; a run far shorter than usual is a cancellation. Before calling a branch green or merging
-  it, check that `git ls-remote origin refs/heads/<branch>` equals local `HEAD` and the rollup's
-  commit.
+  CircleCI run canceled on purpose reports as a failed status, so `gh pr checks` shows it as "fail";
+  a run far shorter than usual is a cancellation. Before calling a branch green or merging it, check
+  that `git ls-remote origin refs/heads/<branch>` equals local `HEAD` and the rollup's commit.
 - `gh pr merge --delete-branch` deletes the local branch as well as the remote one, so when run from
-  the pull request's own checkout it first switches that checkout to the default branch. Run it
-  with `--repo` from another directory, and check `git reflog` before describing local state
-  afterwards.
+  the pull request's own checkout it first switches that checkout to the default branch. Run it with
+  `--repo` from another directory, and check `git reflog` before describing local state afterwards.
 - Post a review file to a pull request, issue or release only once every actionable finding in it is
   ✅, ⏸️ or 🚫, with no ❓ row and no open box; a working list goes stale within hours and reads as
   the record. A handoff's still-open questions are the exception `/ship-it` posts by design.
@@ -191,9 +189,9 @@ messages are the strictest case: once merged they cannot be edited.
 - Follow the [Ruby Style Guide](https://rubystyle.guide/) and the
   [Rails Style Guide](https://rails.rubystyle.guide/)
 - End every file with a single trailing newline (not a literal blank line)
-- Wrap at 100 characters where it makes sense — source code and comments, Markdown prose
-  (including slash command, skill and agent files) and configuration. Defer to a project's own
-  linter or `.editorconfig` when it sets a different limit.
+- Wrap at 100 characters where it makes sense — source code and comments, Markdown prose (including
+  slash command, skill and agent files) and configuration. Defer to a project's own linter or
+  `.editorconfig` when it sets a different limit.
 - When an edit changes a line of wrapped prose or comment, refill the paragraph or comment block it
   belongs to so every line again takes as many words as fit within the limit, but never a fenced or
   indented code block or a table, whose line breaks are content. Change only line breaks, and leave
