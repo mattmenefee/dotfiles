@@ -1,4 +1,4 @@
-# Git worktrees - navigate by number (e.g., wt 1, wt 2)
+# Git worktrees - navigate by number (e.g. wt 1, wt 2)
 # Run from any worktree to switch between them
 #
 # `git worktree list` sorts linked worktrees by full path, and the throwaway worktrees Claude Code

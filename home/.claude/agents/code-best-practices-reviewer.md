@@ -60,8 +60,8 @@ languages and frameworks.
 ### Consider Project Context
 
 - Alignment with existing codebase patterns and conventions
-- Consistency with project-specific style guides (e.g., RuboCop for Ruby)
-- Following framework-specific best practices (e.g., Rails conventions)
+- Consistency with project-specific style guides (e.g. RuboCop for Ruby)
+- Following framework-specific best practices (e.g. Rails conventions)
 - Adherence to any CLAUDE.md instructions or project guidelines
 
 ## Response Style

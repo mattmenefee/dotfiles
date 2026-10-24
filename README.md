@@ -82,7 +82,7 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
     brew bundle
     ```
 
-    Ruby versions are managed with rbenv. Other tool versions (e.g., Ansible, Terraform) are managed
+    Ruby versions are managed with rbenv. Other tool versions (e.g. Ansible, Terraform) are managed
     with [mise][mise_link], which is installed via Homebrew and activated through the Oh My Zsh
     `mise` plugin.
 
@@ -127,7 +127,7 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
     | [docker][omz_docker] | built-in | Docker completions |
     | [vi-mode][omz_vimode] | built-in | Vim keybindings in the shell |
     | [mise][omz_mise] | built-in | Activates [mise][mise_link] for version management |
-    | [z][omz_z] | built-in | Jump to frequently used directories (e.g., `z dotfiles`) |
+    | [z][omz_z] | built-in | Jump to frequently used directories (e.g. `z dotfiles`) |
     | [gh][omz_gh] | built-in | GitHub CLI completions |
     | [bundler][omz_bundler] | built-in | Runs bundled commands via `bundle exec`; adds `be`, `bi`, `bl`, `bp`, `bu` |
 

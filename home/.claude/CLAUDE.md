@@ -209,7 +209,8 @@ messages are the strictest case: once merged they cannot be edited.
 - A list item that is a single phrase or sentence takes no final period. An item of several
   sentences ends each of them with a period, the last one included: the single-sentence rule does
   not reach it, here or for comments under Code Style.
-- Write `e.g.` and `i.e.` with no following comma
+- Write `e.g.` and `i.e.` with no following comma everywhere — prose, code comments and slash
+  command, skill and agent files — and drop the comma from text ported in from elsewhere
 - In prose, write "changelog" in lowercase. Write `CHANGELOG.md` only when naming the file, and keep
   a proper name such as "Keep a Changelog" capitalized.
 - Write dates month-first ("October 4 to October 21"), never day-first ("4 to 21 October"), in
