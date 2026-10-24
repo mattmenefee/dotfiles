@@ -30,6 +30,11 @@ jobs:
         # The file is not executable, so call it through bash
         run: bash .claude/skills/ship-it/scripts/test-scrub.sh
 
+      - name: Test the /reflow block detector
+        # The fixtures pin the block edges the helper's heuristics must keep, and ubuntu-latest
+        # ships the python3 it runs on
+        run: bash home/.claude/skills/reflow/scripts/test-unfilled-blocks.sh
+
       - name: Check zsh syntax
         # Nothing else here checks this shell code. ShellCheck has no zsh dialect, and
         # super-linter never hands it these files anyway: a .zsh extension is routed to the
