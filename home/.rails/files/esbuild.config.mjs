@@ -9,7 +9,8 @@ const context = await esbuild.context({
   absWorkingDir: path.join(process.cwd(), 'app/javascript'),
   publicPath: '/assets',
   sourcemap: true,
-  minify: process.env.NODE_ENV === 'production',
+  // Rails' Dockerfile sets only RAILS_ENV; NODE_ENV=production makes Yarn 1 skip esbuild itself
+  minify: [process.env.NODE_ENV, process.env.RAILS_ENV].includes('production'),
   alias: { '@': path.resolve(process.cwd(), 'app/javascript') }
 });
 
