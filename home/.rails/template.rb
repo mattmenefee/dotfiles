@@ -44,6 +44,7 @@ def setup_rspec
   generate 'rspec:install'
   uncomment_lines! 'spec/rails_helper.rb', %r{Rails\.root\.glob\('spec/support}
   directory 'spec/support'
+  copy_file 'lib/tasks/spec_assets.rake'
 end
 
 def setup_esbuild
@@ -126,6 +127,11 @@ def setup_ci
   RUBY
 end
 
+def setup_database
+  # Writes db/schema.rb, which db:prepare skips without a migration and CI's db:test:prepare needs
+  rails_command 'db:create db:migrate', abort_on_failure: true
+end
+
 def setup_rubocop
   copy_file 'rubocop.yml', '.rubocop.yml'
   run 'bundle binstubs rubocop'
@@ -145,5 +151,6 @@ after_bundle do
   setup_kamal_worker
   setup_haml_layouts
   setup_ci
+  setup_database
   setup_rubocop
 end
