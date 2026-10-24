@@ -190,8 +190,8 @@ autosquash attaches an `amend!` that names a subject to the oldest commit carryi
 when two commits share one the reword silently lands on the wrong commit.
 
 Two limits are worth knowing before relying on this. The hook validates `amend! <sha>` as the
-subject rather than the new one, so a hook that checks subject *format* judges the marker line,
-and one strict enough to reject `amend!` outright blocks this path entirely — there, reword with
+subject rather than the new one, so a hook that checks subject *format* judges the marker line, and
+one strict enough to reject `amend!` outright blocks this path entirely — there, reword with
 `git history reword` and run the hook's check by hand. And `<sha>~1` does not resolve when `<sha>`
 is the root commit; use `--root` in its place.
 
@@ -261,8 +261,8 @@ them. Check `git log` for the identifier format in use and match it rather than 
 
 - For a bug-fix commit that should close its issue on merge, use the tracker's magic keyword:
   `Fixes <ISSUE-ID>.` (Linear and GitHub both also honor `Closes` / `Resolves`.)
-- For a commit that is partial work toward an issue, use `Refs <ISSUE-ID>.` — it won't
-  auto-close the issue.
+- For a commit that is partial work toward an issue, use `Refs <ISSUE-ID>.` — it won't auto-close
+  the issue.
 - For a change related to an issue it does not implement, use `Related to <ISSUE-ID>`. Commit text
   reaches pull request bodies, and in Linear even `Refs` there still moves the issue's status.
 - If unsure whether the commit fully resolves the issue, ask before defaulting to `Fixes`;
