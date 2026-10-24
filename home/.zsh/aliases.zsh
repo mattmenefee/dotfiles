@@ -10,7 +10,7 @@ alias tn='tmux -2 new'
 # starting and for resuming after a dropped connection, which is the whole point of the session
 # surviving on the far end
 alias tm='tmux -2 new -A -s mobile'
-alias vim='mvim -v'
+alias vim='nvim'
 
 # Ruby
 alias be="bundle exec"

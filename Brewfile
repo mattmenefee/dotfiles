@@ -3,7 +3,6 @@
 # Terminal tools
 cask 'iterm2'
 brew 'bash'
-cask 'macvim-app' # loads Ruby from rbenv on demand; the formula links a Homebrew `ruby` into Vim
 brew 'neovim'
 brew 'the_silver_searcher'
 brew 'tmux'
