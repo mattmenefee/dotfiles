@@ -25,11 +25,31 @@ from collections import defaultdict
 MARKDOWN = (".md", ".markdown", ".mdx")
 YAML = (".yml", ".yaml")
 WORKING_DOCUMENTS = (
-    "*local-review*.md", "*DOC-REVIEW*.md", "*-REVIEW*.md", "*PLAN.md", "*HANDOFF.md",
+    "*local-review*.md",
+    "*DOC-REVIEW*.md",
+    "*-REVIEW*.md",
+    "*PLAN.md",
+    "*HANDOFF.md",
 )
 LEADERS = {
-    "//": (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".go", ".rs", ".c", ".h", ".cc", ".cpp",
-           ".java", ".kt", ".swift", ".scss"),
+    "//": (
+        ".js",
+        ".mjs",
+        ".cjs",
+        ".ts",
+        ".tsx",
+        ".jsx",
+        ".go",
+        ".rs",
+        ".c",
+        ".h",
+        ".cc",
+        ".cpp",
+        ".java",
+        ".kt",
+        ".swift",
+        ".scss",
+    ),
     "--": (".sql", ".lua", ".hs"),
     ";": (".el", ".lisp", ".clj"),
 }
@@ -188,8 +208,13 @@ def markdown_blocks(lines):
             continue
         # Indented code cannot interrupt a paragraph, so only a line that opens a block starts one
         indented_code = not blocks.current and indent >= 4 and not LIST_MARKER.match(inner)
-        if (not stripped or stripped.startswith(("#", "|")) or LINK_DEFINITION.match(inner)
-                or indented_code or WHOLE_LINE_OPENER.match(stripped)):
+        if (
+            not stripped
+            or stripped.startswith(("#", "|"))
+            or LINK_DEFINITION.match(inner)
+            or indented_code
+            or WHOLE_LINE_OPENER.match(stripped)
+        ):
             blocks.close()
             continue
         marker = LIST_MARKER.match(inner)
@@ -236,9 +261,13 @@ def comment_blocks(lines, path):
             key = None
             continue
         match = pattern.match(line)
-        text = line[match.end():] if match else ""
-        if (not match or line.startswith("#!") or DIRECTIVE.match(text.lstrip())
-                or ENCODING_COOKIE.search(line)):
+        text = line[match.end() :] if match else ""
+        if (
+            not match
+            or line.startswith("#!")
+            or DIRECTIVE.match(text.lstrip())
+            or ENCODING_COOKIE.search(line)
+        ):
             blocks.close()
             mode = None
             key = None
@@ -295,7 +324,7 @@ def check(block, limit, markdown):
             opened = open_unit(text)
             if opened is not None:
                 # A split unit is worth reporting only when the next line could hold it whole
-                whole = text[text.rfind(" ", 0, opened) + 1:] + " " + unit
+                whole = text[text.rfind(" ", 0, opened) + 1 :] + " " + unit
                 if width(following[:start] + whole, markdown) <= limit:
                     issues.append(f"line {number} splits link text or a code span")
                 continue
@@ -381,8 +410,11 @@ def main():
                 print(f"{path}:{block[0][0]}-{block[-1][0]}: " + "; ".join(issues))
     for name, path in named.items():
         if name not in matched:
-            print(f"no changed lines for {path}: run from the repository root and name files as "
-                  "changed-lines.sh prints them", file=sys.stderr)
+            print(
+                f"no changed lines for {path}: run from the repository root and name files as "
+                "changed-lines.sh prints them",
+                file=sys.stderr,
+            )
     sys.exit(1 if failed else 0)
 
 
