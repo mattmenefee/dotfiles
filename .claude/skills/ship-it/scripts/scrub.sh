@@ -20,18 +20,18 @@
 # printed them after the "<file>:<line>:" prefix. A hit is cleared only by an exact match, so an
 # edited or appended line is put back in front of the user. Only secret hits can be cleared.
 #
-# These patterns derive from the PR Comment Format section of home/.claude/commands/doc-review.md,
-# which shares their bounds, temp roots, account-name forms, secret set and LC_ALL=C. They differ
-# from it on purpose, and a sync in either direction keeps these differences; re-derive the list
-# before one:
+# These patterns derive from PR Comment Format in home/.claude/skills/doc-review/posting.md, whose
+# pattern set lives in scripts/scrub-lib.sh beside it and shares their bounds, temp roots,
+# account-name forms, secret set and LC_ALL=C. They differ from it on purpose, and a sync in either
+# direction keeps these differences; re-derive the list before one:
 #   - The shell's home variable is not a term. It names nobody, and rewriting it breaks quoted code.
 #   - Placeholders are exempt only in the fixed forms /Users/<user>, <name> or <username>, removed
-#     per match before scanning, where doc-review.md exempts in-pattern any angle-bracketed segment
+#     per match before scanning, where /doc-review exempts in-pattern any angle-bracketed segment
 #     but the account name.
 #   - git@ remotes and example.com, .org and .net addresses are exempt.
-#   - A .local host fires before any character that cannot continue its name, not only before a
-#     port or path. A dotenv name such as .env.test.local and Rails's Time.zone.local are exempt
-#     from it, as doc-review.md passes both by requiring that port or path.
+#   - A .local host fires before any character that cannot continue its name, not only before a port
+#     or path. A dotenv name such as .env.test.local and Rails's Time.zone.local are exempt from it,
+#     as /doc-review passes both by requiring that port or path.
 #   - --narrow and the exit codes above serve callers of this script.
 
 narrow=
@@ -46,7 +46,7 @@ fi
 file=$1
 cleared=${2:-/dev/null}
 
-# Bytes, not characters: in a UTF-8 locale grep silently skips a line holding invalid UTF-8.
+# Bytes, not characters: in a UTF-8 locale grep silently skips a line holding invalid UTF-8
 export LC_ALL=C
 
 [ -r "${file}" ] || {
@@ -66,7 +66,7 @@ if command grep -qx '[[:space:]]*' "${cleared}"; then
   exit 2
 fi
 
-# Escaped before it enters the pattern, since an account name can hold regex metacharacters.
+# Escaped before it enters the pattern, since an account name can hold regex metacharacters
 me=$(id -un | sed 's/[][\.*^$+?(){}|/]/\\&/g')
 
 paths='(^|[^a-z0-9._/~-])(/users/|/home/|/private/tmp/|/private/var/|/var/folders/'
@@ -83,9 +83,9 @@ ident="${ident}|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}"
 keys='api\\?[_-]?key|access\\?[_-]?(key|id)|(secret|master|private)\\?[_-]?key(\\?_base)?'
 keys="${keys}"'|secret|token|passw(or)?d|pwd|credential|auth|bearer|pepper'
 schemes='postgres(ql)?|mysql2?|rediss?|amqps?|mongodb(\+srv)?'
-secrets='-----begin [a-z ]*private key-----'
+secrets='-----begin [a-z ]*private key( block)?-----'
 secrets="${secrets}|(${keys})[\"'\`\\\\]*[[:space:]]*[:=]"
-secrets="${secrets}|\\|[[:space:]]*[a-z0-9_.-]*(${keys})[a-z0-9_.-]*[[:space:]]*\\|"
+secrets="${secrets}|\\|[[:space:]*\`\"']*[a-z0-9_.-]*(${keys})[a-z0-9_.-]*[[:space:]*\`\"']*\\|"
 secrets="${secrets}"'[[:space:]]*[^|[:space:]]'
 secrets="${secrets}"'|authorization:[[:space:]]*(basic|bearer|token|apikey)[[:space:]]'
 secrets="${secrets}"'|[a-z][a-z0-9+.-]*://[^[:space:]/@:]*:[^[:space:]/@]+@'
@@ -97,6 +97,8 @@ secrets="${secrets}"'|(^|[^a-z0-9])aiza[0-9a-z_-]{35}|glpat-[a-z0-9_-]{20,}|npm_
 secrets="${secrets}"'|sg\.[a-z0-9_-]{16,}\.[a-z0-9_-]{16,}|ccipat_[a-z0-9_]{20,}'
 secrets="${secrets}"'|do[opr]_v1_[a-f0-9]{64}|lin_(api|oauth)_[a-z0-9]{32,}'
 secrets="${secrets}"'|eyj[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.|bearer[[:space:]]+[a-z0-9._~+/=-]{16,}'
+secrets="${secrets}"'|hooks\.slack\.com/services/|discord(app)?\.com/api/webhooks/'
+secrets="${secrets}"'|xapp-[0-9]-[a-z0-9-]{10,}|whsec_[a-z0-9]{20,}'
 
 # `command grep` bypasses a wrapper that might honor ignore files, and these artifacts are
 # untracked. Branch on grep's own status: 1 is clean, above 1 is a failed read.

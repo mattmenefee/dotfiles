@@ -16,15 +16,17 @@ home_root="/$(printf 'Us')ers"
 failed=0
 n=0
 
-# expect <exit code> <description> <line> [--narrow]
+# expect <exit code> <description> <line> [--narrow | --cleared <cleared-lines file content>]
 expect() {
   n=$((n + 1))
   printf '%s\n' "$3" >"${dir}/case-${n}"
-  if [ "${4-}" = --narrow ]; then
-    bash "${scrub}" --narrow "${dir}/case-${n}" >/dev/null 2>&1
-  else
-    bash "${scrub}" "${dir}/case-${n}" >/dev/null 2>&1
-  fi
+  case "${4-}" in
+    --narrow) bash "${scrub}" --narrow "${dir}/case-${n}" >/dev/null 2>"${dir}/err-${n}" ;;
+    --cleared)
+      printf '%s\n' "$5" >"${dir}/cleared-${n}"
+      bash "${scrub}" "${dir}/case-${n}" "${dir}/cleared-${n}" >/dev/null 2>"${dir}/err-${n}" ;;
+    *) bash "${scrub}" "${dir}/case-${n}" >/dev/null 2>"${dir}/err-${n}" ;;
+  esac
   rc=$?
   if [ "${rc}" -ne "$1" ]; then
     echo "FAIL: $2 (expected $1, got ${rc})"
@@ -32,45 +34,78 @@ expect() {
   fi
 }
 
+# secret <description> <line> [--narrow]: exit 1 from the secret pass, not the identifying one, so a
+# case cannot pass through an email or host term that happens to match the same line
+secret() {
+  expect 1 "$@"
+  command grep -q 'secret-shaped hits above' "${dir}/err-${n}" || {
+    echo "FAIL: $1 (not caught by the secret pass)"
+    failed=1
+  }
+}
+
 x16=AAAABBBBCCCCDDDD
 x36="${x16}${x16}EEEE"
 
 # Secrets block.
-expect 1 'quoted JSON token key' "\"POSTMARK_SERVER_$(printf 'TO')KEN\": \"abc123\""
-expect 1 'backticked key' "\`api_$(printf 'ke')y\`: abc123"
-expect 1 'table cell' "| pass$(printf 'wo')rd | hunter2 |"
-expect 1 'escaped underscore' "api\\_$(printf 'ke')y: abc123"
-expect 1 'PASSWD assignment' "PASS$(printf 'WD')=abc123"
-expect 1 'AWS secret key' "aws_secret_access_$(printf 'ke')y = abc123"
-expect 1 'basic auth header' "Authorization: $(printf 'Ba')sic dXNlcjpwYXNz"
-expect 1 'Anthropic key' "$(printf 'sk')-ant-api03-${x36}"
-expect 1 'OpenAI project key' "$(printf 'sk')-proj-${x36}"
-expect 1 'Google key' "$(printf 'AI')za${x36}"
-expect 1 'GitLab token' "$(printf 'gl')pat-${x36}"
-expect 1 'npm token' "$(printf 'np')m_${x36}"
-expect 1 'AWS temporary key id' "$(printf 'AS')IA${x16}"
-expect 1 'AWS key id' "$(printf 'AK')IA${x16}"
-expect 1 'SendGrid key' "$(printf 'S')G.${x16}.${x16}"
-expect 1 'GitHub token' "$(printf 'gh')p_${x36}"
-expect 1 'Slack token' "$(printf 'xo')xb-${x16}"
-expect 1 'JWT' "$(printf 'ey')J${x16}.${x16}.sig"
-expect 1 'private key header' "-----BEGIN RSA $(printf 'PRI')VATE KEY-----"
-expect 1 'password in a URL' "postgres://app:$(printf 'hu')nter2@db.example.com/app"
-expect 1 'Rails secret key base' "SECRET_$(printf 'KE')Y_BASE=${x36}"
-expect 1 'Rails master key' "RAILS_MASTER_$(printf 'KE')Y=${x36}"
-expect 1 'table cell naming a password' "| DATABASE_PASS$(printf 'WO')RD | hunter2 |"
-expect 1 'table cell naming a master key' "| RAILS_MASTER_$(printf 'KE')Y | ${x36} |"
-expect 1 'credential after an invalid byte' "x $(printf '\377') api_$(printf 'ke')y: abc123"
-expect 1 'empty-user Redis URL' "$(printf 're')diss://:${x16}@host.example:6380"
-expect 1 'slash in a database password' "$(printf 'pos')tgres://u:pa/${x16}@db.example/app"
-expect 1 'Heroku token' "$(printf 'HR')KU-${x36}"
-expect 1 'DigitalOcean token' "$(printf 'do')p_v1_$(printf 'a1%.0s' $(seq 1 32))"
-expect 1 'Linear key' "$(printf 'li')n_api_${x36}"
-expect 1 'CircleCI token' "$(printf 'CC')IPAT_${x36}"
-expect 1 'ApiKey authorization header' "Authorization: $(printf 'Api')Key ${x16}"
-expect 1 'pepper assignment' "$(printf 'pep')per: ${x16}"
-expect 1 'access id assignment' "spaces_access_$(printf 'i')d = ${x16}"
-expect 1 'bearer key with a colon' "$(printf 'bea')rer: ${x16}"
+secret 'quoted JSON token key' "\"POSTMARK_SERVER_$(printf 'TO')KEN\": \"abc123\""
+secret 'backticked key' "\`api_$(printf 'ke')y\`: abc123"
+secret 'table cell' "| pass$(printf 'wo')rd | hunter2 |"
+secret 'escaped underscore' "api\\_$(printf 'ke')y: abc123"
+secret 'PASSWD assignment' "PASS$(printf 'WD')=abc123"
+secret 'AWS secret key' "aws_secret_access_$(printf 'ke')y = abc123"
+secret 'basic auth header' "Authorization: $(printf 'Ba')sic dXNlcjpwYXNz"
+secret 'Anthropic key' "$(printf 'sk')-ant-api03-${x36}"
+secret 'OpenAI project key' "$(printf 'sk')-proj-${x36}"
+secret 'Google key' "$(printf 'AI')za${x36}"
+secret 'GitLab token' "$(printf 'gl')pat-${x36}"
+secret 'npm token' "$(printf 'np')m_${x36}"
+secret 'AWS temporary key id' "$(printf 'AS')IA${x16}"
+secret 'AWS key id' "$(printf 'AK')IA${x16}"
+secret 'SendGrid key' "$(printf 'S')G.${x16}.${x16}"
+secret 'GitHub token' "$(printf 'gh')p_${x36}"
+secret 'Slack token' "$(printf 'xo')xb-${x16}"
+secret 'JWT' "$(printf 'ey')J${x16}.${x16}.sig"
+secret 'private key header' "-----BEGIN RSA $(printf 'PRI')VATE KEY-----"
+secret 'password in a URL' "postgres://app:$(printf 'hu')nter2@db.example.com/app"
+secret 'password in an HTTPS URL' "https://deploy:$(printf 'hu')nter2@git.example.com/x"
+secret 'Rails secret key base' "SECRET_$(printf 'KE')Y_BASE=${x36}"
+secret 'Rails master key' "RAILS_MASTER_$(printf 'KE')Y=${x36}"
+secret 'table cell naming a password' "| DATABASE_PASS$(printf 'WO')RD | hunter2 |"
+secret 'table cell naming a master key' "| RAILS_MASTER_$(printf 'KE')Y | ${x36} |"
+secret 'backticked table key cell' "| \`SECRET_KEY_$(printf 'BA')SE\` | ${x36} |"
+secret 'bold table key cell' "| **Pass$(printf 'wo')rd** | hunter2x |"
+secret 'double-quoted table key cell' "| \"pass$(printf 'wo')rd\" | hunter2x |"
+secret 'single-quoted table key cell' "| 'PASS$(printf 'WO')RD' | hunter2x |"
+# Accepted false positive: a bare backticked file name holding a key word reads as a key cell
+secret 'summary row locating a key-named file' "| F4 | Low | Accuracy | d | \`au$(printf 'th').md\` | open |"
+secret 'credential after an invalid byte' "x $(printf '\377') api_$(printf 'ke')y: abc123"
+secret 'empty-user Redis URL' "$(printf 're')diss://:${x16}@host.example:6380"
+secret 'slash in a database password' "$(printf 'pos')tgres://u:pa/${x16}@db.example/app"
+secret 'Heroku token' "$(printf 'HR')KU-${x36}"
+secret 'DigitalOcean token' "$(printf 'do')p_v1_$(printf 'a1%.0s' $(seq 1 32))"
+secret 'Linear key' "$(printf 'li')n_api_${x36}"
+secret 'CircleCI token' "$(printf 'CC')IPAT_${x36}"
+secret 'ApiKey authorization header' "Authorization: $(printf 'Api')Key ${x16}"
+secret 'pepper assignment' "$(printf 'pep')per: ${x16}"
+secret 'access id assignment' "spaces_access_$(printf 'i')d = ${x16}"
+secret 'bearer key with a colon' "$(printf 'bea')rer: ${x16}"
+secret 'PGP private key block' "-----BEGIN PGP $(printf 'PRI')VATE KEY BLOCK-----"
+secret 'Slack webhook URL' "https://$(printf 'ho')oks.slack.com/services/T0/B0/${x16}"
+secret 'Discord webhook URL' "$(printf 'dis')cord.com/api/$(printf 'web')hooks/1/${x16}"
+secret 'Slack app-level token' "$(printf 'xa')pp-1-${x16}"
+secret 'Stripe webhook signing secret' "$(printf 'wh')sec_${x16}${x16}"
+
+# A cleared line is skipped only as an exact match, and only in the secret pass.
+api_line="api_$(printf 'ke')y: abc123"
+expect 0 'cleared secret line' "${api_line}" --cleared "${api_line}"
+secret 'secret line beside a cleared one' "${api_line}
+pass$(printf 'wo')rd: other" --cleared "${api_line}"
+expect 2 'blank line in the cleared file' "${api_line}" --cleared "${api_line}
+
+"
+expect 1 'cleared identifying line still blocks' "${home_root}/someone/code" \
+  --cleared "${home_root}/someone/code"
 
 # Identifying text blocks.
 expect 1 'home path' "${home_root}/someone/code"
@@ -93,7 +128,17 @@ expect 1 'real path beside a placeholder' "${home_root}/<name>/x and ${home_root
 expect 1 'private IP' 'thing at 192.168.1.4 here'
 expect 1 'email address' 'someone@company.io'
 expect 1 'home path in narrow mode' "${home_root}/someone/code" --narrow
-expect 1 'secret in narrow mode' "\"$(printf 'TO')KEN\": \"abc123\"" --narrow
+secret 'secret in narrow mode' "\"$(printf 'TO')KEN\": \"abc123\"" --narrow
+expect 1 'Linux home path' '/home/someone/code'
+expect 1 'private tmp path' '/private/tmp/x'
+expect 1 'mounted volume path' '/Volumes/Data/x'
+expect 1 'root home path' '/root/x'
+expect 1 'WSL path' '\\wsl$\Ubuntu\x'
+expect 1 'LAN host' 'ssh to nas.lan now'
+expect 1 'ten-dot address' 'thing at 10.0.0.5 here'
+expect 1 'one-seventy-two address' 'thing at 172.16.4.2 here'
+expect 1 'account name before an @' "${me}@devbox"
+expect 0 'private IP in narrow mode' 'thing at 192.168.1.4 here' --narrow
 
 # Ordinary text passes.
 expect 0 'Rails users path' 'app/views/users/index'
@@ -141,6 +186,11 @@ printf 'x\n' >"${dir}/same"
 bash "${scrub}" "${dir}/same" "${dir}/same" >/dev/null 2>&1
 [ $? -eq 2 ] || {
   echo 'FAIL: cleared file equal to the checked file should exit 2'
+  failed=1
+}
+bash "${scrub}" "${dir}/same" "${dir}/no-such-cleared-file" >/dev/null 2>&1
+[ $? -eq 2 ] || {
+  echo 'FAIL: unreadable cleared file should exit 2'
   failed=1
 }
 

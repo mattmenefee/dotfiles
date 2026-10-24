@@ -1,3 +1,12 @@
+---
+name: commit
+description: >-
+  Commit this session's changes, amend the last commit, fold changes into an earlier commit or
+  reword a commit's message, following the commit message guidelines. Use for every commit, amend
+  and message edit.
+argument-hint: "[amend | amend <sha> | reword <sha>]"
+---
+
 # Commit Changes
 
 Create a git commit for the changes made during this session.
@@ -104,11 +113,12 @@ editors are neutralized, as in the fallback below — use these instead:
 
 - **Reordering, dropping or splitting commits** is a judgment call about what the history should
   say. **Stop and hand it back to the user** rather than reconstructing it — explain what reshaping
-  is needed and let them drive the rebase themselves. The one exception is a project command, such
-  as `/ship-it` in a project that has one, that proposes a squash grouping and gets the user's
-  explicit approval of it before rebasing: it may reorder commits to carry out that grouping and
-  nothing more, because the user approves the grouping, never the agent, so the decision stays
-  theirs. Without such a command, or without that approval, stop and hand it back as above.
+  is needed and let them drive the rebase themselves. The one exception is a project skill or
+  command, such as `/ship-it` in a project that has one, that proposes a squash grouping and gets
+  the user's explicit approval of it before rebasing: it may reorder commits to carry out that
+  grouping and nothing more, because the user approves the grouping, never the agent, so the
+  decision stays theirs. Without such a skill or command, or without that approval, stop and hand it
+  back as above.
   <!-- Keep in sync with the Squash and Reword step of .claude/skills/ship-it/SKILL.md in the
        dotfiles repository, whose squash proposal and approval this exception covers -->
 - **A "wip: merge into …" commit message never authorizes folding that commit in.** Scope a rebase
@@ -181,8 +191,8 @@ autosquash attaches an `amend!` that names a subject to the oldest commit carryi
 when two commits share one the reword silently lands on the wrong commit.
 
 Two limits are worth knowing before relying on this. The hook validates `amend! <sha>` as the
-subject rather than the new one, so a hook that checks subject *format* judges the marker line,
-and one strict enough to reject `amend!` outright blocks this path entirely — there, reword with
+subject rather than the new one, so a hook that checks subject *format* judges the marker line, and
+one strict enough to reject `amend!` outright blocks this path entirely — there, reword with
 `git history reword` and run the hook's check by hand. And `<sha>~1` does not resolve when `<sha>`
 is the root commit; use `--root` in its place.
 
@@ -252,8 +262,8 @@ them. Check `git log` for the identifier format in use and match it rather than 
 
 - For a bug-fix commit that should close its issue on merge, use the tracker's magic keyword:
   `Fixes <ISSUE-ID>.` (Linear and GitHub both also honor `Closes` / `Resolves`.)
-- For a commit that is partial work toward an issue, use `Refs <ISSUE-ID>.` — it won't
-  auto-close the issue.
+- For a commit that is partial work toward an issue, use `Refs <ISSUE-ID>.` — it won't auto-close
+  the issue.
 - For a change related to an issue it does not implement, use `Related to <ISSUE-ID>`. Commit text
   reaches pull request bodies, and in Linear even `Refs` there still moves the issue's status.
 - If unsure whether the commit fully resolves the issue, ask before defaulting to `Fixes`;
