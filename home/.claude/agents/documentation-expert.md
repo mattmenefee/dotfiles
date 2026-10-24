@@ -43,7 +43,6 @@ model: opus
 memory: project
 effort: high
 skills:
-  - doc-review
   - local-review
 color: cyan
 ---
