@@ -2,8 +2,14 @@ name: Dotfiles CI
 
 on: # yamllint disable-line rule:truthy
   pull_request:
-  push:
-    branches: [main]
+    # The first three are the defaults; ready_for_review is not, and the job below skips drafts and
+    # runs on it
+    types: [opened, synchronize, reopened, ready_for_review]
+  # On main, because its ruleset does not require a branch to be up to date before merging, so a
+  # merge can land a tree that no pull request run linted
+  schedule:
+    - cron: '17 11 * * 1-5'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,6 +21,9 @@ permissions:
 
 jobs:
   lint:
+    # A skipped job satisfies the required status check, which is safe only because a draft cannot
+    # be merged
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
 
     steps:
