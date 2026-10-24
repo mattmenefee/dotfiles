@@ -161,7 +161,12 @@ table cell, alone or inside a longer name such as `DATABASE_PASSWORD`, a URL car
 header or bearer credential, a JWT and a token by its prefix: GitHub, AWS, Slack, Stripe, Heroku,
 OpenAI or Anthropic, Google, GitLab, npm, SendGrid, CircleCI, DigitalOcean and Linear. The generic
 URL term forbids `/` in the password, so `registry.npmjs.org:443/@scope/pkg` is not read as
-`user:password@`, and the database and queue schemes get a second term that allows it.
+`user:password@`, and the database and queue schemes get a second term that allows it. A table key
+cell may wrap its name in backticks or bold, so `` `SECRET_KEY_BASE` `` and `**Password**` are read
+as the key; a header row naming a key, such as `| Token | Status |`, blocks too and is cleared like
+any other line. A key cell of several words, such as `Rollbar access token`, is not matched, since
+matching several words would also catch a summary row whose description mentions a credential; that
+form is left to the reading pass.
 
 A blocked hit is not always a credential: code quotes `api_key:` and `password:` keys that hold
 none. Show the user each hit and ask which lines are not credentials. Only the user clears a line,

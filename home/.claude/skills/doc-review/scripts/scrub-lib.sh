@@ -33,7 +33,7 @@ keys="$keys"'|secret|token|passw(or)?d|pwd|credential|auth|bearer|pepper'
 schemes='postgres(ql)?|mysql2?|rediss?|amqps?|mongodb(\+srv)?'
 secrets='-----begin [a-z ]*private key-----'
 secrets="$secrets|($keys)[\"'\`\\\\]*[[:space:]]*[:=]"
-secrets="$secrets|\\|[[:space:]]*[a-z0-9_.-]*($keys)[a-z0-9_.-]*[[:space:]]*\\|"
+secrets="$secrets|\\|[[:space:]*\`]*[a-z0-9_.-]*($keys)[a-z0-9_.-]*[[:space:]*\`]*\\|"
 secrets="$secrets"'[[:space:]]*[^|[:space:]]'
 secrets="$secrets"'|authorization:[[:space:]]*(basic|bearer|token|apikey)[[:space:]]'
 secrets="$secrets"'|[a-z][a-z0-9+.-]*://[^[:space:]/@:]*:[^[:space:]/@]+@'
