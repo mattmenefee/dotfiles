@@ -32,8 +32,8 @@ hand with the same headings is reconciled the same way.
   current directory, since handoffs live in the root of the checkout that wrote them and a Resume
   Prompt names them without a directory
 - **More than a path** — take the first word ending in `.md` as the handoff and treat the rest as
-  the user's note, never as permission to start work. With no such word, look for a handoff as
-  below and keep the whole text as the note
+  the user's note, never as permission to start work. With no such word, look for a handoff as below
+  and keep the whole text as the note
 - **No arguments** — look in the root of every worktree:
 
   ```bash
@@ -78,8 +78,9 @@ read-only command that checks it. Mine:
 - Each **Open Question** — whether it has since been answered
 - Every pull request, issue and commit under **References**
 
-Check **Commit** first. Comparing it with the branch's tip, which the first block in Step 3 prints,
-says at once whether anything moved after capture, and how much of the rest needs a close look.
+Check **Commit** first. Comparing it with the branch's tip, which `gather-state.sh` in Step 3
+prints, says at once whether anything moved after capture, and how much of the rest needs a close
+look.
 
 Claims about reasoning — **Decisions & Rationale**, **Insights & Learnings**, **Dead Ends** — are
 not in the table. They record why, not what, and no command can confirm them.
@@ -97,59 +98,16 @@ Shell variables do not carry over between tool calls, since each call starts a f
 every later block by setting the variables it uses, as the blocks below do, so an unset variable
 fails loudly instead of quietly standing in for the current checkout.
 
-Fetch first, then resolve the base and the tip and collect the state. The fetch only updates
-remote-tracking refs, and without it every comparison against the remote is as stale as the last
-fetch. Set `branch` to the handoff's **Branch** and `updated` to its **Updated** date:
+Fetch first, then resolve the base and the tip and collect the state; the script does all three. The
+fetch only updates remote-tracking refs, and without it every comparison against the remote is as
+stale as the last fetch. Pass the handoff's **Branch**, its **Updated** date and the files it names:
 
 ```bash
-branch=<branch from the handoff> updated=<Updated date from the handoff>
-git fetch --quiet origin || echo "fetch failed — remote-tracking refs may be stale"
-
-gh api user --jq .login >/dev/null 2>&1 \
-  || echo "gh unavailable — pull request, CI and issue state not checked"
-
-if base=$(gh pr view "$branch" --json baseRefName --jq .baseRefName 2>/dev/null); then
-  base_source="pull request"
-elif base=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null); then
-  base_source="repository default"
-else
-  base=main base_source="assumed"
-fi
-echo "base: $base ($base_source)"
-
-range_base=$(git rev-parse --verify --quiet "refs/remotes/origin/$base") \
-  || range_base=$(git rev-parse --verify --quiet "$base") \
-  || echo "base $base not found locally or on origin — commit range not checked"
-
-if tip=$(git rev-parse --verify --quiet "refs/heads/$branch"); then
-  tip_source="local branch"
-elif tip=$(git rev-parse --verify --quiet "refs/remotes/origin/$branch"); then
-  tip_source="origin"
-elif tip=$(gh pr view "$branch" --json headRefOid --jq .headRefOid 2>/dev/null); then
-  tip_source="pull request head"
-else
-  tip="" tip_source="not found"
-fi
-echo "tip: ${tip:-none} ($tip_source)"
-if remote_tip=$(git rev-parse --verify --quiet "refs/remotes/origin/$branch") \
-  && [ "$remote_tip" != "$tip" ]; then
-  echo "local and origin differ: origin is at $remote_tip"
-fi
-
-git --no-pager status --short --branch
-git --no-pager stash list
-git --no-pager worktree list
-gh pr view "$branch" --json \
-  number,url,state,isDraft,mergedAt,reviewDecision,statusCheckRollup,closingIssuesReferences \
-  2>/dev/null
-gh pr view "$branch" --json comments,reviews,latestReviews 2>/dev/null
-
-if [ -n "$range_base" ] && [ -n "$tip" ]; then
-  git --no-pager log --oneline "$range_base".."$tip"
-  git --no-pager log --oneline --since="$updated 00:00" "$range_base" \
-    -- <files the handoff names>
-fi
+'${CLAUDE_SKILL_DIR}/scripts/gather-state.sh' <branch> <updated> <file the handoff names>...
 ```
+
+It prints each part under a `== <name>` line, and its `tip:` line is the revision every later block
+calls `tip`.
 
 The tip comes from the local branch when there is one, then from `origin`, then from the pull
 request's head, which is all that is left once a merged branch has been deleted. Use `"$tip"`
@@ -162,8 +120,8 @@ cannot resolve it, say so rather than treating the empty range as "no commits".
 Never assume `main`: a stacked branch gets its real base only from its pull request, and a range
 from the wrong base reports the parent branch's commits as this branch's own. Take the range from
 the remote-tracking base, since a local base is often behind and a range from it credits every
-commit merged upstream since to this branch. The block assumes the remote is `origin`; substitute
-the repository's remote if it differs.
+commit merged upstream since to this branch. The script assumes the remote is `origin`; set `REMOTE`
+to the repository's remote if it differs.
 
 Every `gh` call is silenced, so a pull request that does not exist and a `gh` that is missing,
 unauthenticated or offline print the same nothing. When the `gh api user` warning appears, every
@@ -183,11 +141,12 @@ When no worktree holds the branch, mark working-tree claims **UNVERIFIABLE**.
 
 ### When the Branch Moved
 
-If the tip no longer matches **Commit**, find out how. Set `tip` from the first block's output:
+If the tip no longer matches **Commit**, find out how. Set `tip` from the tip line `gather-state.sh`
+printed:
 
 ```bash
-branch=<branch from the handoff> recorded=<Commit from the handoff> tip=<tip from the first block>
-: "${tip:?set tip from the first block}" "${recorded:?set recorded from the handoff}"
+branch=<branch from the handoff> recorded=<Commit from the handoff> tip=<tip from gather-state.sh>
+: "${tip:?set tip from gather-state.sh}" "${recorded:?set recorded from the handoff}"
 git merge-base --is-ancestor "$recorded" "$tip" && echo "fast-forward"
 git --no-pager reflog show --date=iso "$branch" | head -20
 ```
@@ -200,10 +159,11 @@ request.
   subjects often answer which Next Steps are finished
 - **It is not** — the branch was rebased, squashed or reset. Do not range from the recorded commit:
   after a rebase, `"$recorded"..` also lists every base commit the branch was moved onto, presenting
-  upstream work as this branch's. Take the branch's own commits from the `"$range_base".."$tip"` log
-  in the first block instead. Every SHA the handoff cites may now point at nothing, so match commits
-  by subject rather than SHA, and use the reflog to date the rewrite. If the recorded commit no
-  longer resolves at all, say so rather than guessing what replaced it
+  upstream work as this branch's. Take the branch's own commits from the
+  `commits on <branch> since <base>` part of `gather-state.sh`'s output instead. Every SHA the
+  handoff cites may now point at nothing, so match commits by subject rather than SHA, and use the
+  reflog to date the rewrite. If the recorded commit no longer resolves at all, say so rather than
+  guessing what replaced it
 
 ### Issues and Review Threads
 
@@ -233,8 +193,8 @@ its run mid-flight. Before re-running any recorded result:
    this worktree
 1. Look for a running test process, such as with `pgrep -fl` and the project's test command. This
    check always runs
-1. Confirm the current checkout is the handoff's branch, at the tip the first block resolved. Tests
-   run against whatever is checked out, so a pass on another branch confirms nothing
+1. Confirm the current checkout is the handoff's branch, at the tip `gather-state.sh` resolved.
+   Tests run against whatever is checked out, so a pass on another branch confirms nothing
 
 If either of the first two finds something, or the third fails, do not run it. Mark the result "not
 re-run since `<date>`", using the date the handoff recorded, and when the checkout is the reason,
@@ -243,10 +203,10 @@ relevant linters and specs, never the full suite.
 
 ### Also Check
 
-- **What the base absorbed.** The second log in the first block lists what landed on the base since
-  the handoff's **Updated** date, for the files it names. A Next Step may have been done by someone
-  else or made moot. The `00:00` matters: git reads a bare date as that date at the current time of
-  day, which drops whatever landed earlier on it
+- **What the base absorbed.** The final part of `gather-state.sh`'s output lists what landed on the
+  base since the handoff's **Updated** date, for the files it names. A Next Step may have been done
+  by someone else or made moot. The `00:00` matters: git reads a bare date as that date at the
+  current time of day, which drops whatever landed earlier on it
 - **Working artifacts.** Whether the files it leans on still exist: `*local-review*.md`,
   `*-DOC-REVIEW.md`, `*-REVIEW*.md` and `*-PLAN.md` (or a legacy `PLAN.md`). If the project has a
   `/ship-it` or similar command, it may have posted them to the pull request and deleted them.
@@ -301,8 +261,8 @@ Write as `/handoff` does: absolute dates, paths repository-relative or `~`-prefi
    `<date>`"
 1. **Start Here** and the **Resume Prompt** — rewrite them to point at the new item 1. They are the
    first things the next agent reads, and left stale they send it back to finished work. Keep both
-   asking for `/resume-handoff <handoff>` first, and replace an older version that only says to
-   read the file or to continue
+   asking for `/resume-handoff <handoff>` first, and replace an older version that only says to read
+   the file or to continue
 1. **References** — flag any SHA the branch no longer contains and any pull request or issue whose
    state changed
 1. **Handoff History** — append one entry, newest last, recording the reconciliation and your model:
@@ -321,28 +281,12 @@ recorded on an earlier Handoff History entry.
 Check that nothing was lost, and delete the backup only if nothing was:
 
 ```bash
-headings() { awk '/^(```|~~~)/ { fence = !fence; next } !fence && /^#/' "$@"; }
-section() { awk -v h="## $name" '/^## / { on = ($(0) == h) } on' "$@"; }
-lost=$(diff <(headings <handoff>.bak) <(headings <handoff>) | command grep '^<')
-for name in 'Objective' 'Scope' 'Constraints & Preferences' 'Decisions & Rationale' \
-  'Insights & Learnings' 'Dead Ends'; do
-  missing=$(section <handoff>.bak | command grep -vxF -f <(section <handoff>))
-  [ -z "$missing" ] || lost="$lost
-$name: $missing"
-done
-if [ -n "$lost" ]; then
-  printf 'kept the backup — lost:%s\n' "$lost"
-else
-  rm -- <handoff>.bak
-fi
+'${CLAUDE_SKILL_DIR}/scripts/check-loss.sh' <handoff>
 ```
 
 The check skips fenced blocks, so an edited shell comment is not a heading. It reports only headings
 that went missing, so adding one is fine, and it compares the preserved sections line by line, since
-an emptied section keeps its heading. `section` reads the heading from `name`, which the loop sets,
-because a positional parameter in this file would be replaced by the command's arguments. It calls
-`command grep` because a session's `grep` can be a shell function running another grep, which lets
-blank lines through `-vxF -f` and into the report. If it reports a loss, the backup stays: restore
+an emptied section keeps its heading. If it reports a loss, it exits 1 and the backup stays: restore
 what went missing and tell the user.
 
 **Never `git add` or commit the handoff**, and do not rename it.

@@ -83,38 +83,12 @@ row. Never hardcode `main`: this command runs against any repository, including 
 is the repository default, so confirm the base with the user or record it as assumed.
 
 ```bash
-gh api user --jq .login >/dev/null 2>&1 \
-  || echo "gh unavailable — pull request, CI and issue state not checked"
-
-if base=$(gh pr view --json baseRefName --jq .baseRefName 2>/dev/null); then
-  base_source="pull request"
-elif base=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null); then
-  base_source="repository default"
-else
-  base=main base_source="assumed"
-fi
-echo "base: $base ($base_source)"
-
-range_base=$(git rev-parse --verify --quiet "refs/remotes/origin/$base") \
-  || range_base=$(git rev-parse --verify --quiet "$base") \
-  || echo "base $base not found locally or on origin — commit range not checked"
-
-git rev-parse --short HEAD
-git --no-pager status --short --branch
-git --no-pager diff --stat
-git --no-pager diff --stat --cached
-git --no-pager stash list
-git --no-pager worktree list
-git --no-pager branch --sort=-committerdate | head -10
-gh pr view --json \
-  number,url,state,isDraft,reviewDecision,statusCheckRollup,body,closingIssuesReferences 2>/dev/null
-gh pr view --json comments,reviews,latestReviews 2>/dev/null
-
-if [ -n "$range_base" ]; then
-  git --no-pager log --oneline "$range_base"..HEAD
-  git --no-pager log --format=%B "$range_base"..HEAD   # issue references in commit trailers
-fi
+'${CLAUDE_SKILL_DIR}/scripts/gather-state.sh'
 ```
+
+It prints each part under a `== <name>` line: whether `gh` works, the base and where it came from,
+HEAD, the working tree, stashes, worktrees, recent branches, the pull request and the branch's
+commits with their full messages.
 
 Scope the commit ranges to the **base branch**, not `@{upstream}`. `@{upstream}..HEAD` means
 *commits not yet pushed*, which is empty the moment the branch is pushed — the normal state for any
@@ -123,13 +97,13 @@ would report "none" precisely when there is most to find.
 
 Take the range from the remote-tracking base when there is one. A local base branch is often behind
 — a freshly created worktree's usually is — and a range from it attributes every commit merged
-upstream since, with its issue references, to this branch. The block assumes the remote is `origin`;
-substitute the repository's remote if it differs.
+upstream since, with its issue references, to this branch. The script assumes the remote is
+`origin`; pass the repository's remote as its argument if it differs.
 
-Every `gh` call above is silenced, so a pull request that does not exist and a `gh` that is missing,
-unauthenticated or offline print the same nothing. The `gh api user` check is what tells them
-apart: when it prints its warning, record **Pull request** and **Issues** as "not checked", never
-"none opened" or "none". It stands in for `gh auth status`, which permission rules often deny
+Every `gh` call in the script is silenced, so a pull request that does not exist and a `gh` that is
+missing, unauthenticated or offline print the same nothing. The `gh api user` check is what tells
+them apart: when it prints its warning, record **Pull request** and **Issues** as "not checked",
+never "none opened" or "none". It stands in for `gh auth status`, which permission rules often deny
 because one of its flags prints the token.
 
 The pull request body, the `closingIssuesReferences` field and commit trailers are where issue
@@ -442,11 +416,11 @@ clobber it:
 1. Append a new **Handoff History** entry rather than replacing the old one, naming your own model
    and leaving every earlier entry's model untouched
 1. Move finished **Next Steps** into **Completed Work**, preserving their order
-1. Renumber the remaining **Next Steps** so item 1 is the next undone task, then rewrite
-   **Start Here** and the **Resume Prompt** to point at it — they are the first things the next
-   agent reads, and left alone they send it back to work that is already done
-1. Update **Status**, **Updated**, **Branch**, **Commit**, **Pull request**, **Issues**,
-   **Captured by** and **Current State** to current reality — leaving **Created** untouched
+1. Renumber the remaining **Next Steps** so item 1 is the next undone task, then rewrite **Start
+   Here** and the **Resume Prompt** to point at it — they are the first things the next agent reads,
+   and left alone they send it back to work that is already done
+1. Update **Status**, **Updated**, **Branch**, **Commit**, **Pull request**, **Issues**, **Captured
+   by** and **Current State** to current reality — leaving **Created** untouched
 1. Refresh **Verification** — re-run the recorded commands, or mark each result "not re-run since
    `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
