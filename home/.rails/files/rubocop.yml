@@ -1,0 +1,23 @@
+plugins:
+  - rubocop-capybara
+  - rubocop-factory_bot
+  - rubocop-performance
+  - rubocop-rails
+  - rubocop-rake
+  - rubocop-rspec
+  - rubocop-rspec_rails
+
+inherit_mode:
+  merge:
+    - Exclude
+
+AllCops:
+  DisplayCopNames: true
+  DisplayStyleGuide: true
+  Exclude:
+    - 'bin/**/*'
+    - 'db/schema.rb'
+  NewCops: enable
+
+Layout/LineLength:
+  Max: 100
