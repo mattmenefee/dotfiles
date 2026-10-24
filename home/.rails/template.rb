@@ -88,6 +88,16 @@ def setup_kamal_worker
   end
 end
 
+def setup_haml_layouts
+  # haml-rails generates HAML views but leaves the ERB layouts Rails created
+  %w[application.html mailer.html mailer.text].each do |layout|
+    remove_file "app/views/layouts/#{layout}.erb"
+  end
+  template 'app/views/layouts/application.html.haml.tt'
+  copy_file 'app/views/layouts/mailer.html.haml'
+  copy_file 'app/views/layouts/mailer.text.haml'
+end
+
 def setup_rubocop
   copy_file 'rubocop.yml', '.rubocop.yml'
   run 'bundle binstubs rubocop'
@@ -105,5 +115,6 @@ after_bundle do
   setup_sidekiq
   setup_kamal
   setup_kamal_worker
+  setup_haml_layouts
   setup_rubocop
 end
