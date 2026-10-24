@@ -5,5 +5,5 @@
 --skip-rubocop # Skip the omakase config; the template adds the full RuboCop setup
 --skip-solid # Sidekiq runs jobs; the template sets it up
 --devcontainer
--m ~/.rails/template.rb # Adds Bootstrap through dartsass-rails, RSpec, HAML, Sidekiq and RuboCop
+-m ~/.rails/template.rb # Sets up what these flags can't; its setup_* steps list each part
 # pass --main to install the latest version of Rails from the main branch

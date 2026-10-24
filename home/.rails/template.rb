@@ -67,15 +67,19 @@ def setup_esbuild
   run 'npm pkg set scripts.build="node esbuild.config.mjs"'
 end
 
-def setup_bootstrap
+def setup_dartsass
   # Unlike run, rails_command doesn't abort on failure unless asked
   rails_command 'dartsass:install', abort_on_failure: true
-  run 'yarn add bootstrap @popperjs/core'
-  append_to_file 'app/javascript/application.js', %(import "bootstrap"\n)
-  # The stub shares the logical path application.css with the dartsass build, which it would shadow
+  # The stub shares the logical path application.css with the dartsass build, which shadows it, so
+  # edits to the stub would do nothing
   remove_file 'app/assets/stylesheets/application.css'
   copy_file 'app/assets/stylesheets/application.scss', force: true
   copy_file 'config/initializers/dartsass.rb'
+end
+
+def setup_bootstrap
+  run 'yarn add bootstrap @popperjs/core'
+  append_to_file 'app/javascript/application.js', %(import "bootstrap"\n)
 end
 
 def setup_postcss
@@ -93,7 +97,7 @@ def setup_sidekiq
   append_to_file 'Procfile.dev', "worker: bundle exec sidekiq\n"
 end
 
-def setup_kamal
+def setup_kamal_redis
   # REDIS_URL carries the accessory's password, so it is a secret rather than clear env
   inject_into_file! 'config/deploy.yml', "    - REDIS_URL\n", after: "    - RAILS_MASTER_KEY\n"
   accessory = File.read(find_in_source_paths('kamal/redis_accessory.yml'))
@@ -112,7 +116,7 @@ def setup_kamal_secrets
   run "bin/rails runner #{find_in_source_paths('kamal/redis_password.rb')}"
 end
 
-def setup_kamal_worker
+def setup_kamal_job_role
   # Rails' commented job role runs Solid Queue's bin/jobs, which --skip-solid leaves out. It shares
   # the web host, where REDIS_URL's container name resolves. The bang raises if Rails changes the
   # block, rather than deploying with no worker.
@@ -122,7 +126,8 @@ def setup_kamal_worker
 end
 
 def setup_haml_layouts
-  # haml-rails generates HAML views but leaves the ERB layouts Rails created
+  # haml-rails generates HAML views but leaves the ERB layouts Rails created. The replacements are
+  # HAML copies of railties' app/views/layouts templates, so they need Rails' layout changes too.
   %w[application.html mailer.html mailer.text].each do |layout|
     remove_file "app/views/layouts/#{layout}.erb"
   end
@@ -131,12 +136,18 @@ def setup_haml_layouts
   copy_file 'app/views/layouts/mailer.text.haml'
 end
 
-def setup_ci
-  # -T and --skip-rubocop drop Rails' lint and test jobs and bin/ci steps; these restore them
+def setup_ci_workflow
+  # -T and --skip-rubocop drop Rails' lint and test jobs. These restore them from railties'
+  # github/ci.yml.tt, adapted for RSpec, so they need Rails' changes to that template too.
   jobs = File.read(find_in_source_paths('github/ci_jobs.yml'))
   append_to_file '.github/workflows/ci.yml', "\n#{jobs.indent(2)}"
-  insert_into_file! 'config/ci.rb', %(  step "Style: Ruby", "bin/rubocop"\n),
-                    after: /^  step "Setup".*\n/
+end
+
+def setup_bin_ci
+  # The same flags drop the matching steps that railties' config/ci.rb.tt writes to config/ci.rb
+  insert_into_file! 'config/ci.rb', <<~RUBY.indent(2), after: /^  step "Setup".*\n/
+    step "Style: Ruby", "bin/rubocop"
+  RUBY
   insert_into_file! 'config/ci.rb', <<~RUBY.indent(2), after: /^  step "Security: Brakeman.*\n/
     step "Tests: RSpec", "bin/rails spec"
     step "Tests: Seeds", "env RAILS_ENV=test bin/rails db:seed:replant"
@@ -171,15 +182,19 @@ end
 after_bundle do
   setup_rspec
   setup_esbuild
+  setup_dartsass
   setup_bootstrap
   setup_postcss
   setup_playwright
   setup_sidekiq
-  setup_kamal
-  setup_kamal_worker
+  setup_kamal_redis
+  setup_kamal_job_role
   setup_haml_layouts
-  setup_ci
+  setup_ci_workflow
+  setup_bin_ci
   setup_dependabot
   setup_database
+  # Last: its autocorrect and todo cover only code that exists by now, and it rewrites the
+  # double-quoted Rails output that earlier steps' anchors match
   setup_rubocop
 end
