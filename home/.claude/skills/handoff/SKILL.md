@@ -1,3 +1,12 @@
+---
+name: handoff
+description: >-
+  Write or update a Markdown handoff in the project root with everything a future agent needs to
+  resume this session's work. Use after a substantial round of work, before a likely context break
+  or when a review round closes.
+argument-hint: "[topic | path/to/file-HANDOFF.md]"
+---
+
 # Session Handoff
 
 Export everything a future agent needs to resume this session's work to a Markdown file.
