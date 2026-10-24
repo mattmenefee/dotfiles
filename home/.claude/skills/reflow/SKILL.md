@@ -35,7 +35,8 @@ any such error rather than guessing at a fix.
 Untracked files do not count, and the script names each untracked or missing path it was given on
 stderr. Reflow an untracked file only when the user names it, and then treat every line in it as
 changed. A hunk that only deletes lines is reported as the two lines either side of the gap, since
-the paragraph around a deletion can be left short.
+the paragraph around a deletion can be left short. Rows for tracked review, plan and handoff
+documents appear too; step 3 leaves those alone.
 
 Empty output, with no untracked file named and no path reported missing, means the branch changes
 nothing in tracked files under the given paths; say so and stop rather than widening the scope.
@@ -58,8 +59,8 @@ it wins; otherwise use the `.editorconfig` section that matches the file most na
 Where the project runs one of these tools but leaves the width unset, the tool's default governs.
 Where no tool or `.editorconfig` applies, use the user-wide default of 100. Check that a found
 setting is live: an MD013 `line_length` with `code_blocks: false` still governs prose, but a rule
-that is disabled sets no limit. Measure in characters, not bytes, and remember that markdownlint
-counts UTF-16 code units, so an emoji counts as two.
+that is disabled sets no limit. Measure Markdown in UTF-16 code units, as markdownlint counts, so an
+emoji counts as two, and everything else in characters, not bytes.
 
 ## 3. Choose What to Refill
 
@@ -68,14 +69,43 @@ folded scalar (`>` or `>-`) or a run of consecutive line comments sharing one in
 leader. Refill each block that contains a changed line, from its first line to its last, and stop at
 its edges: a blank line, a heading, a list marker, a fence, a change of indentation other than a
 list item's or folded scalar's continuation indent, a change of comment leader or a line of code.
-Inside a comment block, a leader-only line (`#`, `//`), a list marker or doc tag (`@param`) after
-the leader and a line indented further after the leader are edges too. Never pull a line from the
-next block or from an untouched block.
+Inside a block quote, a marker-only line (`>`) and a change of quote depth are edges too, and inside
+a comment block so is a leader-only line (`#`, `//`). A list marker after the leader starts a block
+of its own, whose continuation lines sit at the item's text column. A doc tag (`@param`) starts one
+too, and its continuation lines sit indented under it, at the indent the tag already uses or two
+spaces where it has none; an unindented line ends the tag, and `@example`, `@overload` and `@!`
+directives are left alone. Any other line indented further after the leader is an edge. Never pull a
+line from the next block or from an untouched block.
+
+To find the blocks a refill would change, run the bundled helper from the repository root, once for
+each limit step 2 chose, passing the comment limit where step 2 found a separate one. Name each file
+as step 1's rows print it, and add one `printf` row for each untracked file the user named, leaving
+that line out when there is none:
+
+```bash
+{ '${CLAUDE_SKILL_DIR}/scripts/changed-lines.sh' <arguments> 2>/dev/null
+  printf '%s\t1-%s\n' <untracked file> "$(awk 'END { print NR }' <untracked file>)"; } \
+  | python3 -I '${CLAUDE_SKILL_DIR}/scripts/unfilled-blocks.py' --limit <limit> <file>...
+```
+
+It prints `path:first-last:` and the reason for each changed block that has a line over the limit, a
+line with room for the next line's first word, or link text or a code span split across lines that
+the next line could hold whole. It measures Markdown in UTF-16 code units, keeps code spans and link
+text whole and skips the review, plan and handoff documents the list below names. It sees Markdown,
+YAML folded scalars and line comments led by `#`, `//` (with `///` and `//!`), `--` or `;` (with
+`;;`); find the blocks in any other comment syntax, such as CSS `/* */`, by reading the changed
+lines.
+
+Read its standard error before trusting an empty result. Empty output with exit status 0 means every
+block it can see is filled; exit status 1 means a file or row could not be read, and a named path
+that matches no row is named there too. The helper finds candidates only: check each block it
+reports against the list below before refilling it.
 
 Leave these alone, whether or not they changed:
 
-- Fenced and indented code blocks, tables, headings, front matter keys, HTML blocks, link reference
-  definitions and Markdown hard breaks (a line ending in two spaces or a backslash)
+- Fenced and indented code blocks, tables, headings, front matter keys (a folded scalar's value
+  under one is a block like any other), HTML blocks, link reference definitions and Markdown hard
+  breaks (a line ending in two spaces or a backslash)
 - A line that holds a long URL, or any string, identifier or code span that cannot be split; let it
   run long rather than break it
 - Code statements, commented-out code and diagrams drawn in comments. Line length in code is the
@@ -103,16 +133,18 @@ backup="<scratchpad>/reflow$(realpath <file>)" && mkdir -p "$(dirname "$backup")
 ```
 
 Fill each block greedily: put on every line as many words as fit within the limit, counting the
-line's indentation and comment leader, and break only between words. A block that already fits on
-fewer lines shrinks; a line over the limit wraps. Keep the block's first-line prefix (list marker,
-`>` or comment leader) and give every continuation line the indentation the block already uses: a
-list item's text column, the comment's own leader and the folded scalar's indent.
+line's indentation and comment leader in the units step 2 measures (UTF-16 code units for Markdown,
+characters elsewhere), and break only between words. A block that already fits on fewer lines
+shrinks; a line over the limit wraps. Keep the block's first-line prefix (list marker, `>` or
+comment leader) and give every continuation line the indentation the block already uses: a list
+item's text column, the comment's own leader and the folded scalar's indent.
 
 In Markdown, never start a continuation line with a word that would open a new block: `-`, `+` or
-`*` followed by a space, a number followed by `.` or `)`, `#`, `>`, a run of `=` or `-` (a setext
-underline), a run of `*` or `_` (a thematic break), a fence (three or more backticks or tildes), `<`
-opening an HTML block or `|`. Move one more word down instead. Keep a code span or link text on one
-line when it fits on the next line whole.
+`*` followed by a space, a number followed by `.` or `)` and a space, `#`, `>`, a fence (three or
+more backticks or tildes), `<` opening an HTML block or `|`. Nor leave a continuation line made only
+of `=` or `-` (a setext underline) or of three or more `*`, `-` or `_`, with or without spaces
+between them (a thematic break); bold or italic text may start a line. Move one more word down
+instead. Keep a code span or link text on one line when it fits on the next line whole.
 
 Make each edit with the Edit tool, one block at a time.
 
@@ -132,14 +164,17 @@ else is a changed word, so restore that block from the backup and refill it agai
 
 Then check the width with the project's linter, not a character count. For Markdown, run
 `npx --yes markdownlint-cli --config <config file> <file>`, naming the project's markdownlint config
-by path, since markdownlint-cli looks for one only in the current directory; with no config file,
-drop `--config`. Act only on its MD013 lines. For other files, use the linter or formatter step 2
-took the limit from. Where there is none, `LC_ALL=en_US.UTF-8 grep -n '.\{<limit + 1>,\}' <file>`
-lists every line over the limit; each one it prints must be a line step 3 leaves alone.
+by path, since markdownlint-cli looks for one only in the current directory, and act only on its
+MD013 lines. With no config file, drop `--config`; markdownlint then measures against its default of
+80, so act only on MD013 lines whose reported length (`Actual: N`) exceeds the step 2 limit. For
+other files, use the linter or formatter step 2 took the limit from. Where there is none,
+`LC_ALL=en_US.UTF-8 grep -n '.\{<limit + 1>,\}' <file>` lists every line over the limit; each one it
+prints must be a line step 3 leaves alone.
 
 ## 6. Report
 
-List each file reflowed with its limit and where that limit came from, each changed block left alone
-with the reason and each over-limit code line, with the formatter or linter that would fix it. Leave
-the changes uncommitted and suggest `/commit`. When the branch already has commits, a reflow of
-lines they introduced reads best folded into those commits, which `/commit amend <sha>` does.
+List each block refilled as `path:first-last`, each file reflowed with its limit and where that
+limit came from, each changed block left alone with the reason and each over-limit code line, with
+the formatter or linter that would fix it. Leave the changes uncommitted and suggest `/commit`. When
+the branch already has commits, a reflow of lines they introduced reads best folded into those
+commits, which `/commit amend <sha>` does.
