@@ -179,9 +179,9 @@ messages are the strictest case: once merged they cannot be edited.
   (including slash command and agent files) and configuration. Defer to a project's own linter or
   `.editorconfig` when it sets a different limit.
 - When an edit changes a line of wrapped prose or comment, refill the paragraph or comment block it
-  belongs to so every line again takes as many words as fit within the limit. Change only line
-  breaks, and leave blocks the edit did not touch as they are. `/reflow` does this for every block a
-  branch changed.
+  belongs to so every line again takes as many words as fit within the limit, but never a fenced or
+  indented code block or a table, whose line breaks are content. Change only line breaks, and leave
+  blocks the edit did not touch as they are. `/reflow` does this for every block a branch changed.
 - Do not wrap where the line break would be wrong rather than merely long: pull request and issue
   descriptions and comments (GitHub renders each line break in them, so a hard wrap shows as ragged
   lines); Markdown written to be pasted into Teams or Slack; review, plan, handoff and other working
