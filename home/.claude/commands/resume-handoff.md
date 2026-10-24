@@ -239,9 +239,9 @@ relevant linters and specs, never the full suite.
   else or made moot. The `00:00` matters: git reads a bare date as that date at the current time of
   day, which drops whatever landed earlier on it
 - **Working artifacts.** Whether the files it leans on still exist: `*local-review*.md`,
-  `*-DOC-REVIEW.md` and `*-PLAN.md` (or a legacy `PLAN.md`). If the project has a `/ship-it` or
-  similar command, it may have posted them to the pull request and deleted them. Search the root of
-  the worktree the handoff was found in with `find`, as under **Arguments**
+  `*-DOC-REVIEW.md`, `*-REVIEW*.md` and `*-PLAN.md` (or a legacy `PLAN.md`). If the project has a
+  `/ship-it` or similar command, it may have posted them to the pull request and deleted them.
+  Search the root of the worktree the handoff was found in with `find`, as under **Arguments**
 
 ### Mark Each Claim
 

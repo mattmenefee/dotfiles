@@ -69,6 +69,7 @@ expect "front matter after a byte-order mark is still front matter" p.md 80 \
   "p.md:5-6: line 5 can take 'line.' from line 6" '\357\273\277---\nname: x\n---\n\nShort\nline.\n'
 expect "a working document is skipped" x-HANDOFF.md 80 \
   "" 'one\ntwo\n'
+expect "an ad hoc review report is skipped" x-REVIEW.md 80 "" 'one\ntwo\n'
 
 # Block quotes
 expect "a bare > separates quoted paragraphs" p.md 80 \
