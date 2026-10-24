@@ -52,7 +52,7 @@ either.
 
 `/ship-it` posts review and plan artifacts whole and then deletes them: `*local-review*.md` (an
 identifier may sit on either side of the name, as in `payments-local-review.md` or
-`local-review-2.md`), `*-DOC-REVIEW*.md` and `*-PLAN.md` (or a legacy `PLAN.md`).
+`local-review-2.md`), `*-DOC-REVIEW*.md`, `*-REVIEW*.md` and `*-PLAN.md` (or a legacy `PLAN.md`).
 
 A handoff is treated differently. `/ship-it` posts only its durable sections — **Decisions &
 Rationale**, **Insights & Learnings**, **Dead Ends**, still-open **Open Questions** and
@@ -275,13 +275,14 @@ reference and one line on why it matters. Reference code; do not paste it. The e
 that exists nowhere on disk — a snippet the user supplied, or a command output being reasoned about
 — which must be included verbatim or it is lost.
 
-**Do not lean on another working artifact without saying it may be gone.** `*local-review*.md` and
-`*-DOC-REVIEW*.md` are untracked, `*-PLAN.md` (or a legacy `PLAN.md`) is tracked but stripped from
-the branch history at ship time, and `/ship-it` deletes all of them once it has posted them to the
-pull request — so a handoff that names one as its authoritative record is describing a file that
-shipping will remove. Mark any such reference as branch-local and deletable, and carry the
-load-bearing parts into this file: the conclusions, the open items and the reasoning the next agent
-would otherwise lose. Point at the artifact for the detail; never depend on it for the substance.
+**Do not lean on another working artifact without saying it may be gone.** `*local-review*.md`,
+`*-DOC-REVIEW*.md` and `*-REVIEW*.md` are untracked, `*-PLAN.md` (or a legacy `PLAN.md`) is tracked
+but stripped from the branch history at ship time, and `/ship-it` deletes all of them once it has
+posted them to the pull request — so a handoff that names one as its authoritative record is
+describing a file that shipping will remove. Mark any such reference as branch-local and deletable,
+and carry the load-bearing parts into this file: the conclusions, the open items and the reasoning
+the next agent would otherwise lose. Point at the artifact for the detail; never depend on it for
+the substance.
 
 ### Decisions & Rationale
 
@@ -441,12 +442,12 @@ clobber it:
    `<date>`". This is the section most certain to be stale on a re-run and the one whose staleness
    misleads most
 1. Re-check every working artifact this handoff points at — `*local-review*.md`, `*-DOC-REVIEW*.md`,
-   `*-PLAN.md` (or a legacy `PLAN.md`; tracked, but stripped by `/ship-it`) and anything else
-   untracked. If one is gone, say so where it is referenced and promote what it was carrying. If one
-   is still there but the handoff leans on it for substance, promote the load-bearing parts now and
-   mark the reference deletable. An earlier pass may have been written before this rule existed, and
-   shipping deletes these files — so the check is on the reference, not on whether a previous pass
-   thought it was fine
+   `*-REVIEW*.md`, `*-PLAN.md` (or a legacy `PLAN.md`; tracked, but stripped by `/ship-it`) and
+   anything else untracked. If one is gone, say so where it is referenced and promote what it was
+   carrying. If one is still there but the handoff leans on it for substance, promote the
+   load-bearing parts now and mark the reference deletable. An earlier pass may have been written
+   before this rule existed, and shipping deletes these files — so the check is on the reference,
+   not on whether a previous pass thought it was fine
 1. Resolve **Open Questions** that have since been answered — record the answer in **Decisions &
    Rationale** rather than deleting the question
 1. Preserve **Objective**, **Scope**, **Constraints & Preferences**, **Dead Ends**, **Decisions &

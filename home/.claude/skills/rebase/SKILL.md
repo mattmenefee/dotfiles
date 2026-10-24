@@ -355,7 +355,7 @@ review files, handoffs and plans are now stale. List any in the project root,
 
 ```bash
 find "$(git rev-parse --show-toplevel)" -maxdepth 1 \( -name '*local-review*.md' \
-  -o -name '*DOC-REVIEW*.md' -o -name '*HANDOFF.md' -o -name '*PLAN.md' \)
+  -o -name '*DOC-REVIEW*.md' -o -name '*-REVIEW*.md' -o -name '*HANDOFF.md' -o -name '*PLAN.md' \)
 ```
 
 and say so; the project's review command can re-locate them. Do not re-run a review unprompted. On

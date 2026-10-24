@@ -117,8 +117,8 @@ Leave these alone, whether or not they changed:
   `# yamllint disable-line` or `<!-- markdownlint-disable -->`. Merging one into prose disables it
 - Any line a project rule keeps whole, such as a long shell `alias`
 - Files that must not be hard-wrapped at all: review, plan and handoff documents
-  (`*local-review*.md`, `*DOC-REVIEW*.md`, `*PLAN.md`, `*HANDOFF.md`), pull request and issue text
-  and Markdown meant to be pasted into Teams or Slack
+  (`*local-review*.md`, `*DOC-REVIEW*.md`, `*-REVIEW*.md`, `*PLAN.md`, `*HANDOFF.md`), pull request
+  and issue text and Markdown meant to be pasted into Teams or Slack
 - A file whose untouched paragraphs put one sentence per line: that is its style, so ask before
   filling it
 

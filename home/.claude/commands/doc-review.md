@@ -36,9 +36,9 @@ and the second command adds new files not yet added to Git: documentation is oft
 it is committed. Deleted files are left out, since there is nothing to read.
 
 Keep the **documents** among the changed files: names ending `.md`, `.mdx`, `.markdown`, `.txt`,
-`.rst`, `.adoc` or `.pdf`, compared case-insensitively. Drop the working files these commands write
-to the project root — `*local-review*.md`, `*-DOC-REVIEW*.md`, `*-HANDOFF.md` and `*PLAN.md` — which
-are a run's output rather than documentation.
+`.rst`, `.adoc` or `.pdf`, compared case-insensitively. Drop the working files these commands and ad
+hoc reviews write to the project root — `*local-review*.md`, `*-DOC-REVIEW*.md`, `*-REVIEW*.md`,
+`*-HANDOFF.md` and `*PLAN.md` — which are a run's output rather than documentation.
 
 A named path is reviewed as given, with one exception: in a project that has `/local-review`, its
 output `local-review.md`, or a carried `*-local-review.md` on a stacked branch, is not a valid

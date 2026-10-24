@@ -24,7 +24,9 @@ from collections import defaultdict
 
 MARKDOWN = (".md", ".markdown", ".mdx")
 YAML = (".yml", ".yaml")
-WORKING_DOCUMENTS = ("*local-review*.md", "*DOC-REVIEW*.md", "*PLAN.md", "*HANDOFF.md")
+WORKING_DOCUMENTS = (
+    "*local-review*.md", "*DOC-REVIEW*.md", "*-REVIEW*.md", "*PLAN.md", "*HANDOFF.md",
+)
 LEADERS = {
     "//": (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".go", ".rs", ".c", ".h", ".cc", ".cpp",
            ".java", ".kt", ".swift", ".scss"),
