@@ -29,6 +29,7 @@ end
 
 gem_group :test do
   gem 'capybara'
+  gem 'capybara-playwright-driver'
   gem 'rubocop', require: false
   gem 'rubocop-capybara', require: false
   gem 'rubocop-factory_bot', require: false
@@ -45,6 +46,14 @@ def setup_rspec
   uncomment_lines! 'spec/rails_helper.rb', %r{Rails\.root\.glob\('spec/support}
   directory 'spec/support'
   copy_file 'lib/tasks/spec_assets.rake'
+end
+
+def setup_playwright
+  # playwright-ruby-client drives the browser through the npm package, which must match its version
+  version = File.read('Gemfile.lock')[/^    playwright-ruby-client \(([\d.]+)\)/, 1]
+  raise Thor::Error, 'playwright-ruby-client is missing from Gemfile.lock' unless version
+
+  run "yarn add --dev --exact playwright@#{version}"
 end
 
 def setup_esbuild
@@ -146,6 +155,7 @@ after_bundle do
   setup_esbuild
   setup_bootstrap
   setup_postcss
+  setup_playwright
   setup_sidekiq
   setup_kamal
   setup_kamal_worker
