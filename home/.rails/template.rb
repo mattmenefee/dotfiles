@@ -79,6 +79,15 @@ def setup_kamal
   append_to_file 'config/deploy.yml', "\n#{accessory}"
 end
 
+def setup_kamal_worker
+  # Rails' commented job role runs Solid Queue's bin/jobs, which --skip-solid leaves out. It shares
+  # the web host, where REDIS_URL's container name resolves. The bang raises if Rails changes the
+  # block, rather than deploying with no worker.
+  gsub_file! 'config/deploy.yml', %r{^  # job:\n(?:  # .*\n)*?  #   cmd: bin/jobs\n} do |role|
+    role.gsub('  # ', '  ').sub('bin/jobs', 'bundle exec sidekiq')
+  end
+end
+
 def setup_rubocop
   copy_file 'rubocop.yml', '.rubocop.yml'
   run 'bundle binstubs rubocop'
@@ -95,5 +104,6 @@ after_bundle do
   setup_postcss
   setup_sidekiq
   setup_kamal
+  setup_kamal_worker
   setup_rubocop
 end
