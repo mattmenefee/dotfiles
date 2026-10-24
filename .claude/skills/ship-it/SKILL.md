@@ -408,8 +408,8 @@ Compose the title and body from the branch's commits and diff, never from memory
 - A descriptive title that summarizes the whole change
 - `## Summary` with bullet points, and `## Test plan` with checkboxes
 - Tick `- [x]` each test-plan item that was actually run and passed, noting the evidence inline when
-  the method matters; leave open only what was not run. A CI item is ticked only from `gh pr checks`
-  showing green on the current head.
+  the method matters; leave open only what was not run. A CI item is ticked only from the status
+  rollup below, and names the commit it ran on.
 - No status claim that was not read from `gh` or the repository in this step
 - No manual line wrapping; GitHub renders each line break in the body, so a hard wrap shows as
   ragged lines
@@ -417,6 +417,26 @@ Compose the title and body from the branch's commits and diff, never from memory
 - No home directory path, not even as a search pattern in a test-plan item, and no name of a private
   repository or client project. Describe such a check in words.
 - American English, and no serial comma
+
+Read CI for an open pull request with `gh pr view`, whose `headRefOid` names the commit its status
+rollup reports on; `gh pr checks` names none:
+
+```bash
+git rev-parse HEAD
+git ls-remote origin 'refs/heads/<branch>' | cut -f1
+gh pr view --json state,headRefOid,statusCheckRollup --jq 'select(.state == "OPEN") | .headRefOid,
+  (.statusCheckRollup[] | select((.context // "") != "ship-it")
+    | "\(.name // .context) \(.status // "") \(.conclusion // .state)")'
+```
+
+Tick the CI item only when local `HEAD`, the pushed branch and `headRefOid` all name one commit, the
+rollup lists at least one check and every check listed reports `SUCCESS`, and name that commit's
+short SHA in the item. Step 4's push has usually just started the checks, so leave the item open
+while any is pending, while the list is empty because the checks have not registered yet, or before
+the pull request exists: Step 7 reads the rollup again. A `CANCELLED` check was superseded by a
+later push or stopped by hand: it is neither a pass nor a failure, so leave the item open and ask
+rather than tick it or call it red. A CI item already ticked for an earlier commit is reopened until
+the rollup passes on this one.
 
 When an open pull request already has a body, carry over anything in it that was not derived from
 the commits, such as a note for a reviewer or a screenshot, and ask when unsure: the edit replaces
@@ -850,10 +870,15 @@ gh pr view --json state,isDraft,labels \
   --jq '"state=\(.state) draft=\(.isDraft) labels=\([.labels[].name] | join(","))"'
 ```
 
+When Step 5 left the CI item open, read the rollup again with Step 5's rollup block. If the checks
+now pass by Step 5's rule, tick the item with that commit's short SHA in `body.txt` and send it with
+Step 5's check-and-send block. Otherwise leave the item open.
+
 On every run, name each deferred finding Step 6 listed with its follow-up, and ask whether that
 follow-up has landed. When Step 6 left a review unposted because a finding is open, leave the pull
 request as it is and tell the user which findings are holding it. Otherwise, if it is a draft or
-carries `wip`, ask with `AskUserQuestion` before marking it ready, since that notifies watchers and
+carries `wip`, ask with `AskUserQuestion` before marking it ready, stating the CI state just read
+(passed on which commit, pending, canceled or failed), since marking ready notifies watchers and
 cannot be recalled. On approval, run `gh pr edit --remove-label wip` only when the labels printed
 include `wip`, and `gh pr ready` only when it printed `draft=true`.
 
@@ -879,9 +904,9 @@ Local HEAD, the pushed branch and the pull request's head must all name one comm
 lands on exactly what was reviewed, pushed and is about to merge.
 
 Finish by telling the user what was pushed and how, which files were posted and deleted, which were
-kept and why, whether the `ship-it` status was recorded and on which commit or what withheld it and
-the pull request URL, then remove the work directory. Merging is not part of this workflow; the user
-merges.
+kept and why, whether the CI item was ticked and on which commit or what kept it open, whether the
+`ship-it` status was recorded and on which commit or what withheld it and the pull request URL, then
+remove the work directory. Merging is not part of this workflow; the user merges.
 
 ## Confirmations
 
