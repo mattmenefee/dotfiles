@@ -1,3 +1,12 @@
+---
+name: resume-handoff
+description: >-
+  Check a handoff written by /handoff against the current state of git, pull requests, CI and
+  issues, rewrite it with whatever drifted, report the drift and stop before starting any of its
+  work. Run first when resuming from a handoff.
+argument-hint: "[path/to/file-HANDOFF.md] [note]"
+---
+
 # Resume Handoff
 
 Check a handoff written by `/handoff` against the world as it is now, rewrite it with whatever

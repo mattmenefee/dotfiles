@@ -1,3 +1,11 @@
+---
+name: update-deps
+description: >-
+  Update an app's Ruby, JavaScript and Terraform dependencies and its tool and image pins, build a
+  commit message from changelogs and open a pull request.
+disable-model-invocation: true
+---
+
 # Update Dependencies
 
 Update the app's Ruby, JavaScript and Terraform dependencies, build a detailed commit message from

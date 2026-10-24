@@ -178,8 +178,8 @@ approves, since the rewrite is force pushed and becomes permanent at merge.
 
 The procedures below write commit messages in place of `/commit`: do not invoke it during this step,
 since its default mode commits the session's changes. Read the Commit Message Guidelines in
-`home/.claude/commands/commit.md` and follow them. A message that absorbs others describes the end
-state only, never the journey.
+`home/.claude/skills/commit/SKILL.md` and follow them. A message that absorbs others describes the
+end state only, never the journey.
 
 Write each message with the `Write` tool to a file of its own in the work directory, named for its
 target (`msg-<sha>.txt`). Before using a message file, check it, in one command:
@@ -194,7 +194,7 @@ LC_ALL=en_US.UTF-8 command grep -n '.\{73,\}' /dev/null "$f"
 ### Propose the remaining commits
 
 <!-- The squash proposal and approval here are the exception /commit's Reshaping History grants
-     (home/.claude/commands/commit.md); keep the two in sync -->
+     (home/.claude/skills/commit/SKILL.md); keep the two in sync -->
 
 Fold into the commit it belongs to: a commit that fixes, finishes or reverts earlier work on this
 branch; a review fix round; a `wip`, `fixup!` or `squash!` commit; a generated file into the commit

@@ -1,10 +1,10 @@
-# Untracked working files, which the handoff and doc-review commands write to the repository root.
+# Untracked working files, which the handoff and doc-review skills write to the repository root.
 # They are scratch rather than documentation, and a local `markdownlint --fix` run would otherwise
 # rewrite them.
 #
-# The leading slash anchors each pattern to the repository root. Without it these would also match
-# the tracked home/.claude/commands/handoff.md and doc-review.md, since the matching is
-# case-insensitive.
+# The leading slash anchors each pattern to the repository root, so only the working files there
+# are skipped. Matching is case-insensitive, so without it a tracked file elsewhere whose name ends
+# the same way would be skipped too.
 /*DOC-REVIEW.md
 /*HANDOFF.md
 /*PLAN.md

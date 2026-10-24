@@ -1,3 +1,12 @@
+---
+name: commit
+description: >-
+  Create a git commit for this session's changes, amend one, or reword or fold into an earlier
+  commit, with a message that follows the commit guidelines. Use for every commit, amend and
+  message edit.
+argument-hint: "[amend | amend <sha> | reword <sha>]"
+---
+
 # Commit Changes
 
 Create a git commit for the changes made during this session.

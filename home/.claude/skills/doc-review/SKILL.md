@@ -1,3 +1,13 @@
+---
+name: doc-review
+description: >-
+  Review documents for formatting, consistency, accuracy, clarity, sensitive information, spelling
+  and staleness with one documentation-expert per document and a collator that writes a single
+  review file, then walk through the findings. Use after writing or updating a significant amount
+  of documentation.
+argument-hint: "[paths | a description such as \"the changes on this branch\"]"
+---
+
 # Document Review
 
 Review documents for quality, using **documentation-expert** agents (a global agent defined in
@@ -108,7 +118,7 @@ orchestrator extracts verbatim from this one, and reading that file **in full** 
 step:
 
 ```bash
-cmd="$HOME/.claude/commands/doc-review.md"
+cmd="$HOME/.claude/skills/doc-review/SKILL.md"
 for h in '## Formatting' '## Review File' '## After the Review'; do
   [ "$(grep -cx -- "$h" "$cmd")" -eq 1 ] || { echo "anchor missing or repeated: $h" >&2; exit 1; }
 done
