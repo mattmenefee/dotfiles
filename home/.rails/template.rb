@@ -76,6 +76,7 @@ def setup_postcss
   run 'yarn add --dev autoprefixer postcss postcss-cli'
   run 'npm pkg set scripts.build:css="postcss app/assets/builds/*.css --replace"'
   copy_file 'postcss.config.js'
+  copy_file 'browserslistrc', '.browserslistrc'
   copy_file 'lib/tasks/postcss.rake'
 end
 
