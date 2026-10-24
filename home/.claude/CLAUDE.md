@@ -178,6 +178,10 @@ messages are the strictest case: once merged they cannot be edited.
 - Wrap at 100 characters where it makes sense — source code and comments, Markdown prose
   (including slash command and agent files) and configuration. Defer to a project's own linter or
   `.editorconfig` when it sets a different limit.
+- When an edit changes a line of wrapped prose or comment, refill the paragraph or comment block it
+  belongs to so every line again takes as many words as fit within the limit. Change only line
+  breaks, and leave blocks the edit did not touch as they are. `/reflow` does this for every block a
+  branch changed.
 - Do not wrap where the line break would be wrong rather than merely long: pull request and issue
   descriptions and comments (GitHub renders each line break in them, so a hard wrap shows as ragged
   lines); Markdown written to be pasted into Teams or Slack; review, plan, handoff and other working
@@ -202,6 +206,9 @@ messages are the strictest case: once merged they cannot be edited.
   example, write "DigitalOcean" rather than "DO"
 - Write lists without the serial comma: "a, b and c". When editing a file that mixes styles, remove
   the serial comma; if dropping one makes a sentence ambiguous, restructure the sentence instead.
+- A list item that is a single phrase or sentence takes no final period. An item of several
+  sentences ends each of them with a period, the last one included: the single-sentence rule does
+  not reach it, here or for comments under Code Style.
 - Write `e.g.` and `i.e.` with no following comma
 - In prose, write "changelog" in lowercase. Write `CHANGELOG.md` only when naming the file, and keep
   a proper name such as "Keep a Changelog" capitalized.
