@@ -35,6 +35,9 @@ jobs:
         # ships the python3 it runs on
         run: bash home/.claude/skills/reflow/scripts/test-unfilled-blocks.sh
 
+      - name: Test the /rebase scripts
+        run: bash home/.claude/skills/rebase/scripts/test-rebase.sh
+
       - name: Check zsh syntax
         # Nothing else here checks this shell code. ShellCheck has no zsh dialect, and
         # super-linter never hands it these files anyway: a .zsh extension is routed to the

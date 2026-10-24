@@ -119,7 +119,9 @@ both `git history` blocks in this file pass `--update-refs=head`. Without it, a 
 in another worktree moves too, and after a `fixup` that worktree's index and files keep the old
 content, so it shows the change reverted as staged edits. A backup branch taken just before the
 rewrite moves as well and then backs up nothing. With the flag, a branch stacked on the target stays
-on the old commits; restacking it is reshaping, which is handed back to the user as above.
+on the old commits; restacking it is reshaping, which is handed back to the user as above, with the
+command for each such branch: `git rebase --onto <branch> <old tip> <child>`, where `<old tip>` is
+the tip printed before the rewrite (see below).
 
 Several sessions can share one checkout, so every amend, rebase, reset, push and `git history`
 rewrite in this file checks the current branch in the same command, as the blocks here do. Before
