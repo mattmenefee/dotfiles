@@ -39,6 +39,10 @@
   push after the run, blocks the merge until `/ship-it` runs again
 - CI skips draft pull requests, so a draft's `lint` check reports `SKIPPED` and has not run, though
   it satisfies the required check and `gh pr checks` exits 0 on it. Never report a draft as green.
+- A Dependabot pull request still needs the `ship-it` status, but its branch and body belong to
+  Dependabot, which stops rebasing a pull request once anyone else pushes to it. Check out its
+  branch without changing it and run only `/ship-it`'s Step 5 CI read and Step 7; to bring it up to
+  date, comment `@dependabot rebase` on it instead of rebasing.
 
 # Shell Files
 
