@@ -26,6 +26,10 @@ jobs:
           # though VALIDATE_ALL_CODEBASE means nothing is ever diffed against it.
           fetch-depth: 0
 
+      - name: Test the /ship-it scrubber
+        # The file is not executable, so call it through bash
+        run: bash .claude/skills/ship-it/scripts/test-scrub.sh
+
       - name: Check zsh syntax
         # Nothing else here checks this shell code. ShellCheck has no zsh dialect, and
         # super-linter never hands it these files anyway: a .zsh extension is routed to the
@@ -39,18 +43,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes zsh
 
-          # Discovered rather than listed: everything under home/.zsh is zsh by construction,
-          # so a file added there is covered without anyone remembering to come back here. The
-          # anti-glob reasoning on the autoload line in home/.zshrc does not apply — there a glob
-          # is dangerous because every fpath entry becomes a live command name, so over-coverage
-          # is the hazard. For a syntax check it is under-coverage that hurts, and parsing a file
-          # that did not need it costs nothing.
-          files=(home/.zshrc)
+          # Only the zsh files outside home/.zsh are listed. Everything under it is discovered,
+          # since it is zsh by construction, so a file added there is covered without anyone
+          # remembering to come back here. The anti-glob reasoning on the autoload line in
+          # home/.zshrc does not apply — there a glob is dangerous because every fpath entry
+          # becomes a live command name, so over-coverage is the hazard. For a syntax check it is
+          # under-coverage that hurts, and parsing a file that did not need it costs nothing.
+          files=(home/.zshrc home/.zprofile init.zsh)
+          listed=${#files[@]}
           while IFS= read -r file; do files+=("${file}"); done < <(find home/.zsh -type f | sort)
 
-          # An empty result would run the loop zero times and pass green while checking nothing —
-          # the exact shape of the gap this step exists to close. Fail loudly instead.
-          if [ "${#files[@]}" -lt 2 ]; then
+          # If find returns nothing, the loop checks only the listed files and passes green while
+          # skipping all of home/.zsh — the exact shape of the gap this step exists to close. Fail
+          # loudly instead.
+          if [ "${#files[@]}" -eq "${listed}" ]; then
             echo "Found no zsh files under home/.zsh; has the directory moved?" >&2
             exit 1
           fi
