@@ -77,14 +77,22 @@ def setup_sidekiq
 end
 
 def setup_kamal
-  service = YAML.load_file('config/deploy.yml').fetch('service')
-  # Kamal names the accessory container <service>-redis on the network it shares with the app
-  gsub_file! 'config/deploy.yml', "  # clear:\n", <<~YAML.indent(2)
-    clear:
-      REDIS_URL: redis://#{service}-redis:6379/0
-  YAML
+  # REDIS_URL carries the accessory's password, so it is a secret rather than clear env
+  inject_into_file! 'config/deploy.yml', "    - REDIS_URL\n", after: "    - RAILS_MASTER_KEY\n"
   accessory = File.read(find_in_source_paths('kamal/redis_accessory.yml'))
   append_to_file 'config/deploy.yml', "\n#{accessory}"
+  setup_kamal_secrets
+end
+
+def setup_kamal_secrets
+  # Kamal names the accessory container <service>-redis, and Rails names the service after the app
+  append_to_file '.kamal/secrets', <<~SECRETS
+
+    # Valkey's password, generated into the app's credentials by rails new
+    REDIS_PASSWORD=$(bin/rails credentials:fetch redis.password)
+    REDIS_URL=redis://:$REDIS_PASSWORD@#{app_name}-redis:6379/0
+  SECRETS
+  run "bin/rails runner #{find_in_source_paths('kamal/redis_password.rb')}"
 end
 
 def setup_kamal_worker
