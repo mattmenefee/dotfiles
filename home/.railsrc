@@ -1,7 +1,9 @@
--T # Skip tests
+-T # Skip Minitest; the template sets up RSpec
 -d postgresql
--a propshaft
 -j esbuild
 --skip-jbuilder
+--skip-rubocop # Skip the omakase config; the template adds the full RuboCop setup
+--skip-solid # Sidekiq runs jobs; the template sets it up
 --devcontainer
+-m ~/.rails/template.rb # Adds Bootstrap through dartsass-rails, RSpec, HAML, Sidekiq and RuboCop
 # pass --main to install the latest version of Rails from the main branch
