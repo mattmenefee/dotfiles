@@ -107,11 +107,14 @@ git checkout -b <branch-name>
 Run `gem_update` to update all Ruby gems and get an initial draft of the dependency changes:
 
 ```bash
-gem_update 2>&1 | tee /tmp/gem-update-output.txt
+out="$(mktemp -t gem-update)" && echo "$out" && gem_update 2>&1 | tee "$out"
 ```
 
-The pipeline's status is `tee`'s, so read `gem_update`'s own: `${pipestatus[1]}` in zsh,
-`${PIPESTATUS[0]}` in bash, not `$?`. A non-zero value means `gem_update` failed.
+The first line printed is the private file the output is saved to; a later command reads it by that
+path, since a variable does not outlive its shell. A fixed path under `/tmp` would follow a stale
+or planted symlink and collide with a concurrent run. The pipeline's status is `tee`'s, so read
+`gem_update`'s own: `${pipestatus[1]}` in zsh, `${PIPESTATUS[0]}` in bash, not `$?`. A non-zero
+value means `gem_update` failed.
 
 `gem_update` is the CLI provided by the `gem_updater` gem (installed via `gem install gem_updater`)
 that runs `bundle update` internally and outputs a formatted changelog with version diffs and
