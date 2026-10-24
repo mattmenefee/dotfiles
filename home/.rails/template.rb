@@ -27,17 +27,23 @@ inject_into_file! 'Gemfile', after: "group :development, :test do\n" do
   RUBY
 end
 
+# The Dockerfile installs every group but development, so this keeps the linter out of images
+inject_into_file! 'Gemfile', after: "group :development do\n" do
+  <<~RUBY.indent(2)
+    gem "rubocop", require: false
+    gem "rubocop-capybara", require: false
+    gem "rubocop-factory_bot", require: false
+    gem "rubocop-performance", require: false
+    gem "rubocop-rails", require: false
+    gem "rubocop-rake", require: false
+    gem "rubocop-rspec", require: false
+    gem "rubocop-rspec_rails", require: false
+  RUBY
+end
+
 gem_group :test do
   gem 'capybara'
   gem 'capybara-playwright-driver'
-  gem 'rubocop', require: false
-  gem 'rubocop-capybara', require: false
-  gem 'rubocop-factory_bot', require: false
-  gem 'rubocop-performance', require: false
-  gem 'rubocop-rails', require: false
-  gem 'rubocop-rake', require: false
-  gem 'rubocop-rspec', require: false
-  gem 'rubocop-rspec_rails', require: false
   gem 'shoulda-matchers'
 end
 
