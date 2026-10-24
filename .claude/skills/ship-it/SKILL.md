@@ -419,13 +419,16 @@ Compose the title and body from the branch's commits and diff, never from memory
 - American English, and no serial comma
 
 Read CI for an open pull request with `gh pr view`, whose `headRefOid` names the commit its status
-rollup reports on; `gh pr checks` names none:
+rollup reports on; `gh pr checks` names none. Each workflow run on the head adds its own check, so a
+draft's skipped `lint` stays listed beside the run that marking it ready started; keep only the
+latest check of each name:
 
 ```bash
 git rev-parse HEAD
 git ls-remote origin 'refs/heads/<branch>' | cut -f1
 gh pr view --json state,headRefOid,statusCheckRollup --jq 'select(.state == "OPEN") | .headRefOid,
-  (.statusCheckRollup[] | select((.context // "") != "ship-it")
+  ([.statusCheckRollup[] | select((.context // "") != "ship-it")]
+    | group_by(.name // .context) | map(max_by(.startedAt // "")) | .[]
     | "\(.name // .context) \(.status // "") \(.conclusion // .state)")'
 ```
 
@@ -435,8 +438,10 @@ short SHA in the item. Step 4's push has usually just started the checks, so lea
 while any is pending, while the list is empty because the checks have not registered yet, or before
 the pull request exists: Step 7 reads the rollup again. A `CANCELLED` check was superseded by a
 later push or stopped by hand: it is neither a pass nor a failure, so leave the item open and ask
-rather than tick it or call it red. A CI item already ticked for an earlier commit is reopened until
-the rollup passes on this one.
+rather than tick it or call it red. A check `SKIPPED` while the pull request is a draft has not run:
+CI skips drafts and starts when the pull request is marked ready, so leave the item open without
+calling it red; Step 7 waits for that run. A CI item already ticked for an earlier commit is
+reopened until the rollup passes on this one.
 
 When an open pull request already has a body, carry over anything in it that was not derived from
 the commits, such as a note for a reviewer or a screenshot, and ask when unsure: the edit replaces
@@ -878,9 +883,9 @@ On every run, name each deferred finding Step 6 listed with its follow-up, and a
 follow-up has landed. When Step 6 left a review unposted because a finding is open, leave the pull
 request as it is and tell the user which findings are holding it. Otherwise, if it is a draft or
 carries `wip`, ask with `AskUserQuestion` before marking it ready, stating the CI state just read
-(passed on which commit, pending, canceled or failed), since marking ready notifies watchers and
-cannot be recalled. On approval, run `gh pr edit --remove-label wip` only when the labels printed
-include `wip`, and `gh pr ready` only when it printed `draft=true`.
+(passed on which commit, pending, canceled, failed or skipped until marked ready), since marking
+ready notifies watchers and cannot be recalled. On approval, run `gh pr edit --remove-label wip`
+only when the labels printed include `wip`, and `gh pr ready` only when it printed `draft=true`.
 
 Then record the run, unless Step 6 left a review unposted because a finding is open. When a deferred
 follow-up named above has not landed, ask with `AskUserQuestion` whether to record the run anyway,
@@ -902,6 +907,27 @@ gh api "repos/{owner}/{repo}/statuses/$head" -f state=success -f context=ship-it
 
 Local HEAD, the pushed branch and the pull request's head must all name one commit, so the status
 lands on exactly what was reviewed, pushed and is about to merge.
+
+When this run marked the pull request ready and the CI item is still open, `gh pr ready` has just
+started CI on the head. Wait for it with the Bash tool's `run_in_background`, so the session is
+woken when it ends, rather than finishing with the item open:
+
+```bash
+head=$(git rev-parse HEAD) || exit 1
+run=
+for _ in $(seq 30); do
+  run=$(gh run list --workflow ci.yml --commit "$head" --json databaseId,status \
+    --jq '[.[] | select(.status != "completed")][0].databaseId // empty')
+  [ -n "$run" ] && break
+  sleep 10
+done
+[ -n "$run" ] || { echo "no CI run started on $head" >&2; exit 1; }
+gh run watch "$run" --exit-status
+```
+
+When it exits, read the rollup again with Step 5's rollup block and tick the item by Step 5's rule,
+sending it with Step 5's check-and-send block. When the run failed, or none started, leave the item
+open and say which.
 
 Finish by telling the user what was pushed and how, which files were posted and deleted, which were
 kept and why, whether the CI item was ticked and on which commit or what kept it open, whether the

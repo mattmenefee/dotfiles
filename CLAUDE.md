@@ -37,6 +37,8 @@
   (`gh pr view --json isDraft,headRefOid,statusCheckRollup`). `main`'s ruleset requires that status,
   and `/ship-it` withholds it while a review finding is open, so a run that left one open, or any
   push after the run, blocks the merge until `/ship-it` runs again
+- CI skips draft pull requests, so a draft's `lint` check reports `SKIPPED` and has not run, though
+  it satisfies the required check and `gh pr checks` exits 0 on it. Never report a draft as green.
 
 # Shell Files
 
