@@ -29,6 +29,15 @@
   propose the exact commands and wait. Read-only queries (`brew info`, `brew list`, `brew doctor`,
   `brew bundle check`) are fine to run
 
+# Pull Requests
+
+- Open a pull request as a draft and leave marking it ready to `/ship-it`, which asks first because
+  that notifies watchers and cannot be undone. Report it as waiting on `/ship-it`, never as ready to
+  merge, until it is out of draft and its head carries the `ship-it` commit status
+  (`gh pr view --json isDraft,headRefOid,statusCheckRollup`). `main`'s ruleset requires that status,
+  and `/ship-it` withholds it while a review finding is open, so a run that left one open, or any
+  push after the run, blocks the merge until `/ship-it` runs again
+
 # Shell Files
 
 - Leave a long shell `alias` on one line. Its command string is one unit, so the 100-character

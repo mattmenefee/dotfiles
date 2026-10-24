@@ -1,10 +1,11 @@
 ---
 name: ship-it
 description: >-
-  Ship the current dotfiles branch: rebase onto origin/main, review each commit against its
-  message, squash into the commits worth keeping on main, push, write the pull request description,
-  post finished review artifacts and handoff notes as collapsible comments and mark the pull request
-  ready. Run it when a branch is done and about to go up for merge.
+  Ship the current dotfiles branch: rebase onto origin/main, review each commit against its message,
+  squash into the commits worth keeping on main, push, write the pull request description, post
+  finished review artifacts and handoff notes as collapsible comments, mark the pull request ready
+  and post the ship-it commit status main requires. Run it when a branch is done and about to go up
+  for merge.
 disable-model-invocation: true
 ---
 
@@ -23,7 +24,7 @@ pushed, and everything published is checked before it leaves the machine.
 1. Push
 1. Create or update the pull request
 1. Post review artifacts, an untracked plan and a handoff's durable sections as collapsible comments
-1. Mark the pull request ready, if it is a draft
+1. Mark the pull request ready, if it is a draft, and post the `ship-it` status `main` requires
 
 ## Ground Rules
 
@@ -374,9 +375,12 @@ if [ -n "$pr" ]; then
   gh pr edit "$pr" --add-assignee @me --title "$(cat -- "$work/title.txt")" \
     --body-file "$work/body.txt"
 else
-  gh pr create --assignee @me --title "$(cat -- "$work/title.txt")" --body-file "$work/body.txt"
+  gh pr create --draft --assignee @me --title "$(cat -- "$work/title.txt")" \
+    --body-file "$work/body.txt"
 fi
 ```
+
+A new pull request opens as a draft, so marking it ready waits for Step 7, which asks first.
 
 The title is read with `$(cat …)`, whose output the shell does not expand a second time, so a
 backticked command in it stays text. `--narrow` runs the secret check and the path terms only: a
@@ -781,7 +785,7 @@ verifies, ask with `AskUserQuestion`:
 When verification failed, say so and do not offer deletion. Delete only on the first answer, with
 the delete block above, naming the handoff's `artifact-<n>`.
 
-## Step 7: Mark Ready
+## Step 7: Mark Ready and Record the Run
 
 ```bash
 gh pr view --json state,isDraft,labels \
@@ -795,9 +799,31 @@ carries `wip`, ask with `AskUserQuestion` before marking it ready, since that no
 cannot be recalled. On approval, run `gh pr edit --remove-label wip` only when the labels printed
 include `wip`, and `gh pr ready` only when it printed `draft=true`.
 
+Then record the run, unless Step 6 left a review unposted because a finding is open. When a deferred
+follow-up named above has not landed, ask with `AskUserQuestion` whether to record the run anyway,
+and record it only on approval. `main`'s ruleset requires a commit status named `ship-it`, so no
+pull request merges until this workflow has recorded it on its head. A status belongs to one commit:
+a later push leaves the new head without one, and the pull request waits for the next run.
+
+```bash
+[ "$(git symbolic-ref --quiet --short HEAD)" = '<branch>' ] ||
+  { echo 'not on <branch>' >&2; exit 1; }
+head=$(git rev-parse HEAD) || exit 1
+remote=$(git ls-remote origin 'refs/heads/<branch>' | cut -f1)
+pr_head=$(gh pr view --json headRefOid,state --jq 'select(.state == "OPEN") | .headRefOid')
+[ "$head" = "$remote" ] && [ "$head" = "$pr_head" ] ||
+  { echo "HEAD $head, pushed $remote, pull request $pr_head: do not record" >&2; exit 1; }
+gh api "repos/{owner}/{repo}/statuses/$head" -f state=success -f context=ship-it \
+  -f description='/ship-it finished on this commit' --jq '.context + " " + .state'
+```
+
+Local HEAD, the pushed branch and the pull request's head must all name one commit, so the status
+lands on exactly what was reviewed, pushed and is about to merge.
+
 Finish by telling the user what was pushed and how, which files were posted and deleted, which were
-kept and why and the pull request URL, then remove the work directory. Merging is not part of this
-workflow; the user merges.
+kept and why, whether the `ship-it` status was recorded and on which commit or what withheld it and
+the pull request URL, then remove the work directory. Merging is not part of this workflow; the user
+merges.
 
 ## Confirmations
 
@@ -815,5 +841,6 @@ the answer:
 - deleting a handoff, a `*-DOC-REVIEW*.md` with a withheld finding or a source whose redacted
   credentials await the user's word on rotation
 - marking the pull request ready
+- recording the `ship-it` status while a deferred follow-up has not landed
 
 A file whose comment could not be verified is never deleted, so there is no question to ask.
