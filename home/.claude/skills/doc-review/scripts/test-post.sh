@@ -58,6 +58,7 @@ Fine.
 $1
 EOF
   grep -v 'F2' "$repo/t-DOC-REVIEW.md" > "$T/copy"
+  printf 'F3\n' > "$T/cf"
 }
 
 # check <label> <expected posts> <expected message or ""> <post.sh arguments>...
@@ -161,6 +162,18 @@ check "M login in angle brackets" 0 "unresolved hits" "${base[@]}" --post "$T/co
 review "| DATABASE_PASS$(printf 'WO')RD | hunter2 |"
 check "N table cell naming a password" 0 "unresolved hits" "${base[@]}" --post "$T/copy" \
   --cleared-findings "$T/cf"
+
+review "| \`SECRET_KEY_$(printf 'BA')SE\` | abc123def456 |"
+check "O backticked key cell" 0 "unresolved hits" "${base[@]}" --post "$T/copy" \
+  --cleared-findings "$T/cf"
+
+review "| **Pass$(printf 'wo')rd** | hunter2x |"
+check "P bold key cell" 0 "unresolved hits" "${base[@]}" --post "$T/copy" \
+  --cleared-findings "$T/cf"
+
+review "| F4 | 🟢 Low | Accuracy | Rotate the cred$(printf 'en')tial note | \`a.md\` | x | Implement | G1 | ✅ |"
+check "Q summary row naming a credential" 1 "" "${base[@]}" --post "$(fresh copy)" \
+  --cleared-findings "$(fresh cf)"
 
 # scrub.sh on its own: clean, a hit and nothing to scan. scrub_exits <code> runs it and checks its
 # exit status; its output is left in $T/out
