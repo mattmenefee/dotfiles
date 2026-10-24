@@ -36,6 +36,7 @@ and copy the mention, which puts Teams' HTML on the clipboard, then run:
 import argparse
 import functools
 import html
+import itertools
 import json
 import os
 import pathlib
@@ -173,7 +174,7 @@ def join_with_spacers(blocks):
     and an inline margin-bottom style also worked, if this ever regresses. Teams already
     spaces a native list from its neighbors, so a spacer beside a list would double the gap."""
     out = blocks[:1]
-    for previous, block in zip(blocks, blocks[1:]):
+    for previous, block in itertools.pairwise(blocks):
         if not (is_list(previous) or is_list(block)):
             out.append('<p>&nbsp;</p>')
         out.append(block)
