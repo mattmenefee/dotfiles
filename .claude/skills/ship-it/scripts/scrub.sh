@@ -20,10 +20,10 @@
 # printed them after the "<file>:<line>:" prefix. A hit is cleared only by an exact match, so an
 # edited or appended line is put back in front of the user. Only secret hits can be cleared.
 #
-# These patterns derive from the PR Comment Format section of
-# home/.claude/skills/doc-review/SKILL.md, which shares their bounds, temp roots, account-name
-# forms, secret set and LC_ALL=C. They differ from it on purpose, and a sync in either direction
-# keeps these differences; re-derive the list before one:
+# These patterns derive from PR Comment Format in home/.claude/skills/doc-review/posting.md, whose
+# pattern set lives in scripts/scrub-lib.sh beside it and shares their bounds, temp roots,
+# account-name forms, secret set and LC_ALL=C. They differ from it on purpose, and a sync in either
+# direction keeps these differences; re-derive the list before one:
 #   - The shell's home variable is not a term. It names nobody, and rewriting it breaks quoted code.
 #   - Placeholders are exempt only in the fixed forms /Users/<user>, <name> or <username>, removed
 #     per match before scanning, where /doc-review exempts in-pattern any angle-bracketed segment
