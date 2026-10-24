@@ -1,0 +1,12 @@
+# The browsers Rails' allow_browser versions: :modern admits, so autoprefixer adds no prefixes for
+# browsers the app turns away. :modern matches user-agent families, so the mobile builds share the
+# desktop floors, and Edge, which :modern leaves unlisted, is admitted at any version. Keep in step
+# with :modern in actionpack's allow_browser.rb.
+safari >= 17.2
+ios_saf >= 17.2
+chrome >= 120
+and_chr >= 120
+firefox >= 121
+and_ff >= 121
+opera >= 106
+edge >= 120
