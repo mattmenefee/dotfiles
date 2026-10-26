@@ -59,6 +59,7 @@
       "mcp__linear-server__list_projects",
       "mcp__linear-server__list_teams",
       "mcp__linear-server__list_users",
+      "mcp__linear-server__save_comment",
       "mcp__playwright__playwright_click",
       "mcp__playwright__playwright_close",
       "mcp__playwright__playwright_get_visible_html",
