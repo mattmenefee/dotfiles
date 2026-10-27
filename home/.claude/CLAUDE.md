@@ -45,9 +45,9 @@
 - Run `/handoff` on your own initiative when it fits: after a substantial round of work, before a
   likely context break or when a review round closes. A command that changes or publishes shared
   state, such as a project's `/ship-it`, runs only when I start it.
-- Put rules meant for an agent where agents read them: CLAUDE.md, a command or an agent file. Never
-  put them in a `.gitignore`, a dotfile or a configuration comment. A comment warning any reader, as
-  Code Style allows, is not such a rule; an instruction addressed to an agent is.
+- Put rules meant for an agent where agents read them: CLAUDE.md, a command, a skill or an agent
+  file. Never put them in a `.gitignore`, a dotfile or a configuration comment. A comment warning
+  any reader, as Code Style allows, is not such a rule; an instruction addressed to an agent is.
 - Don't run linters on memory files under `~/.claude/projects/*/memory/`, and ignore hook lint
   errors reported on them.
 
@@ -128,14 +128,12 @@ When filing or linking Linear issues:
   `gh` command. Otherwise `gh` may resolve to the parent repository and fail, or silently act on the
   wrong pull request.
 - Confirm CI with `gh pr view --json headRefOid,statusCheckRollup` and name the commit it ran on. A
-  CircleCI run canceled on purpose reports as a failed status, so `gh pr checks` shows it as
-  "fail"; a run far shorter than usual is a cancellation. Before calling a branch green or merging
-  it, check that `git ls-remote origin refs/heads/<branch>` equals local `HEAD` and the rollup's
-  commit.
+  CircleCI run canceled on purpose reports as a failed status, so `gh pr checks` shows it as "fail";
+  a run far shorter than usual is a cancellation. Before calling a branch green or merging it, check
+  that `git ls-remote origin refs/heads/<branch>` equals local `HEAD` and the rollup's commit.
 - `gh pr merge --delete-branch` deletes the local branch as well as the remote one, so when run from
-  the pull request's own checkout it first switches that checkout to the default branch. Run it
-  with `--repo` from another directory, and check `git reflog` before describing local state
-  afterwards.
+  the pull request's own checkout it first switches that checkout to the default branch. Run it with
+  `--repo` from another directory, and check `git reflog` before describing local state afterwards.
 - Post a review file to a pull request, issue or release only once every actionable finding in it is
   ✅, ⏸️ or 🚫, with no ❓ row and no open box; a working list goes stale within hours and reads as
   the record. A handoff's still-open questions are the exception `/ship-it` posts by design.
@@ -179,11 +177,11 @@ messages are the strictest case: once merged they cannot be edited.
 
 - The dotfiles repository publishes every file under its `home` directory through symlinks, among
   them `~/.zshrc`, `~/.gitconfig`, `~/.config/gh/config.yml`, everything in `~/.zsh/` and
-  `~/.claude/` files such as `CLAUDE.md`, `settings.json` and the commands. Treat a file whose
+  `~/.claude/` files such as `CLAUDE.md`, `settings.json` and the skills. Treat a file whose
   `realpath` lies under `~/.homesick/repos/dotfiles/home` as published. Keep secrets in the macOS
   Keychain, `~/.claude.json` or an untracked file, never in a tracked dotfile.
 - Name no private individual (a colleague, a client, me) in checked-in guidance such as CLAUDE.md,
-  commands or agent files; state conventions generically
+  commands, skills or agent files; state conventions generically
 
 # Code Style
 
@@ -191,8 +189,8 @@ messages are the strictest case: once merged they cannot be edited.
 - Follow the [Ruby Style Guide](https://rubystyle.guide/) and the
   [Rails Style Guide](https://rails.rubystyle.guide/)
 - End every file with a single trailing newline (not a literal blank line)
-- Wrap at 100 characters where it makes sense — source code and comments, Markdown prose
-  (including slash command and agent files) and configuration. Defer to a project's own linter or
+- Wrap at 100 characters where it makes sense — source code and comments, Markdown prose (including
+  slash command, skill and agent files) and configuration. Defer to a project's own linter or
   `.editorconfig` when it sets a different limit.
 - When an edit changes a line of wrapped prose or comment, refill the paragraph or comment block it
   belongs to so every line again takes as many words as fit within the limit, but never a fenced or
@@ -264,9 +262,9 @@ messages are the strictest case: once merged they cannot be edited.
   REPLs (`psql`, `rails console`) and `yarn upgrade-interactive`.
 - `-i` is not itself the hazard: `git rebase -i` runs fine when its editors are neutralized
   (`GIT_SEQUENCE_EDITOR=true`), which some commands prescribe
-- When writing slash commands, agent files or docs that prescribe shell commands, prescribe the
-  non-interactive form. Claude follows a command file literally, so an editor-opening command in one
-  will hang.
+- When writing slash commands, skills, agent files or docs that prescribe shell commands, prescribe
+  the non-interactive form. Claude follows a command or skill file literally, so an editor-opening
+  command in one will hang.
 - Never put `$` followed by a digit (`$0`, `$1`, `$2`) in a slash command or skill file. Claude Code
   replaces each one with a word of the invocation's arguments, even inside fenced blocks and quoted
   `awk`. Write awk fields as `$(0)` and `$(2)`, pass shell function arguments through `"$@"` or a
