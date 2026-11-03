@@ -34,8 +34,8 @@ runs the project's squash command or `/commit` first, then this skill.
 ## Conventions
 
 - `<branch>` is always the branch being rebased, the `branch` that `resolve-base.sh` prints. Every
-  other placeholder in angle brackets is the key of that name a script printed, or the argument it
-  names.
+  other placeholder in angle brackets is the key of that name a script printed, the argument it
+  names or a name the sentence using it defines.
 - The scripts live in `${CLAUDE_SKILL_DIR}/scripts` and print `key=value` lines. A non-zero exit the
   step does not name stops the skill: report the script's stderr and ask how to proceed.
 - Write each placeholder in single quotes when substituting it into a command, as the commands below
@@ -201,8 +201,12 @@ Then resolve by the first kind that fits:
 
 | Kind | Resolution |
 | --- | --- |
+| A path holding `~`, as `foo~a1b2c3d (subject)`: a file met a directory or another type at that path, so git parked it under this name | Always stop, whatever the file type, since nobody chose this name. Show the path and what occupies the original, and ask what to call the file. Such a name can hold spaces and quotes, so escape it. Record the answer as the user's in the report. |
+| Both sides changed the path with no hunk in `git diff`: a binary file, `merge=binary`, a symlink or a submodule | Always stop, whatever the file type, since there is nothing to merge and the marker check has nothing to find. Show both sides from `git ls-files -s -- '<path>'` and their commits, and ask which to keep. Take that side with `GIT_LITERAL_PATHSPECS=1 git checkout --ours -- '<path>'` for the base or `--theirs` for the branch, or check out that side's commit in a submodule, then stage it with `--side-chosen` naming that side. Record the answer as the user's in the report. |
 | One side deleted the file and the other changed it: `deleted_by_us` (the base deleted it) or `deleted_by_them` (the branch deleted it) from `state.sh` | Always stop, whatever the file type, since there is no hunk to merge and `--ours` would fail or restore the file. Show the path, the deleting commit's subject and the change that would be lost or restored, and ask. Record the answer as the user's in the report. |
-| Lock files (e.g. `Gemfile.lock`, `yarn.lock`) | Take the base's version (`git checkout --ours -- '<path>'`), then regenerate with the package manager, keeping any version the project pins by hand. Never hand-merge. |
+| Both sides renamed the file differently: `deleted_by_both` (the old name), `added_by_us` (the base's new name) and `added_by_them` (the branch's new name) from `state.sh`. After a partial answer the old name may be gone, so also an `added_by_*` name that `git show --summary -M --format= REBASE_HEAD` or `git diff --summary -M '<old_base>' '<target>'` lists as a rename. | Always stop, whatever the file type, since `--ours` fails on two of the names and only a person can say which name was meant. Pair the names with those two commands, and put a whole renamed directory as one question. Show each name and the commit on each side that chose it, and ask which name survives. Record the answer as the user's in the report. |
+| Any other `added_by_us` or `added_by_them`: git moved the file into a directory one side renamed, or a file met a symlink | Always stop, whatever the file type, since nobody chose this location and there is no second name. Show the path and what put it there, and ask whether to accept it. Record the answer as the user's in the report. |
+| Lock files (e.g. `Gemfile.lock`, `yarn.lock`) | Take the base's version (`GIT_LITERAL_PATHSPECS=1 git checkout --ours -- '<path>'`), then regenerate with the package manager, keeping any version the project pins by hand. Never hand-merge. |
 | Generated schema dumps (e.g. `db/schema.rb`) | Take the base's version, then regenerate by running the branch's migrations. Never hand-merge. |
 | Stylesheets where both sides added rules | Keep both |
 | Hunks that change only imports or comments | Resolve |
@@ -211,23 +215,91 @@ Then resolve by the first kind that fits:
 Explain each resolution before applying it: what each side wanted and what was kept. Keep the
 explanations for the report. When regeneration cannot run, stop rather than hand-merge.
 
-For a deleted path, `state.sh` names a file the branch renamed by its new path, so when the log
-above is empty, find the old path with `git show --stat -M REBASE_HEAD` and search for that. Apply
-the user's answer by removing the file with `git rm -- '<path>'`, or by keeping the surviving side's
-version, which git leaves in the worktree, with `git add -- '<path>'`. When the path is all the
-commit changes, an answer that matches the base leaves nothing staged, and `git rebase --continue`
-then drops the commit without asking, so say so in the question.
-
-After resolving any other path, check that no conflict marker is left, including the diff3 style's,
-then stage it:
+Run this step from the repository root, since `state.sh` prints root-relative paths, and put
+`GIT_LITERAL_PATHSPECS=1` before each git command that names a path you were given, so a name such
+as `pages/[id].tsx` cannot match another file. Stage every path, the answers below included, with
+this command and never with `git add`:
 
 ```bash
-! grep -nE '^(<<<<<<<|=======|>>>>>>>|[|]{7})( |$)' '<path>' && git add -- '<path>'
+'${CLAUDE_SKILL_DIR}/scripts/stage-resolved.sh' -- '<path>'
 ```
 
-A Markdown setext heading can underline with exactly seven `=`; read any hit before calling it a
-marker. Then run `git diff --cached --check -- '<path>'`: whitespace it reports that either side
-already carried belongs in the explanation, not in a fix. When every path is staged, continue:
+- Exit 0: it is staged. Whitespace it prints that either side already carried belongs in the
+  explanation, not in a fix.
+- Exit 1: it found lines that look like conflict markers, of any length, and staged nothing. Read
+  each one and fix what is a marker. A Markdown underline or a banner in a log can hit too: when
+  none is a marker, run it again with `--hits-read` before the `--`.
+- Exit 2: it could not read the path, as when the file is missing, and staged nothing. Stop and find
+  out why.
+- Exit 3: the result needs an answer, because one side would simply win, or the file holds a
+  different side from the one named, and nothing was staged. Git can settle a conflict that way with
+  no markers, so stop even when the file looks finished, and put both sides to the user. Choosing
+  the base can leave the commit with no changes, and `git rebase --continue` then drops it without
+  asking (under `op=rebase-apply` it stops on that commit instead, and the `git rebase --skip`
+  question below applies), so say so in the question. Once they have chosen, take that side with
+  `GIT_LITERAL_PATHSPECS=1 git checkout --ours -- '<path>'` for the base or `--theirs` for the
+  branch, then run it again with `--side-chosen=base` or `--side-chosen=branch` before the `--`.
+
+Name the side from the start for a path whose answer the user has already given below, and use
+`--side-chosen=base` for a lock file or schema dump whose row took the base's version. The script
+refuses a file holding the other side. The flag combines with `--hits-read`.
+
+**A deleted path.** `state.sh` names a file the branch renamed by its new path, so when the log
+above is empty, find the old path with `git show --stat -M REBASE_HEAD` and search for that. Remove
+the file with `GIT_LITERAL_PATHSPECS=1 git rm -- '<path>'`, or keep the surviving side's version,
+which git leaves in the worktree, by staging it with `--side-chosen=branch` for `deleted_by_us` or
+`--side-chosen=base` for `deleted_by_them`. When the path is all the commit changes, an answer that
+matches the base drops the commit, as Exit 3 describes, so say so in the question.
+
+**A rename on both sides.** Before asking, compare `git rev-parse --verify -q ':2:<added_by_us>'`
+with `git rev-parse --verify -q ':3:<added_by_them>'`, and read the file. When they match with no
+markers, git merged both sides' edits into each name and keeping one loses nothing. When they match
+with markers, the edits conflict and both are in the file, to be resolved after the answer. When
+they differ, git could not merge them, and keeping one name discards the other side's edit, so put
+that in the question. Compare these rather than the files, which are one file on a case-insensitive
+filesystem. When a new name is `added_by_both`, it also holds another file, so say that keeping or
+dropping it affects that file too. Apply the answer, where `<kept name>` is the name the user chose
+and each `<other name>` is the old name or another new name:
+
+```bash
+'${CLAUDE_SKILL_DIR}/scripts/keep-name.sh' '<kept name>' '<other name>'...
+```
+
+Exit 3 means an `<other name>` is `added_by_both`, so it holds another file's content, or belongs to
+another conflict or to no conflict, and nothing was changed. Name only the old name and the other
+new names, leave an `added_by_both` name out, show its hunks by reading the file, and ask what it
+should hold. Then stage the kept name, with `--side-chosen=base` for `added_by_us` or
+`--side-chosen=branch` for `added_by_them`, reading the file itself since `git diff` prints only
+that it is unmerged, because edits that conflicted leave markers in it. For a lock file or schema
+dump, whose row's `--ours` cannot work here, first write the base's version with
+`git cat-file -e HEAD:'<added_by_us>' && git show HEAD:'<added_by_us>' >'<kept name>'`, then
+regenerate. Keeping the base's name can drop the commit, as Exit 3 describes.
+
+To keep both new names, first run `GIT_LITERAL_PATHSPECS=1 git rm --quiet --cached -- '<old name>'`,
+then stage each new name naming its side. To keep the old name, ask which side's content it should
+hold when the two differ, run `keep-name.sh` with that side's new name kept and the other new name
+dropped, then move the kept name to the old name as described below.
+
+After a whole-directory answer, `git ls-files -- '<rejected directory>/'` lists what git added there
+cleanly, which no `state.sh` key names. Put those files to the user too, and move any they want kept
+with `GIT_LITERAL_PATHSPECS=1 git mv -- '<file>' '<kept directory>/'`. Never pass them to
+`keep-name.sh`, which refuses them.
+
+**Moving a file git placed.** To accept a location, stage the path with `--side-chosen=base` for
+`added_by_us` or `--side-chosen=branch` for `added_by_them`. To move it instead, `<new path>` being
+the original spot, which `git diff --summary -M '<old_base>' '<target>'` helps find by showing the
+directory's rename, or, for a `~` name, the name the user chose, run these as one command, since a
+session ending between them leaves the file off every list:
+
+```bash
+'${CLAUDE_SKILL_DIR}/scripts/move-file.sh' '<path>' '<new path>' \
+  && '${CLAUDE_SKILL_DIR}/scripts/stage-resolved.sh' -- '<new path>'
+```
+
+Exit 3 from `move-file.sh` means `<new path>` is occupied and nothing was moved, so ask for another
+name. Never `git rm` the path alone, which deletes the file.
+
+When every path is staged, continue:
 
 ```bash
 GIT_EDITOR=true git rebase --continue
