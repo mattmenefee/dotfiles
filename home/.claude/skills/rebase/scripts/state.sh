@@ -15,6 +15,13 @@
 #   deleted_by_us, deleted_by_them
 #                  a conflicted path one side deleted while the other changed it, with the sides as
 #                  git status names them; it also has a conflict line
+#   deleted_by_both, added_by_us, added_by_them, added_by_both
+#                  a conflicted path by what git status says of it, each also with a conflict line.
+#                  Both sides renaming a file gives the old name as deleted_by_both and each new
+#                  name as added by its side. A directory rename usually gives only added_by_us or
+#                  added_by_them, for a file git moved into that directory, and a file meeting a
+#                  directory gives one holding ~. added_by_both is a path both sides added, which
+#                  may also be a new name from a rename.
 #
 # Usage: state.sh
 
@@ -63,4 +70,6 @@ esac
 echo "dirty_tracked=$(git status --porcelain --untracked-files=no | wc -l | tr -d ' ')"
 git -c core.quotePath=false diff --name-only --diff-filter=U | sed 's/^/conflict=/'
 git status --porcelain --untracked-files=no -z | tr '\0' '\n' \
-  | sed -n -e 's/^DU /deleted_by_us=/p' -e 's/^UD /deleted_by_them=/p'
+  | sed -n -e 's/^DU /deleted_by_us=/p' -e 's/^UD /deleted_by_them=/p' \
+    -e 's/^DD /deleted_by_both=/p' -e 's/^AU /added_by_us=/p' -e 's/^UA /added_by_them=/p' \
+    -e 's/^AA /added_by_both=/p'
