@@ -12,6 +12,9 @@
 #   dirty_tracked  the number of changed tracked paths, conflicted ones included
 #   conflict       one line per conflicted path, unquoted unless it holds a control character, a
 #                  quote or a backslash
+#   deleted_by_us, deleted_by_them
+#                  a conflicted path one side deleted while the other changed it, with the sides as
+#                  git status names them; it also has a conflict line
 #
 # Usage: state.sh
 
@@ -59,3 +62,5 @@ esac
 
 echo "dirty_tracked=$(git status --porcelain --untracked-files=no | wc -l | tr -d ' ')"
 git -c core.quotePath=false diff --name-only --diff-filter=U | sed 's/^/conflict=/'
+git status --porcelain --untracked-files=no -z | tr '\0' '\n' \
+  | sed -n -e 's/^DU /deleted_by_us=/p' -e 's/^UD /deleted_by_them=/p'
