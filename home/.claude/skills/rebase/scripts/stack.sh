@@ -24,7 +24,8 @@
 #
 # Run it after rebasing <branch> but before restacking anything, with <old_tip> the branch's tip
 # from before its rebase. Without <repo>, no pull request is consulted, so every child is judged by
-# its history alone.
+# its history alone. A failed gh call exits non-zero with gh's error, since it would otherwise read
+# as no pull request and offer a child as ok.
 
 set -euo pipefail
 # shellcheck source=SCRIPTDIR/lib.sh
@@ -51,7 +52,7 @@ on_remote() {
 open_pr_of() {
   [[ -n $repo ]] || return 0
   gh pr list --repo "$repo" --head "$1" --state open --limit 1 --json number,baseRefName \
-    --jq '.[0] | select(. != null) | [.number, .baseRefName] | @tsv' 2>/dev/null || true
+    --jq '.[0] | select(. != null) | [.number, .baseRefName] | @tsv'
 }
 
 tip() { git rev-parse "refs/heads/$1"; }
@@ -104,6 +105,8 @@ while ((i < ${#queue[@]})); do
   done
 
   if [[ -n $repo ]]; then
+    open=$(gh pr list --repo "$repo" --base "$parent" --state open --json number,headRefName \
+      --jq '.[] | [.headRefName, .number] | @tsv')
     while IFS=$'\t' read -r child number; do
       [[ -n $child && $seen != *" $child "* && " ${candidates[*]-} " != *" $child "* ]] || continue
       require_plain_names "$child"
@@ -114,7 +117,6 @@ while ((i < ${#queue[@]})); do
         printf '%s\t%s\t%s\t-\t%s\t-\t-\tnot-local\n' "$parent" "$parent_old" "$child" "$number"
       fi
       seen+="$child "
-    done < <(gh pr list --repo "$repo" --base "$parent" --state open --json number,headRefName \
-      --jq '.[] | [.headRefName, .number] | @tsv' 2>/dev/null || true)
+    done <<<"$open"
   fi
 done

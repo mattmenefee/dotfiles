@@ -44,6 +44,10 @@ for ((i = 0; i < ${#args[@]}; i++)); do
     --author) author=${args[i + 1]} ;;
   esac
 done
+if [[ "$1 $2" == 'pr list' && (-e $f/fail-list-$state || -e $f/fail-list-$state-${key%%-*}) ]]; then
+  echo "HTTP 401: Bad credentials" >&2
+  exit 1
+fi
 case "$1 $2" in
   "repo view") jq -r "$filter" "$f/repo.json" ;;
   "pr view")
@@ -129,6 +133,11 @@ skill="${scripts}/../SKILL.md"
 check 'SKILL.md exists' yes "$([[ -f ${skill} ]] && echo yes)"
 # Claude Code would substitute an argument for each dollar sign followed by a digit
 check 'SKILL.md: no dollar-digit placeholders' '' "$(grep -nE '\$[0-9]' "${skill}")"
+# Only an agent reads these rules, so no script failure would show that one was lost
+contains 'SKILL.md: stops on an unconfirmed base' "- \`github=failed\`, unless" "$(cat "${skill}")"
+contains 'SKILL.md: resume keeps that stop' "Apply
+step 3's \`github=failed\` stop" "$(cat "${skill}")"
+contains 'SKILL.md: stops on modify/delete' "from \`state.sh\` | Always stop" "$(cat "${skill}")"
 
 echo '== state.sh'
 init_origin "${dir}/state.git" "${dir}/state" main
@@ -176,6 +185,39 @@ run 0 'state: bisect' "${scripts}/state.sh"
 check 'state: bisect op' bisect "$(kv op)"
 git bisect reset >/dev/null 2>&1
 
+echo '== modify/delete conflicts'
+git switch --quiet main
+commit 'yarn lock' lock 'Add a lock file'
+git switch --quiet -c base-deletes
+git rm --quiet -- 'yarn lock' && git commit --quiet -m 'Drop it'
+git switch --quiet -c base-changes main && commit 'yarn lock' base 'Change it on the base'
+git switch --quiet -c keeps main && commit 'yarn lock' branch 'Change it on the branch'
+git switch --quiet -c drops main && git rm --quiet -- 'yarn lock' && git commit --quiet -m 'Drop it'
+git switch --quiet keeps && git rebase base-deletes >/dev/null 2>&1
+run 0 'modify/delete: base deleted' "${scripts}/state.sh"
+check 'modify/delete: deleted by us' 'yarn lock' "$(kv deleted_by_us)"
+check 'modify/delete: not deleted by them' '' "$(kv deleted_by_them)"
+check 'modify/delete: still a conflict' 'yarn lock' "$(kv conflict)"
+git rebase --abort
+git switch --quiet drops && git rebase base-changes >/dev/null 2>&1
+run 0 'modify/delete: branch deleted' "${scripts}/state.sh"
+check 'modify/delete: deleted by them' 'yarn lock' "$(kv deleted_by_them)"
+check 'modify/delete: not deleted by us' '' "$(kv deleted_by_us)"
+git rm --quiet -- 'yarn lock' && git rebase --continue >/dev/null 2>&1
+check 'modify/delete: git rm finishes the rebase' none "$(kv op "$("${scripts}/state.sh")")"
+check 'modify/delete: the file stays deleted' no "$([[ -e 'yarn lock' ]] && echo yes || echo no)"
+git switch --quiet keeps && git rebase base-deletes >/dev/null 2>&1
+git add -- 'yarn lock' && git rebase --continue >/dev/null 2>&1
+check 'modify/delete: git add finishes the rebase' none "$(kv op "$("${scripts}/state.sh")")"
+check "modify/delete: git add keeps the branch's version" branch "$(cat 'yarn lock')"
+git switch --quiet -c lock-only main
+commit 'yarn lock' branch 'Change only the lock file'
+git rebase base-deletes >/dev/null 2>&1
+git rm --quiet -- 'yarn lock' && git rebase --continue >/dev/null 2>&1
+check 'modify/delete: an emptied commit drops silently' none "$(kv op "$("${scripts}/state.sh")")"
+check 'modify/delete: step 7 sees no commits left' 0 "$(git rev-list --count base-deletes..HEAD)"
+git switch --quiet main
+
 echo '== a repository whose default branch is master'
 init_origin "${dir}/master.git" "${dir}/master" master
 cd "${dir}/master" || exit 2
@@ -186,6 +228,7 @@ check 'master: base from GitHub' master "$(kv base)"
 touch "${FAKE_GH}/offline"
 run 0 'master: offline' "${scripts}/resolve-base.sh"
 check 'master: base from origin/HEAD' master "$(kv base)"
+check 'master: offline is unconfirmed' failed "$(kv github)"
 run 0 'master: prepare' "${scripts}/prepare.sh" topic master master origin
 check 'master: target' origin/master "$(kv target)"
 check 'master: local master up to date' up-to-date "$(kv ff_default)"
@@ -211,12 +254,22 @@ run 0 'resolve: default' "${scripts}/resolve-base.sh"
 check 'resolve: branch' feature "$(kv branch)"
 check 'resolve: default base' main "$(kv base)"
 check 'resolve: default source' default "$(kv source)"
+check 'resolve: confirmed by GitHub' ok "$(kv github)"
 check 'resolve: no parent' '' "$(kv parent)"
 touch "${FAKE_GH}/offline"
 run 0 'resolve: offline' "${scripts}/resolve-base.sh"
 check 'resolve offline: base from origin/HEAD' main "$(kv base)"
 check 'resolve offline: no repo' '' "$(kv repo)"
+check 'resolve offline: unconfirmed' failed "$(kv github)"
+contains "resolve offline: keeps gh's error" 'error connecting' "${err}"
 rm "${FAKE_GH}/offline"
+touch "${FAKE_GH}/fail-list-open"
+run 0 'resolve: pull request lookup fails' "${scripts}/resolve-base.sh"
+check 'resolve lookup failed: base' main "$(kv base)"
+check 'resolve lookup failed: source' default "$(kv source)"
+check 'resolve lookup failed: unconfirmed' failed "$(kv github)"
+contains "resolve lookup failed: keeps gh's error" 'HTTP 401' "${err}"
+rm "${FAKE_GH}/fail-list-open"
 run 0 'resolve: argument' "${scripts}/resolve-base.sh" other
 check 'resolve: argument base' other "$(kv base)"
 check 'resolve: argument source' argument "$(kv source)"
@@ -388,6 +441,17 @@ expected='feature child ok|feature develop has-merges|feature otherpr other-base
 expected+='|feature notparent not-on-parent|feature ghost not-local|child grandchild ok'
 actual=$(awk -F '\t' '{ print $1, $3, $8 }' <<<"${rows}" | paste -sd '|' -)
 check 'stack: rows' "${expected}" "${actual}"
+touch "${FAKE_GH}/fail-list-open-head"
+run 1 'stack: pull request lookup fails' "${scripts}/stack.sh" feature "${old_feature}" main \
+  test/repo
+contains "stack: keeps gh's error" 'HTTP 401' "${err}"
+rm "${FAKE_GH}/fail-list-open-head"
+touch "${FAKE_GH}/fail-list-open"
+run 1 'stack: pull request list fails with no child' "${scripts}/stack.sh" otherpr \
+  "$(git rev-parse otherpr)" main test/repo
+contains "stack: keeps the list's error" 'HTTP 401' "${err}"
+run 0 'stack: no repo consults no pull request' "${scripts}/stack.sh" feature "${old_feature}" main
+rm "${FAKE_GH}/fail-list-open"
 check 'stack: pull request' 11 "$(awk -F '\t' '$3 == "child" { print $5 }' <<<"${rows}")"
 wt=$(awk -F '\t' '$3 == "sibling" { print $6 }' <<<"${rows}")
 check 'stack: worktree' "$(cd "${dir}/sibling-wt" && pwd -P)" "$(cd "${wt}" && pwd -P)"
@@ -416,6 +480,15 @@ contains 'merged: offline says why' 'gh cannot reach' "${err}"
 rm "${FAKE_GH}/offline"
 run 1 'merged: unpushed parent, no merged PR' "${scripts}/resolve-base.sh" localparent
 contains 'merged: online says why' 'no merged pull request' "${err}"
+touch "${FAKE_GH}/fail-list-merged"
+run 1 'merged: unpushed parent, lookup fails' "${scripts}/resolve-base.sh" localparent
+contains 'merged: failed lookup says why' 'gh cannot reach' "${err}"
+contains "merged: failed lookup keeps gh's error" 'HTTP 401' "${err}"
+rm "${FAKE_GH}/fail-list-merged"
+touch "${FAKE_GH}/fail-list-open"
+run 1 'merged: only the open lookup fails' "${scripts}/resolve-base.sh" localparent
+contains 'merged: the merged lookup answered' 'no merged pull request' "${err}"
+rm "${FAKE_GH}/fail-list-open"
 printf '[{"number": 5, "headRefOid": "%s", "baseRefName": "main"}]\n' "$(git rev-parse feature)" \
   >"${FAKE_GH}/list-merged-head-localparent.json"
 run 1 'merged: an old PR from a reused name' "${scripts}/resolve-base.sh" localparent
@@ -461,6 +534,12 @@ check 'kept parent: source' merged-parent "$(kv source)"
 check 'kept parent: parent' parent4 "$(kv parent)"
 check 'kept parent: base from the merged PR' other "$(kv base)"
 check 'kept parent: old tip' "${parent4}" "$(kv old_parent_tip)"
+touch "${FAKE_GH}/fail-list-merged"
+run 0 'kept parent: lookup fails' "${scripts}/resolve-base.sh"
+check 'kept parent failed: source' pull-request "$(kv source)"
+check 'kept parent failed: unconfirmed' failed "$(kv github)"
+contains "kept parent failed: keeps gh's error" 'HTTP 401' "${err}"
+rm "${FAKE_GH}/fail-list-merged"
 
 # Squash-merged with the branch deleted, so GitHub retargeted the child to main
 git switch --quiet -c parent3 origin/main && commit p3.txt p3 'Add parent3'
@@ -475,6 +554,16 @@ run 0 'retargeted' "${scripts}/resolve-base.sh"
 check 'retargeted: source' default "$(kv source)"
 check 'retargeted: parent skips own and already-merged heads' parent3 "$(kv parent)"
 check 'retargeted: old tip' "${parent3}" "$(kv old_parent_tip)"
+touch "${FAKE_GH}/fail-list-merged"
+run 0 'retargeted: scan fails' "${scripts}/resolve-base.sh"
+check 'retargeted failed: no parent found' '' "$(kv parent)"
+check 'retargeted failed: unconfirmed' failed "$(kv github)"
+contains "retargeted failed: keeps gh's error" 'HTTP 401' "${err}"
+run 0 'retargeted: default named, scan fails' "${scripts}/resolve-base.sh" main
+check 'retargeted named: source' argument "$(kv source)"
+check 'retargeted named: unconfirmed' failed "$(kv github)"
+check 'retargeted named: no parent found' '' "$(kv parent)"
+rm "${FAKE_GH}/fail-list-merged"
 printf '[{"number": 31, "headRefName": "merged-in", "headRefOid": "%s"}]\n' \
   "$(git rev-parse origin/main)" >"${FAKE_GH}/list-merged-base-main.json"
 run 0 'retargeted: only an already-merged head' "${scripts}/resolve-base.sh"

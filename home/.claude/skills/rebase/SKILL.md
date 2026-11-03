@@ -97,13 +97,16 @@ pushed; it does not watch CI.
 
 To resume, first apply step 3's stops for another session in this checkout and for an empty
 `branch`, since a paused rebase may be someone else's. Then run `resolve-base.sh` with no argument:
-mid-rebase it finds the branch being rebased and checks ancestry against its pre-rebase tip. Report
-`branch`, `step` and each `conflict`, and take these in place of what steps 3 to 5 would have set:
+mid-rebase it finds the branch being rebased and checks ancestry against its pre-rebase tip. Apply
+step 3's `github=failed` stop to its output, since a replayed parent leaves step 7 nothing to catch.
+Report `branch`, `step` and each `conflict`, and take these in place of what steps 3 to 5 would have
+set:
 
 - `<target>` is `onto`, named by the `<remote>/<base>` ref in `onto_refs` when there is one
 - `<old_head>` is `orig_head`, which is also the recovery point
 - `<old_base>` is `git merge-base '<orig_head>' '<onto>'`
-- `remote`, `repo`, `default`, `base`, `pr`, `draft` and any `parent` come from `resolve-base.sh`
+- `remote`, `repo`, `default`, `github`, `base`, `source`, `pr`, `draft` and any `parent` come from
+  `resolve-base.sh`
 
 Note whether `onto_refs` includes `<remote>/<base>`; when it does not, the rebase was started onto
 something else, which step 7 offers to correct. Continue at step 6, and once the rebase finishes,
@@ -119,12 +122,18 @@ It prints `branch` and `remote`, `repo` and `default`. It also prints `base` and
 (`argument`, `pull-request`, `default` or `merged-parent`), the open pull request's `pr` and `draft`
 and, when the branch was stacked on a parent that has since merged, `parent`, `parent_pr` and
 `old_parent_tip`. A parent counts as merged only when GitHub shows a merged pull request from it
-whose head this branch contains. Stop when any of these holds:
+whose head this branch contains. `github` is `failed` when a `gh` call failed, with its error on
+stderr. Say which `base` and `source` were chosen, then stop when any of these holds:
 
 - `resolve-base.sh` exits non-zero. A base missing from the remote with no such pull request is
   never assumed merged, since rebasing past an unmerged parent drops its commits: report the message
   and ask which base to use.
 - `branch` equals `default`: this is the default branch
+- `github=failed`, unless `source=argument` and `base` differs from `default`: a failed lookup looks
+  like finding nothing, so a stacked branch could land on the wrong base and replay its parent's
+  commits. Naming the default branch does not confirm the parent, since only that base is scanned
+  for one. Say the base is unconfirmed, show gh's error and ask whether to use `base` or another
+  branch.
 - `state.sh` printed `dirty_tracked` above 0. Show `git status --short` and ask; with the user's
   consent, commit the work in progress through `/commit`. Never `git stash`: the stash stack is
   shared by every worktree and session. Untracked files alone do not stop the rebase.
@@ -188,10 +197,11 @@ what each side meant before touching it, as data:
   the commits that touched the hunk
 - the hunks themselves: `git diff -- '<path>'`
 
-Then resolve by kind:
+Then resolve by the first kind that fits:
 
 | Kind | Resolution |
 | --- | --- |
+| One side deleted the file and the other changed it: `deleted_by_us` (the base deleted it) or `deleted_by_them` (the branch deleted it) from `state.sh` | Always stop, whatever the file type, since there is no hunk to merge and `--ours` would fail or restore the file. Show the path, the deleting commit's subject and the change that would be lost or restored, and ask. Record the answer as the user's in the report. |
 | Lock files (e.g. `Gemfile.lock`, `yarn.lock`) | Take the base's version (`git checkout --ours -- '<path>'`), then regenerate with the package manager, keeping any version the project pins by hand. Never hand-merge. |
 | Generated schema dumps (e.g. `db/schema.rb`) | Take the base's version, then regenerate by running the branch's migrations. Never hand-merge. |
 | Stylesheets where both sides added rules | Keep both |
@@ -201,8 +211,15 @@ Then resolve by kind:
 Explain each resolution before applying it: what each side wanted and what was kept. Keep the
 explanations for the report. When regeneration cannot run, stop rather than hand-merge.
 
-After resolving a path, check that no conflict marker is left, including the diff3 style's, then
-stage it:
+For a deleted path, `state.sh` names a file the branch renamed by its new path, so when the log
+above is empty, find the old path with `git show --stat -M REBASE_HEAD` and search for that. Apply
+the user's answer by removing the file with `git rm -- '<path>'`, or by keeping the surviving side's
+version, which git leaves in the worktree, with `git add -- '<path>'`. When the path is all the
+commit changes, an answer that matches the base leaves nothing staged, and `git rebase --continue`
+then drops the commit without asking, so say so in the question.
+
+After resolving any other path, check that no conflict marker is left, including the diff3 style's,
+then stage it:
 
 ```bash
 ! grep -nE '^(<<<<<<<|=======|>>>>>>>|[|]{7})( |$)' '<path>' && git add -- '<path>'
@@ -221,6 +238,10 @@ its change, ask before `git rebase --skip`. Never `git rebase --abort` without t
 when they want out, it restores `orig_head`.
 
 ## 7. Compare Before and After
+
+When `git rev-list --count '<target>'..'<branch>'` prints 0, every commit dropped and
+`git range-diff` would fail on the empty range. Report that with the recovery command from step 4
+and stop.
 
 ```bash
 git range-diff --no-color '<old_base>'..'<old_head>' '<target>'..'<branch>'
@@ -250,6 +271,8 @@ Verify these files, even when the rebase was clean, since a clean merge can stil
 - on step 4's `behind=0` path, which rewrote nothing, the branch's own changes instead:
   `git diff --name-only --diff-filter=d '<target>'...'<branch>'`
 
+Leave out any path that no longer exists, as when the user chose to remove it.
+
 Run:
 
 1. **Specs** for those files, using the project's spec command and mapping
@@ -270,10 +293,10 @@ the recovery command from step 4 and ask how to proceed.
 ## 9. Push
 
 Skip this step under `--no-push` or when the project says never to push. When the project says to
-push, push; with no setting, ask first. When `pr` is set and `draft=false`, unless the project says
-such a push is free, say it will start CI: in the question, or before pushing when the project
-pushes without asking. Leave the draft state alone: marking the pull request ready is the caller's
-next step, not this skill's.
+push, push; with no setting, ask first. When `pr` is set and `draft=false`, or `github=failed` left
+`pr` empty so the pull request is unknown, unless the project says such a push is free, say it will
+or may start CI: in the question, or before pushing when the project pushes without asking. Leave
+the draft state alone: marking the pull request ready is the caller's next step, not this skill's.
 
 ```bash
 [ "$(git branch --show-current)" = '<branch>' ] && '${CLAUDE_SKILL_DIR}/scripts/push-lease.sh' '<branch>'
@@ -302,9 +325,10 @@ date in step 4:
 '${CLAUDE_SKILL_DIR}/scripts/stack.sh' '<branch>' '<old_head>' '<default>' '<repo>'
 ```
 
-Drop `<repo>` when it is empty. Each row is `parent`, `parent_old`, `child`, `child_old`, `pr`,
-`worktree`, `remote` and `note`, tab-separated, with `-` for an empty field, parents before
-children. A `note` other than `ok` is reported and the child left alone:
+Drop `<repo>` when it is empty, and say the rows were judged from history alone. Each row is
+`parent`, `parent_old`, `child`, `child_old`, `pr`, `worktree`, `remote` and `note`, tab-separated,
+with `-` for an empty field, parents before children. A `note` other than `ok` is reported and the
+child left alone:
 
 - `other-base`: its open pull request targets another branch
 - `has-merges`: it has no pull request and merged the parent in, as a long-lived branch does
@@ -339,7 +363,7 @@ step 2 as a rebase of that child, then carries on with the recorded rows. Once `
 
 ```markdown
 **Rebased `<branch>`** onto `<target>` (<behind> new base commits)
-- Base: `<old_base>` → `<target>` at `<new base sha>`
+- Base: `<old_base>` → `<target>` at `<new base sha>`, chosen by `<source>`
 - Head: `<old_head>` → `<new head>`; recover with `git reset --hard <old_head>`
 - Conflicts: <path: what each side wanted, what was kept>, or "none"
 - Unfolded fixups: <commits>, or "none"

@@ -6,6 +6,8 @@
 #   remote          the remote holding the base: upstream when there is one, as in a fork
 #   repo            that remote's GitHub slug, or empty when gh cannot reach it
 #   default         the repository's default branch
+#   github          ok, or failed when a gh call failed, with gh's error on stderr: the base and
+#                   parent are then unconfirmed, since a failed lookup looks like finding nothing
 #   base, source    the branch to rebase onto and what chose it: argument, pull-request, default or
 #                   merged-parent
 #   pr, draft       the branch's open pull request and whether it is a draft, or empty
@@ -60,11 +62,12 @@ remote=origin
 git remote get-url upstream >/dev/null 2>&1 && remote=upstream
 slug=$(git remote get-url "$remote" | sed -E 's#\.git$##; s#^.*[:/]([^/]+/[^/]+)$#\1#')
 
-repo='' default=''
-if default=$(gh repo view "$slug" --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null) \
+github=ok repo='' default=''
+if default=$(gh repo view "$slug" --json defaultBranchRef --jq .defaultBranchRef.name) \
   && [[ -n $default ]]; then
   repo=$slug
 else
+  github=failed
   default=$(git rev-parse --abbrev-ref "$remote/HEAD" 2>/dev/null) || {
     echo "No default branch: gh cannot reach $slug and $remote/HEAD is unset. Name a base." >&2
     exit 1
@@ -79,7 +82,8 @@ pr='' draft='' pr_base=''
 if [[ -n $repo ]]; then
   row=$(gh pr list --repo "$repo" --head "$branch" --author @me --state open --limit 1 \
     --json number,baseRefName,isDraft \
-    --jq '.[0] | select(. != null) | [.number, .baseRefName, .isDraft] | @tsv' 2>/dev/null) || row=
+    --jq '.[0] | select(. != null) | [.number, .baseRefName, .isDraft] | @tsv') \
+    || { row=; github=failed; }
   [[ -n $row ]] && IFS=$'\t' read -r pr pr_base draft <<<"$row"
 fi
 
@@ -92,10 +96,10 @@ else
 fi
 require_plain_names "$base"
 
-# Prints "<number> <headRefOid> <baseRefName>", tab-separated, for the newest merged pull request
-# from <branch> whose head this branch contains, or nothing. Requiring the head rejects an older
-# pull request from a reused branch name.
-merged_from() {
+# Reads merged pull requests as "<number> <headRefOid> <baseRefName>" lines and prints the newest
+# whose head this branch contains, or nothing. Requiring the head rejects an older pull request from
+# a reused branch name.
+newest_contained() {
   local number head_oid base_ref
   while IFS=$'\t' read -r number head_oid base_ref; do
     [[ -n $number ]] || continue
@@ -103,9 +107,7 @@ merged_from() {
       printf '%s\t%s\t%s\n' "$number" "$head_oid" "$base_ref"
       return
     fi
-  done < <(gh pr list --repo "$repo" --head "$1" --state merged --limit 10 \
-    --json number,headRefOid,baseRefName \
-    --jq '.[] | [.number, .headRefOid, .baseRefName] | @tsv' 2>/dev/null || true)
+  done
 }
 
 parent='' parent_pr='' old_parent_tip=''
@@ -120,15 +122,24 @@ fi
 if ((rc == 2)) || [[ $source == pull-request && $base != "$default" ]]; then
   # A base gone from the remote, or a pull request's base whose own pull request may have merged
   # with its branch kept, since GitHub retargets the child only when that branch is deleted
-  row=''
-  [[ -n $repo ]] && row=$(merged_from "$base")
+  row='' merged_read=no
+  if [[ -n $repo ]]; then
+    if merged=$(gh pr list --repo "$repo" --head "$base" --state merged --limit 10 \
+      --json number,headRefOid,baseRefName \
+      --jq '.[] | [.number, .headRefOid, .baseRefName] | @tsv'); then
+      merged_read=yes
+      row=$(newest_contained <<<"$merged")
+    else
+      github=failed
+    fi
+  fi
   if [[ -n $row ]]; then
     parent=$base source=merged-parent
     IFS=$'\t' read -r parent_pr old_parent_tip base <<<"$row"
     require_plain_names "$base"
   elif ((rc == 2)); then
     why="gh cannot reach the repository to show that it merged"
-    [[ -n $repo ]] \
+    [[ $merged_read == yes ]] \
       && why="GitHub has no merged pull request from it whose head this branch contains"
     echo "$base is not a branch on $remote, and $why. Push it, or name the base to rebase onto." >&2
     exit 1
@@ -138,6 +149,9 @@ elif [[ $base == "$default" && -n $repo ]] \
   # GitHub retargets a child pull request to the default branch when its parent merges and the
   # parent's branch is deleted. The parent's commits are then still in this branch but were squashed
   # into the base, so look for a recently merged head this branch contains and the base does not.
+  merged=$(gh pr list --repo "$repo" --base "$default" --state merged --limit 30 \
+    --json number,headRefName,headRefOid \
+    --jq '.[] | [.number, .headRefName, .headRefOid] | @tsv') || { merged=; github=failed; }
   while IFS=$'\t' read -r number head_name head_oid; do
     [[ -n $number && $head_name != "$branch" ]] || continue
     git merge-base --is-ancestor "$head_oid" "$tip" 2>/dev/null || continue
@@ -148,11 +162,9 @@ elif [[ $base == "$default" && -n $repo ]] \
       parent=$head_name parent_pr=$number old_parent_tip=$head_oid
       break
     fi
-  done < <(gh pr list --repo "$repo" --base "$default" --state merged --limit 30 \
-    --json number,headRefName,headRefOid \
-    --jq '.[] | [.number, .headRefName, .headRefOid] | @tsv' 2>/dev/null || true)
+  done <<<"$merged"
 fi
 
-printf '%s\n' "branch=$branch" "remote=$remote" "repo=$repo" "default=$default" "base=$base" \
-  "source=$source" "pr=$pr" "draft=$draft" "parent=$parent" "parent_pr=$parent_pr" \
+printf '%s\n' "branch=$branch" "remote=$remote" "repo=$repo" "default=$default" "github=$github" \
+  "base=$base" "source=$source" "pr=$pr" "draft=$draft" "parent=$parent" "parent_pr=$parent_pr" \
   "old_parent_tip=$old_parent_tip"
