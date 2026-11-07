@@ -9,8 +9,6 @@ tools: Glob, Grep, Read, Edit, Write, Bash, WebFetch, WebSearch, Skill, ToolSear
 model: opus
 memory: project
 effort: high
-skills:
-  - local-review
 color: cyan
 ---
 
