@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# claude-mcp-setup — register Claude Code's user-scope MCP servers on this Mac. They live in
+# ~/.claude.json, which isn't synced because it also holds machine and account state. A server
+# already registered is left alone, and each HTTP server still needs `/mcp` to sign in.
+#
+# Usage: POSTMARK_DEFAULT_SENDER_EMAIL=<address> claude-mcp-setup
+#
+# Without POSTMARK_DEFAULT_SENDER_EMAIL the Postmark server is skipped, which keeps the address out
+# of this public file.
+
+set -eu
+
+failed=0
+
+# Adding is the presence check: `claude mcp get` would also find a server registered for one project
+# or in a project's .mcp.json, hiding a missing user-scope one
+# Usage: add <name> <claude mcp add arguments after the name>
+add() {
+  name=$1
+  shift
+  if out=$(claude mcp add --scope user "$name" "$@" 2>&1); then
+    echo "add      $name"
+  elif printf '%s\n' "$out" | grep -q 'already exists in user config'; then
+    echo "ok       $name"
+  else
+    printf '%s\n' "$out" >&2
+    echo "fail     $name" >&2
+    failed=1
+  fi
+}
+
+add serena -- uvx --from git+https://github.com/oraios/serena serena start-mcp-server \
+  --context ide-assistant
+add chrome-devtools -- npx chrome-devtools-mcp@latest
+add circleci-cli -- circleci mcp start
+add heroku -- npx -y @heroku/mcp-server
+
+add notion --transport http https://mcp.notion.com/mcp
+add linear-server --transport http https://mcp.linear.app/mcp
+add appsignal --transport http https://appsignal.com/api/mcp
+add mixpanel --transport http https://mcp.mixpanel.com/mcp
+add harvest --transport http https://api.harvestapp.com/mcp
+add expensify --transport http https://www.expensify.com/mcp/
+
+if [ -n "${POSTMARK_DEFAULT_SENDER_EMAIL-}" ]; then
+  add postmark -e "DEFAULT_SENDER_EMAIL=$POSTMARK_DEFAULT_SENDER_EMAIL" \
+    -e DEFAULT_MESSAGE_STREAM=outbound -- npx -y @activecampaign/postmark-mcp
+else
+  echo 'skip     postmark: set POSTMARK_DEFAULT_SENDER_EMAIL to add it'
+fi
+
+exit "$failed"

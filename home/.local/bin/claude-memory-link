@@ -1,0 +1,252 @@
+#!/bin/sh
+#
+# claude-memory-link — keep Claude Code's memory folders in a synced folder (iCloud Drive by
+# default) and symlink them back into ~/.claude, so every Mac that runs this shares one memory per
+# project.
+#
+# Usage: claude-memory-link [--dry-run]
+#
+# A synced folder is named after its project's path under the home folder, so the Macs' usernames
+# may differ, but each repository must sit at the same path under ~ on every Mac for its memory to
+# line up. Claude Code's naming has two limits this inherits: a folder beside the home folder, such
+# as /Users/me-work/x, shares memory with ~/work/x, and a path long enough that Claude Code shortens
+# its folder name is not shared at all. Set CLAUDE_MEMORY_SYNC_DIR to an absolute path to use a
+# folder other than iCloud Drive's ClaudeMemory.
+#
+# Quit every Claude session before running this: a session that writes memory mid-run can leave its
+# write behind in ~/.claude/memory-backups. iCloud does not merge files, so when two Macs edit one
+# file close together it keeps both and names one "MEMORY 2.md", which Claude never reads; look for
+# such files now and then and merge them by hand.
+#
+# Memory records details of the projects it was written in. Turn on Advanced Data Protection so
+# iCloud stores it end-to-end encrypted, and never share the folder: anyone who can write to it can
+# put text in front of every Claude session through MEMORY.md.
+
+set -eu
+
+dry_run=0
+case "${1-}" in
+  --dry-run) dry_run=1 ;;
+  '') ;;
+  *)
+    echo 'usage: claude-memory-link [--dry-run]' >&2
+    exit 2
+    ;;
+esac
+
+cloud_docs="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
+root="${CLAUDE_MEMORY_SYNC_DIR:-$cloud_docs/ClaudeMemory}"
+claude_dir="$HOME/.claude"
+backups="$claude_dir/memory-backups"
+stamp=$(date +%Y%m%d%H%M%S)
+unresolved=0
+
+# A relative path would be read from the current folder here but from ~/.claude by each link
+case $root in
+  /*) ;;
+  *)
+    echo "claude-memory-link: CLAUDE_MEMORY_SYNC_DIR must be an absolute path: $root" >&2
+    exit 2
+    ;;
+esac
+
+if [ -z "${CLAUDE_MEMORY_SYNC_DIR-}" ] && [ ! -d "$cloud_docs" ]; then
+  echo "claude-memory-link: iCloud Drive not found at $cloud_docs" >&2
+  exit 1
+fi
+
+run() {
+  if [ "$dry_run" -eq 1 ]; then
+    echo "          would run: $*"
+  else
+    "$@"
+  fi
+}
+
+report() {
+  echo "$1" >&2
+  unresolved=1
+}
+
+# A link inside the synced folder could send this Mac's memory writes anywhere
+has_symlink() {
+  [ -L "$1" ] || { [ -d "$1" ] && [ -n "$(find "$1" -type l -print -quit)" ]; }
+}
+
+# Prints each file present in both folders whose contents differ
+differing_files() {
+  (cd "$1" && find . -type f) | while IFS= read -r file; do
+    if [ -e "$2/$file" ] && ! cmp -s "$1/$file" "$2/$file"; then
+      echo "${file#./}"
+    fi
+  done
+}
+
+# Reads relative paths and copies each one the target lacks. Callers sit on the left of `||`, where
+# `set -e` is off, so every step checks its own result.
+copy_missing() {
+  while IFS= read -r file; do
+    file=${file#./}
+    [ -e "$2/$file" ] && continue
+    run mkdir -p "$(dirname "$2/$file")" || return 1
+    run cp -p "$1/$file" "$2/$file" || return 1
+  done
+}
+
+# Copies files the target lacks, then sets the local folder aside; fails on a differing file
+merge_into() {
+  local_dir=$1 target=$2 name=$3
+  conflicts=$(differing_files "$local_dir" "$target")
+  if [ -n "$conflicts" ]; then
+    report "conflict $name: these files differ from $target; merge them by hand, then rerun:"
+    echo "$conflicts" | sed 's/^/           /' >&2
+    return 1
+  fi
+
+  echo "merge    $name"
+  if ! (cd "$local_dir" && find . -type f) | copy_missing "$local_dir" "$target"; then
+    report "fail     $name: copying into $target failed; $local_dir is unchanged"
+    return 1
+  fi
+  if ! { run mkdir -p "$backups" && run mv "$local_dir" "$backups/$name-$stamp"; }; then
+    report "fail     $name: could not move $local_dir aside; its files are now in $target too"
+    return 1
+  fi
+}
+
+# Moves a local folder into a target that did not exist; fails if the target appeared meanwhile
+move_into() {
+  local_dir=$1 target=$2 name=$3
+  echo "move     $name"
+  if ! { run mkdir -p "$(dirname "$target")" && run mv "$local_dir" "$target"; }; then
+    report "fail     $name: could not move $local_dir to $target"
+    return 1
+  fi
+  # BSD mv puts the folder inside a target that iCloud created between the test and the move; moving
+  # it back leaves the next run an ordinary merge
+  nested="$target/${local_dir##*/}"
+  if [ "$dry_run" -eq 0 ] && [ -d "$nested" ]; then
+    if mv "$nested" "$local_dir"; then
+      report "fail     $name: $target appeared during the move; rerun to merge"
+    else
+      report "fail     $name: $target appeared during the move; move $nested back by hand"
+    fi
+    return 1
+  fi
+}
+
+make_link() {
+  local_dir=$1 target=$2 name=$3
+  run mkdir -p "$target"
+  run ln -s "$target" "$local_dir"
+  if [ "$dry_run" -eq 1 ] || [ -L "$local_dir" ]; then
+    return 0
+  fi
+
+  # A session wrote memory between the move and the link, so ln nested the link in a new folder
+  nested="$local_dir/${target##*/}"
+  [ -L "$nested" ] && rm "$nested"
+  report "fail     $name: $local_dir came back during the move; quit Claude sessions and rerun"
+}
+
+link_one() {
+  local_dir=$1 target=$2 name=$3
+
+  if has_symlink "$target"; then
+    report "skip     $name: $target is or contains a symlink"
+    return 0
+  fi
+
+  if [ -L "$local_dir" ]; then
+    if [ "$(readlink "$local_dir")" != "$target" ]; then
+      report "skip     $name: links to $(readlink "$local_dir"), not $target"
+    elif [ -d "$target" ]; then
+      echo "ok       $name"
+    else
+      echo "relink   $name (synced folder missing)"
+      run mkdir -p "$target"
+    fi
+    return 0
+  fi
+
+  if [ -d "$local_dir" ]; then
+    if [ -z "$(ls -A "$local_dir")" ]; then
+      echo "link     $name (empty here)"
+      run rmdir "$local_dir"
+    elif [ ! -e "$target" ]; then
+      move_into "$local_dir" "$target" "$name" || return 0
+    else
+      merge_into "$local_dir" "$target" "$name" || return 0
+    fi
+  elif [ -e "$local_dir" ]; then
+    report "skip     $name: $local_dir is not a folder"
+    return 0
+  else
+    echo "link     $name (new here)"
+    run mkdir -p "$(dirname "$local_dir")"
+  fi
+
+  make_link "$local_dir" "$target" "$name"
+}
+
+# Claude Code names a project's memory folder after its path, with every character but letters and
+# digits turned into "-", so the home folder's own prefix differs between usernames
+home_slug=$(printf '%s' "${HOME%/}" | sed 's/[^A-Za-z0-9]/-/g')
+
+# Prints the synced name for a local slug: "home" in place of this Mac's home prefix. A slug outside
+# the home folder keeps its name, which starts with "-" and so never collides.
+synced_name() {
+  case $1 in
+    "$home_slug") printf 'home\n' ;;
+    "$home_slug"-*) printf 'home%s\n' "${1#"$home_slug"}" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+# Prints the local slug for a synced name, the reverse of synced_name
+local_slug() {
+  case $1 in
+    home | home-*) printf '%s%s\n' "$home_slug" "${1#home}" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+# Neither a slug nor a synced name contains a space, so a name with one is a conflict copy iCloud
+# made, such as "home-code-app 2"
+conflict_copy() {
+  case $1 in
+    *' '*)
+      report "skip     $1: looks like an iCloud conflict copy; merge it by hand"
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+run mkdir -p "$root/projects"
+
+link_one "$claude_dir/memory" "$root/user" user
+
+for local_dir in "$claude_dir"/projects/*/memory; do
+  [ -e "$local_dir" ] || [ -L "$local_dir" ] || continue
+  slug=${local_dir%/memory}
+  slug=${slug##*/}
+  name=$(synced_name "$slug")
+  # Scratchpad and temporary projects live under /private, outside the home folder, and never recur
+  case $name in -private-*) continue ;; esac
+  link_one "$local_dir" "$root/projects/$name" "$slug"
+done
+
+# Memory another Mac created for a project this Mac has not opened yet
+for target in "$root"/projects/*; do
+  [ -d "$target" ] || [ -L "$target" ] || continue
+  name=${target##*/}
+  conflict_copy "$name" && continue
+  slug=$(local_slug "$name")
+  local_dir="$claude_dir/projects/$slug/memory"
+  if [ ! -e "$local_dir" ] && [ ! -L "$local_dir" ]; then
+    link_one "$local_dir" "$target" "$slug"
+  fi
+done
+
+exit "$unresolved"
