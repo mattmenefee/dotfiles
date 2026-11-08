@@ -66,7 +66,8 @@ Arguments: `$ARGUMENTS`
   would run as shell. Double quotes run backticks and `$( )`, and subjects in this repository
   contain backticks. A heredoc is used below only for fixed text the skill itself supplies and for
   the squash todo list, which holds only SHAs and paths.
-- **Write commit messages here, never with `/commit`.** Steps 2 and 3 write and commit their own
+- **Write commit messages here, never with `/commit`.** This is the one exception to the `/commit`
+  rule in `home/.claude/CLAUDE.md`'s Committing Changes: Steps 2 and 3 write and commit their own
   messages; do not invoke `/commit` during either, since its default mode commits the session's
   changes. Read the Commit Message Guidelines in `home/.claude/skills/commit/SKILL.md` and follow
   them, and check each message file with the block in Step 3 before using it. A message that absorbs
@@ -686,8 +687,8 @@ For each of the rest, in this order:
 Record each answer at the end of the finding's **Status** line in the source, as `Follow-up: #<n>.`
 or `No follow-up.`, so the posted comment says where each deferral went. When `gh` cannot reach
 GitHub, record `Not filed: GitHub unavailable.`, tell the user and carry on. These follow-ups are
-records, not merge gates: Steps 7 and 8 hold the merge only for the findings Deferred findings that
-describe a weakness listed.
+records, not merge gates: Steps 7 and 8 hold the merge only for the findings listed under Deferred
+findings that describe a weakness.
 
 ### Copy, redact and scrub
 
@@ -726,9 +727,11 @@ Only the user's answer to this question clears a finding, never the reviewer's c
 Write the numbers the user cleared with the `Write` tool to `artifact-<n>.cleared-findings` in the
 work directory, one per line, as `F14`, and leave the file out when the user clears none.
 
-The blocks below see only findings under the `## Sensitive Information` heading. When the summary
-table names Sensitive Information for a finding filed elsewhere, such as under `## Observations`,
-stop and ask the user to move it under that heading in the source before posting.
+The blocks below see findings under the `## Sensitive Information` heading and any finding whose
+summary-table row names Sensitive Information in its Category cell, as `post.sh` in `/doc-review`
+does. When a finding filed elsewhere, such as under `## Observations`, is Sensitive Information but
+its summary row names no category, stop and ask the user to move it under that heading in the source
+before posting.
 
 Then **withhold every trace of each Sensitive Information finding the user has not cleared**: its
 section entry, its summary row, its checklist item, any assessment sentence, any other mention of
@@ -858,8 +861,10 @@ comment="$work/$name.comment"
   cat -- "$work/$name.copy" && printf '\n</details>\n'; } > "$comment" || exit 1
 [ "$(wc -c < "$comment")" -le 60000 ] || { echo 'over 60000 bytes: ask the user' >&2; exit 1; }
 cf="$work/$name.cleared-findings"; [ -e "$cf" ] || cf=/dev/null
-all=$(awk '/^## /{s=/^## Sensitive Information/} s && /^### F[0-9]+ /{print $(2)}' "$src") ||
-  exit 1
+# A finding is Sensitive Information by its heading's section or its summary row's Category cell
+all=$(awk '/^## /{s=/^## Sensitive Information/} s && /^### F[0-9]+ /{print $(2)}
+  /^\|[[:space:]]*F[0-9]+[[:space:]]*\|/ { n = split($(0), c, /[[:space:]]*\|[[:space:]]*/)
+    if (n > 4 && c[4] == "Sensitive Information") print c[2] }' "$src") || exit 1
 while IFS= read -r fid || [ -n "$fid" ]; do
   printf '%s\n' "$fid" | command grep -qxE 'F[0-9]+' &&
     printf '%s\n' "$all" | command grep -qxF -- "$fid" ||
@@ -870,9 +875,11 @@ awk -v cf="$cf" 'FILENAME == cf {c[$(0)]; n++; next}
   s && /^### / && !($(2) in c) {bad=1}
   END {exit bad}' "$cf" "$comment" ||
   { echo 'withhold: the section still holds a finding that was not cleared' >&2; exit 1; }
-ids=$(awk -v cf="$cf" 'FILENAME == cf {c[$(0)]; next}
-  /^## /{s=/^## Sensitive Information/} s && /^### F[0-9]+ / && !($(2) in c) {print $(2)}' \
-  "$cf" "$src") || exit 1
+ids=$(awk -v cf="$cf" 'FILENAME == cf {c[$(0)]; next} { id = "" }
+  /^## /{s=/^## Sensitive Information/} s && /^### F[0-9]+ / {id = $(2)}
+  /^\|[[:space:]]*F[0-9]+[[:space:]]*\|/ { n = split($(0), r, /[[:space:]]*\|[[:space:]]*/)
+    if (n > 4 && r[4] == "Sensitive Information") id = r[2] }
+  id != "" && !(id in c) && !(id in seen) {seen[id]; print id}' "$cf" "$src") || exit 1
 for fid in $(printf '%s\n' "$ids"); do
   ! command grep -qE "(^|[^0-9a-z])$fid([^0-9]|\$)" "$comment" ||
     { echo "withhold: $fid is still in the comment" >&2; exit 1; }
@@ -1052,14 +1059,14 @@ When Step 5 left the CI item open, read the rollup again with Step 5's rollup bl
 now pass by Step 5's rule, tick the item with that commit's short SHA in `body.txt` and send it with
 Step 5's check-and-send block. Otherwise leave the item open.
 
-On every run, name each finding Step 6's Deferred findings that describe a weakness listed, with its
-follow-up, and ask whether that follow-up has landed. When Step 6 left a review unposted because a
-finding is open, leave the pull request as it is and tell the user which findings are holding it.
-Otherwise, if it is a draft or carries `wip`, ask with `AskUserQuestion` before marking it ready,
-stating the CI state just read (passed on which commit, pending, canceled, failed or skipped until
-marked ready), since marking ready notifies watchers and cannot be recalled. On approval, run
-`gh pr edit --remove-label wip` only when the labels printed include `wip`, and `gh pr ready` only
-when it printed `draft=true`.
+On every run, name each finding listed under Step 6's Deferred findings that describe a weakness,
+with its follow-up, and ask whether that follow-up has landed. When Step 6 left a review unposted
+because a finding is open, leave the pull request as it is and tell the user which findings are
+holding it. Otherwise, if it is a draft or carries `wip`, ask with `AskUserQuestion` before marking
+it ready, stating the CI state just read (passed on which commit, pending, canceled, failed or
+skipped until marked ready), since marking ready notifies watchers and cannot be recalled. On
+approval, run `gh pr edit --remove-label wip` only when the labels printed include `wip`, and
+`gh pr ready` only when it printed `draft=true`.
 
 Then record the run, unless Step 6 left a review unposted because a finding is open. When a weakness
 deferral's follow-up named above has not landed, ask with `AskUserQuestion` whether to record the
@@ -1250,8 +1257,10 @@ the answer:
 - the destination of each deferred finding, with the exact text of any issue to be filed
 - how to publish each deferred finding that describes a weakness
 - posting in full each Sensitive Information finding that names no value
-- posting a review whose scrub hit a secret-shaped line, or that names a person, organization or
-  Linear link
+- posting an artifact whose Branch row names another branch or repository, or has none
+- dropping a Location line from a withheld finding's term list
+- posting a review, plan or handoff comment whose scrub hit a secret-shaped line, or that names a
+  person, organization or Linear link
 - deleting a handoff, a `*-DOC-REVIEW*.md` with a withheld finding or a source whose redacted
   credentials await the user's word on rotation
 - marking the pull request ready
