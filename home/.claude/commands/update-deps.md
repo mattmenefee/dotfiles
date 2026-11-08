@@ -106,11 +106,35 @@ git checkout -b <branch-name>
 
 ### Step 3: Update Ruby Dependencies
 
+First lift any release-age hold an earlier run left. List them with
+`grep -n 'update-deps: release-age hold' Gemfile`. Delete each line whose marker ends at `hold`, and
+on a line marked `bound only` remove just the `"< <version>"` bound and the marker (see
+[Check Every Moved Gem's Release Age](#check-every-moved-gems-release-age)).
+
 Run `gem_update` to update all Ruby gems and get an initial draft of the dependency changes:
 
 ```bash
-out="$(mktemp -t gem-update)" && echo "$out" && gem_update 2>&1 | tee "$out"
+out="$(mktemp -t gem-update)" && echo "$out" && BUNDLE_COOLDOWN=1 gem_update 2>&1 | tee "$out"
 ```
+
+`BUNDLE_COOLDOWN=1` is the Ruby side of the release-age gate
+[Step 4](#step-4-update-javascript-dependencies) applies to Yarn: Bundler skips any gem release
+younger than one day and resolves the newest one old enough, across the whole tree, and prints the
+releases it skipped. It overrides any `cooldown:` the Gemfile sets on a `source` line, so first read
+the project's own cooldown for rubygems.org, in days: `bundle config get cooldown`, or else the
+`cooldown:` on the Gemfile's `source "https://rubygems.org"` line. Drop the variable when that is
+`1` or more, so a longer cooldown stands; a `0` is not a reason to drop it. A private source's own
+`cooldown: 0` does not count: Bundler's documentation suggests it to exempt an internal server,
+which usually sends no `created_at` for the cooldown to use anyway. Bundler without cooldown support
+ignores the variable silently, which
+[Check Every Moved Gem's Release Age](#check-every-moved-gems-release-age) below catches.
+
+The variable loses to one place: the project's local configuration, which Bundler reads before the
+environment. `bundle config get cooldown` labels such a value "Set for your local app", from
+`.bundle/config`. When that value is below `1`, the variable changes nothing, and `gem_update` takes
+no `--cooldown` flag, the only setting that outranks local configuration. Tell the user the gate
+will not apply to `gem_update` and why, and let the release-age check below catch what it lets
+through.
 
 The first line printed is the private file the output is saved to; a later command reads it by that
 path, since a variable does not outlive its shell. A fixed path under `/tmp` would follow a stale
@@ -131,8 +155,12 @@ output will indicate that the bundle is already up to date.
 
 #### Update Bundler
 
-`bundle update` moves gems but never the lock file's `BUNDLED WITH` line, so Bundler stays wherever
-it was. Production installs whichever Bundler that line names, so update it explicitly:
+Production installs whichever Bundler the lock file's `BUNDLED WITH` line names. `bundle update`
+runs that Bundler and leaves the line alone, so on its own it keeps Bundler wherever it was.
+`gem_update` does not: it runs the newest Bundler installed on this machine and can rewrite the line
+to that version, so a lock at 2.6.9 can come back at 4.0.24 with no Bundler step taken and no entry
+in its output. Either way, update Bundler explicitly and read the line from the diff, which shows
+both kinds of move:
 
 ```bash
 bundle update --bundler
@@ -162,6 +190,95 @@ commit-message entry. There is no changelog anchor to cite, so link the comparis
 [compare](https://github.com/<owner>/<repo>/compare/<old-sha>...<new-sha>)
 ```
 
+#### Check Every Moved Gem's Release Age
+
+The cooldown cannot be trusted on its own. `gem_update` runs the newest Bundler installed on this
+machine, not the one `BUNDLED WITH` names, and an older one has no cooldown. A gem server that sends
+no per-version `created_at` lets every release through. And `bundle update --bundler` ignores the
+cooldown altogether. So read the publish time of every gem version that `Gemfile.lock` now records
+for the first time, the `BUNDLED WITH` Bundler included, from the RubyGems API:
+
+```bash
+git diff -U0 Gemfile.lock \
+  | sed -nE 's/^\+    ([^ ]+) \(([^)]+)\)$/\1 \2/p; s/^\+ {2,3}([0-9][^ ]*)$/bundler \1/p' \
+  | while read -r name version; do
+      if ! json="$(curl -fsS "https://rubygems.org/api/v1/versions/${name}.json" 2>&1)"; then
+        echo "${name} ${version}: lookup failed: ${json}"; continue
+      fi
+      printf '%s\n' "$json" \
+        | jq -r --arg n "$name" --arg v "${version%%-*}" '
+            (([.[] | select(.number == $v)][0] // {}).created_at // "unknown") as $c
+            | if $c == "unknown" then "\($n) \($v): not on rubygems.org"
+              else ((now - ($c | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601)) / 3600
+                    | floor) as $h
+              | "\($n) \($v): published \($c[0:16])Z, \($h)h ago\(
+                  if $h < 24 then " (younger than one day)" else "" end)" end'
+    done
+```
+
+`${version%%-*}` drops a platform suffix (`1.18.10-arm64-darwin`). Bundler 4 indents the
+`BUNDLED WITH` version two spaces and Bundler 2 three, which the second `sed` pattern allows for.
+Read the other lines this way:
+
+- **`lookup failed: … 404`** — no gem of that name is on rubygems.org, so it comes from a Git source
+  or a private server and is not gated here
+- **`not on rubygems.org`** — the gem is there but that version is not, which again means another
+  source
+- **`lookup failed` with any other error** — a network or rate-limit failure, so that gem is
+  unchecked, not passed. Run the script again before going on.
+- **A gem whose `Gemfile.lock` block names another `remote:`** — its line reports the public gem of
+  the same name, so it says nothing about the version locked
+
+For each line marked `(younger than one day)`:
+
+- **Bundler** — lock the newest Bundler at least one day old instead, with
+  `bundle update --bundler=<version>`, and note it for the PR body
+- **Any other gem** — the cooldown did not apply. Stop and tell the user which gems slipped through,
+  and why, if the reason is plain: no cooldown in the Bundler `gem_update` loaded
+  (`(cd / && ruby -rbundler -e 'puts Bundler::VERSION')`, run away from the project so its
+  `BUNDLED WITH` does not choose the version), a local `cooldown` below `1` in `.bundle/config` (see
+  [Step 3](#step-3-update-ruby-dependencies)) or a source with no `created_at`. Offer to install a
+  Bundler with cooldown support and run the step again, when that is the reason, or to hold each one
+  back with a marked temporary bound, which the next run's Step 3 removes before `gem_update`. For a
+  transitive gem, add a line inside the same `group` block as the gem that depends on it, which
+  `bundle exec gem dependency <name> --reverse-dependencies` names under "Used by", so a production
+  install that skips the development and test groups does not gain it. `require: false` keeps
+  `Bundler.require` from loading it at boot:
+
+  ```ruby
+  gem "<name>", "< <young-version>", require: false # update-deps: release-age hold
+  ```
+
+  For a gem the Gemfile already lists, add the `"< <young-version>"` bound to its existing line
+  instead, with the marker `# update-deps: release-age hold, bound only`.
+
+  A bound in the Gemfile alone leaves `Gemfile.lock` on the young version, and a frozen install in
+  CI then refuses the pair. Re-resolve that gem under the gate with
+  `bundle update <name> --conservative --cooldown 1`, so the lock file takes the older release, and
+  record the resulting version change like any other. If Bundler reports a conflict because another
+  gem needs the young version, remove the bound and tell the user which gem needs it. Then run the
+  script above again.
+
+A gem bumped to close a security alert is exempt, as
+[Close Open Security Alerts](#close-open-security-alerts) explains.
+
+#### Re-check the Project's Gem Holds
+
+A project can hold a gem's Gemfile bound for a reason Bundler cannot see. For example, another gem
+may activate it at runtime with `gem "<name>", …` outside its gemspec: Bundler resolves straight
+past that check, and the mismatch raises `Gem::LoadError` only when that code path loads. Bundler
+never moves a gem outside its Gemfile bound, so the usual failure is a hold left stale, too tight or
+no longer matching what it tracks, which brings back the error the hold was set to prevent.
+
+Read the project's `CLAUDE.md` and README for gem holds. For each, check the condition it names
+against what moved in `git diff Gemfile.lock`. When the condition fired — for example "re-read the
+activating line whenever `rails` moves" after a Rails bump — do what it says, reading an installed
+gem's files with `bundle exec gem contents <gem>` and a `grep` for the line it names. Then either
+confirm the hold still holds or put the change it needs to the user; never move a hold unasked. Note
+each hold re-checked or changed for the commit message
+([Step 11](#step-11-build-the-final-commit-message)) and the PR body
+([Step 12](#step-12-commit-push-and-create-the-pr)).
+
 ### Step 4: Update JavaScript Dependencies
 
 Skip this step if the repository has no `yarn.lock`. Run every command in it from the repository
@@ -185,22 +302,25 @@ published minutes ago. Every `yarn` command in this step and in
 carries one of two prefixes, so a malicious release has had time to be caught and pulled before it
 can land, and no newly resolved package runs code on this machine:
 
-- **The gated prefix**, `YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d`, for every command
-  that can take a release the repository does not yet commit
-- **The restore prefix**, `YARN_ENABLE_SCRIPTS=false`, only for putting a hold back at an exact
-  version the repository already commits (see the hold restore below)
+- **The gated prefix**, `YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=1440`, for every
+  command that can take a release the repository does not yet commit
+- **The restore prefix**, `YARN_ENABLE_SCRIPTS=false`, only for the hold restore below, which puts
+  holds back at the exact versions and ranges the repository already commits, and for a security fix
+  younger than the gate (see [Close Open Security Alerts](#close-open-security-alerts))
 
 Commands that resolve nothing — `yarn --version`, `yarn config get`, `yarn why` — take neither. The
 two variables:
 
-- **`YARN_NPM_MINIMAL_AGE_GATE=3d`** skips any release younger than three days and takes the newest
-  one old enough. `yarn config get npmMinimalAgeGate` printed the repository's own gate in minutes:
-  drop the variable when that is `4320` or more, so a longer gate stands. A `0` is not a reason to
-  drop it — a repository that turns the gate off for everyday `yarn add` still gets one during a
-  dependency run. Yarn older than 4.10 has no gate, so drop the variable there and say so in the PR
-  body (see [Step 12](#step-12-commit-push-and-create-the-pr)). The gate guards against taking a new
-  release, which is why the restore prefix leaves it out. If it refuses a version a gated command
-  needs, stop and tell the user rather than dropping the gate.
+- **`YARN_NPM_MINIMAL_AGE_GATE=1440`** skips any release younger than one day and takes the newest
+  one old enough. The value is in minutes: Yarn 4.10 reads a duration such as `1d` as 1 minute with
+  no warning, and only 4.11 and later parse durations, so write the number.
+  `yarn config get npmMinimalAgeGate` printed the repository's own gate in minutes: drop the
+  variable when that is `1440` or more, so a longer gate stands. A `0` is not a reason to drop it —
+  a repository that turns the gate off for everyday `yarn add` still gets one during a dependency
+  run. Yarn older than 4.10 has no gate, so drop the variable there and say so in the PR body (see
+  [Step 12](#step-12-commit-push-and-create-the-pr)). The gate guards against taking a new release,
+  which is why the restore prefix leaves it out. If it refuses a version a gated command needs, stop
+  and tell the user rather than dropping the gate.
 - **`YARN_ENABLE_SCRIPTS=false`** stops postinstall and build scripts. Nothing later in this command
   builds the app, so the only cost is that a package with a build step stays unbuilt until the next
   plain `yarn install` on a developer machine.
@@ -211,7 +331,7 @@ on every command.
 #### Update the Direct Dependencies and Restore Holds
 
 ```bash
-YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d yarn up '*'
+YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=1440 yarn up '*'
 ```
 
 `yarn up '*'` rewrites the range of every direct dependency, in every workspace manifest, to
@@ -231,27 +351,42 @@ git diff -- package.json '**/package.json'
 ```
 
 Restore every operator that changed and every version that moved down, unless the project's
-`CLAUDE.md` or README says that hold has ended; ask the user when unsure. For a prerelease or a
-version that moved down, `npm view <pkg> dist-tags --json` shows which tag the project was tracking.
-Then check the [Version-Locked Packages](#version-locked-packages), which name the version a hold
-must take, and put every hold back in one call with the restore prefix:
+`CLAUDE.md` or README says that hold has ended; ask the user when unsure. Restore a held package's
+range whenever it changed at all, even when the operator stayed a caret and the version moved up:
+`yarn up '*'` turns a caret hold on an older major, `^3.7.1`, into `^4.0.0` without changing its
+operator. A package is held when its range was exact or a tilde before the run, when the project's
+`CLAUDE.md` or README says so, or when it also has a `resolutions` entry; a caret range that moved
+up for a package nobody holds is the normal case and stays. For a prerelease or a version that moved
+down, `npm view <pkg> dist-tags --json` shows which tag the project was tracking. Then check the
+[Version-Locked Packages](#version-locked-packages), which name the version a hold must take, and
+put every hold back in one call with the restore prefix:
 
 ```bash
 YARN_ENABLE_SCRIPTS=false yarn up '<pkg>@<spec>' '<pkg>@<spec>'
 ```
 
-This call leaves out the age gate on purpose. With the gate on, a hold bumped in the last three days
-is quarantined, and Yarn fails the whole call over it, restoring none of the holds. An exact spec
+This call leaves out the age gate on purpose. With the gate on, a hold bumped in the last day is
+quarantined, and Yarn fails the whole call over it, restoring none of the holds. An exact spec
 restores a version the repository already commits, so it takes nothing new. A restored range — a
-tilde, or a caret on a prerelease — can resolve to a release younger than three days; the gated
-re-resolution below moves it back. A hold that must move to a version the repository does not yet
-commit (a re-pin under [Version-Locked Packages](#version-locked-packages)) is a new release: run it
-in its own call, with the gated prefix.
+tilde, or a caret on a prerelease or an older major — can resolve to a release younger than one day;
+the gated re-resolution below moves it back. A hold that must move to a version the repository does
+not yet commit (a re-pin under [Version-Locked Packages](#version-locked-packages)) is a new
+release: run it in its own call, with the gated prefix.
 
 Holds can also live outside the direct ranges. A `resolutions` block in `package.json` survives the
 re-resolution below. A hold the lock file alone keeps — a transitive package left below its newest
 release with no `resolutions` entry — does not, so if the project's `CLAUDE.md` or README documents
-one, ask the user whether to move it into `resolutions` before going on.
+one, ask the user whether to move it into `resolutions` before going on. A caret hold that neither
+document names and no `resolutions` entry backs looks like any other caret range, so nothing here
+can restore it. When the diff moves a caret across a major whose first release predates the last
+dependency run, an earlier run left that range on the old major, which suggests a deliberate hold:
+ask the user. `npm view <pkg> time --json` dates the major's first release, and this dates the last
+run (Step 1's `git log` searches this month only, so on a month's first run it prints nothing):
+
+```bash
+git log origin/main -1 --format='%ad  %s' --date=short --no-merges -i \
+  --grep="update the app's dependencies"
+```
 
 #### Re-resolve the Lock File
 
@@ -260,14 +395,16 @@ change keeps the version the lock file already records, even when a newer releas
 every manifest holds its final ranges, re-resolve every range in the lock file:
 
 ```bash
-YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d yarn up -R '*'
+YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=1440 yarn up -R '*'
 ```
 
 That is the gated prefix. `-R` re-resolves every range matching the pattern, transitive ones
 included, and leaves the manifests alone. It produces the same lock file as deleting `yarn.lock` and
 reinstalling, without the moment where the repository has none. A `resolutions` block still applies.
-Under the age gate, a transitive package the lock file holds at a release younger than three days
-moves back to the newest one old enough; that is the gate working, not a regression to report.
+Under the age gate, a transitive package the lock file holds at a release younger than one day moves
+back to the newest one old enough; that is the gate working, not a regression to stop for. Note it
+in the PR body (see [Step 12](#step-12-commit-push-and-create-the-pr)), where a reviewer reading the
+diff would otherwise flag it.
 
 If it exits non-zero, `yarn.lock` still holds the result of the commands above, including any
 restored range the ungated restore resolved. If any restored hold is a range, re-run those restores
@@ -288,11 +425,31 @@ list every resolved copy:
 yarn why <pkg>
 ```
 
-Every copy should be at the held version. If the held package itself moved, restore it with `yarn up
-'<pkg>@<spec>'` and the restore prefix, and repeat the check. A second copy at another version is
-reported to the user, not worked around: a transitive range the hold used to satisfy can now resolve
-higher — a `jquery: >=1.11` dependency taking jQuery 4 beside a held 3.7.1 — and only the user can
-say whether it needs a `resolutions` entry.
+Every copy should be at the held version. If the held package itself moved, restore it with
+`yarn up '<pkg>@<spec>'` and the restore prefix, and repeat the check. A second copy at another
+version is reported to the user, not worked around: a transitive range the hold used to satisfy can
+now resolve higher — a `jquery: >=1.11` dependency taking jQuery 4 beside a held 3.7.1 — and only
+the user can say whether it needs a `resolutions` entry.
+
+`yarn why` cannot see two kinds of drift, so check them directly:
+
+- **A direct range under a resolution.** A `resolutions` entry rewrites every matching descriptor,
+  so `yarn why` lists the held version, "via" the resolution's range, even when `package.json` now
+  declares the next major. For each held package that also has a `resolutions` entry, compare its
+  direct range in `git diff -- package.json '**/package.json'` with the hold, and restore it if it
+  moved. Shipping the drifted range invites a later cleanup that drops the "redundant" resolution
+  and lands the major.
+- **A nested installed copy.** `yarn why` reads the project graph, not the installed tree, and a
+  copy under another package's own `node_modules` that the lock file does not record can still be
+  what that package loads. With a `node_modules` linker, list every nested copy and its version (the
+  pattern skips the top-level `node_modules/<pkg>`, which `yarn why` already covers):
+
+  ```bash
+  find node_modules -path '*/node_modules/<pkg>/package.json' -exec grep -H '"version"' {} +
+  ```
+
+  Report any copy at a version off the hold to the user, as for a second copy above. Under
+  Plug'n'Play there is no `node_modules` to check; say so.
 
 #### Record the Direct Dependency Changes
 
@@ -896,13 +1053,50 @@ gh api 'repos/{owner}/{repo}/dependabot/alerts?state=open' --paginate \
 ```
 
 Bump anything with a fix that this run has not already reached, like any other update: a gem with
-`bundle update <gem> --conservative`, a transitive npm package with the gated `yarn up -R '<pkg>'`
-and a direct one with the gated `yarn up '<pkg>'` (both from
-[Step 4](#step-4-update-javascript-dependencies)). If the fix lies outside every range that holds
-the package, tell the user rather than adding a `resolutions` entry. Record each bump like any
-other, and note every alert the run closes for the PR summary in
-[Step 12](#step-12-commit-push-and-create-the-pr). Never dismiss an alert without the user's say-so.
-A `403` or `404` means alerts are off or out of reach for this token; say so and carry on.
+`bundle update <gem> --conservative --cooldown 1`, a transitive npm package with the gated
+`yarn up -R '<pkg>'` and a direct one with the gated `yarn up '<pkg>@<operator><patched-version>'`
+(both from [Step 4](#step-4-update-javascript-dependencies)). `<operator>` is the one the package's
+range had before the bump, none for an exact pin, so a hold Step 4 restored stays a hold: a bare
+`yarn up '<pkg>'` rewrites the range to `^<latest>`, turning an exact `3.7.1` into `^4.0.0`. A
+direct package still short of a fix after Step 4 is usually one Step 4 put back as a hold, so this
+matters most here. `--cooldown 1` is the gem gate from [Step 3](#step-3-update-ruby-dependencies),
+omitted under the same rule; unlike the variable, the flag outranks the project's local
+configuration. A Bundler without cooldown support rejects the flag rather than ignoring it, so drop
+it there. If the fix lies outside every range that holds the package, tell the user rather than
+adding a `resolutions` entry. Record each bump like any other, and note every alert the run closes
+for the PR summary in [Step 12](#step-12-commit-push-and-create-the-pr). Never dismiss an alert
+without the user's say-so. A `403` or `404` means alerts are off or out of reach for this token; say
+so and carry on.
+
+A fix younger than the release-age gate does not wait for it: an open alert is a known
+vulnerability, while the gate guards against a compromise not yet known. The gated gem bump and the
+gated transitive npm bump do not fail on a young fix when an older release satisfies their ranges:
+each skips the fix, resolves the newest release old enough and exits 0, so compare the version it
+resolved with the alert's patched version. The gated direct npm bump names the patched version, so
+the gate refuses it instead (`YN0082` … `No candidates found`, exit 1). When a gated bump came up
+short or was refused, take only that package past the gate:
+
+- **A gem** — rerun the bump as `bundle update <gem> --conservative --cooldown 0`. The flag outranks
+  every other cooldown setting, the project's local configuration included, so none holds the fix
+  back; `--conservative` keeps the rest of the tree where it is.
+- **A direct npm dependency** — the same spec with the restore prefix,
+  `YARN_ENABLE_SCRIPTS=false yarn up '<pkg>@<operator><patched-version>'`
+- **A transitive npm package** — `YARN_ENABLE_SCRIPTS=false yarn up -R '<pkg>'`. `-R` takes no
+  version (Yarn rejects one with `Ranges aren't allowed when using --recursive`), so it moves the
+  package to the newest release its ranges allow, which can be newer than the patched one; read its
+  new `version:` in `git diff yarn.lock`.
+
+An ungated bump also resolves, without the gate, any new dependency the patched release declares, so
+read the lock file diff afterwards and name each package that came in this way beside the bypass in
+the PR body.
+
+After any gem bump in this step, and after any made under
+[Version-Locked Packages](#version-locked-packages), run the script in
+[Check Every Moved Gem's Release Age](#check-every-moved-gems-release-age) again, where only a gem
+bumped past the gate above, or a new dependency it brought in, may show as younger than one day, and
+repeat [Re-check the Project's Gem Holds](#re-check-the-projects-gem-holds) for what moved. After
+any npm bump in this step, repeat Step 4's hold check for that package — `yarn why` and the two
+checks after it, in [Re-resolve the Lock File](#re-resolve-the-lock-file).
 
 #### Stop If Nothing Changed
 
@@ -1195,6 +1389,8 @@ Give it:
   every behavioral claim in its prose must either cite one of these results or be phrased as what
   the changelog says. Without them it writes from the changelogs alone and can state as fact what
   this session has already shown to be false
+- Each gem hold re-checked or changed in
+  [Re-check the Project's Gem Holds](#re-check-the-projects-gem-holds), and the result
 - If Terraform changed, the evidence Steps 5 and 6 collected:
   - Each lock file's version changes against the Step 5 baseline, including transitive providers
     that no `required_providers` block names
@@ -1283,6 +1479,10 @@ The agent should:
    Fix the following haml-lint violations:
    - LinterName: Brief description of the fix
    ```
+
+9. If a gem hold was re-checked or changed
+   ([Re-check the Project's Gem Holds](#re-check-the-projects-gem-holds)), add one line per hold
+   after the dependency list, naming the hold and the result.
 
 ### Step 12: Commit, Push and Create the PR
 
@@ -1378,10 +1578,22 @@ EOF
 
 Omit any category (Ruby, JavaScript, Terraform) that had no changes. Tailor the summary bullets to
 highlight the most notable updates (major version bumps, security patches, linter upgrades that
-required code changes, etc.). Also add a bullet for each of these that applies: a Bundler bump
-([Step 3](#step-3-update-ruby-dependencies)), tool and image pin bumps
-([Step 7](#step-7-update-tool-and-image-pins)), the security alerts this run closes and a Rails
-upgrade shipping in this PR — which also goes in the title, as
+required code changes, etc.). Also add a bullet for each of these that applies:
+
+- **A Bundler bump** — [Step 3](#step-3-update-ruby-dependencies)
+- **A gem hold re-checked or changed**, and why —
+  [Re-check the Project's Gem Holds](#re-check-the-projects-gem-holds)
+- **A Bundler or gem release held back** by the release-age check —
+  [Check Every Moved Gem's Release Age](#check-every-moved-gems-release-age)
+- **A gem or npm package that skipped a release-age gate** to close a security alert, with the alert
+  and the release's date, and any new dependency it brought in —
+  [Close Open Security Alerts](#close-open-security-alerts)
+- **The security alerts this run closes** —
+  [Close Open Security Alerts](#close-open-security-alerts)
+- **Tool and image pin bumps** — [Step 7](#step-7-update-tool-and-image-pins)
+- **A Rails upgrade shipping in this PR** — [Step 2](#step-2-create-the-feature-branch)
+
+A Rails upgrade also goes in the title, as
 `Upgrade Rails to <version> and update the app's dependencies - {qualifier }{Month} {Year}`. If any
 Terraform providers **or modules** changed, add a
 `- [ ] terraform plan shows no unexpected resource changes` checkbox to the test plan — a module
@@ -1400,6 +1612,9 @@ alone counts as a JavaScript change, so do not omit the category for it:
   `- Re-resolved yarn.lock so transitive dependencies take the newest versions their ranges allow`
 - **No release-age gate** — the repository's Yarn is older than 4.10, so the run took releases of
   any age ([Step 4](#step-4-update-javascript-dependencies))
+- **Packages the gate moved down** — a transitive package the lock file held at a release younger
+  than one day, moved back by the re-resolution, so a reviewer does not read it as a regression
+  ([Step 4](#step-4-update-javascript-dependencies))
 - **The re-resolution failed** — and why, so the reviewer knows transitive dependencies did not move
   ([Step 4](#step-4-update-javascript-dependencies))
 
@@ -1461,7 +1676,7 @@ npx playwright --version   # prints "Version <x.y.z>"
 1. If they differ, the gem's value wins. Move the npm side to it, which writes an exact pin:
 
    ```bash
-   YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d yarn up playwright@<compatible-version>
+   YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=1440 yarn up playwright@<compatible-version>
    ```
 
    That is the gated prefix, for a version the repository does not yet commit. When the gem did not
@@ -1500,7 +1715,7 @@ When a new version is available:
    ```bash
    # If the npm package got ahead (writes an exact pin). The gated prefix, unless <gem-version> is
    # the version already committed — then the restore prefix, in Step 4's restore call:
-   YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=3d yarn up @notus.sh/cocooned@<gem-version>
+   YARN_ENABLE_SCRIPTS=false YARN_NPM_MINIMAL_AGE_GATE=1440 yarn up @notus.sh/cocooned@<gem-version>
 
    # If the gem got ahead, first set the cocooned constraint in Gemfile to <npm-version> exactly:
    # bundle update never moves a gem below what the Gemfile already allows
@@ -1690,5 +1905,13 @@ releases, so link [Diffend](https://my.diffend.io) as Step 11 describes.
   [Step 6](#step-6-re-resolve-and-verify-terraform-lock-files).
 - **Version-locked packages** — see [Step 4](#step-4-update-javascript-dependencies) and
   [Version-Locked Packages](#version-locked-packages).
+- **Take no release younger than one day**, gem or npm, except to close a security alert — see
+  [Step 3](#step-3-update-ruby-dependencies), [Step 4](#step-4-update-javascript-dependencies) and
+  [Close Open Security Alerts](#close-open-security-alerts). No gate covers a gem or npm package
+  that follows a Git branch or tag, or a gem from a server other than rubygems.org, so those can
+  move to a commit or release of any age; their changes are listed for review in
+  [Check Git-Sourced Gems](#check-git-sourced-gems),
+  [Record the Direct Dependency Changes](#record-the-direct-dependency-changes) and the release-age
+  check's `404` and `not on rubygems.org` lines.
 - If no dependencies changed at all, inform the user and stop. A change to `yarn.lock` alone is put
   to the user first — see [Stop If Nothing Changed](#stop-if-nothing-changed).
