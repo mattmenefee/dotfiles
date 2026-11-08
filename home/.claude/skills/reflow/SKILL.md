@@ -35,7 +35,7 @@ any such error rather than guessing at a fix.
 Untracked files do not count, and the script names each untracked or missing path it was given on
 stderr. Reflow an untracked file only when the user names it, and then treat every line in it as
 changed. A hunk that only deletes lines is reported as the two lines either side of the gap, since
-the paragraph around a deletion can be left short. Rows for tracked review, plan and handoff
+the paragraph around a deletion can be left short. Rows for tracked review, plan, handoff and impact
 documents appear too; step 3 leaves those alone.
 
 Empty output, with no untracked file named and no path reported missing, means the branch changes
@@ -91,10 +91,10 @@ that line out when there is none:
 It prints `path:first-last:` and the reason for each changed block that has a line over the limit, a
 line with room for the next line's first word, or link text or a code span split across lines that
 the next line could hold whole. It measures Markdown in UTF-16 code units, keeps code spans and link
-text whole and skips the review, plan and handoff documents the list below names. It sees Markdown,
-YAML folded scalars and line comments led by `#`, `//` (with `///` and `//!`), `--` or `;` (with
-`;;`); find the blocks in any other comment syntax, such as CSS `/* */`, by reading the changed
-lines.
+text whole and skips the review, plan, handoff and impact documents the list below names. It sees
+Markdown, YAML folded scalars and line comments led by `#`, `//` (with `///` and `//!`), `--` or `;`
+(with `;;`); find the blocks in any other comment syntax, such as CSS `/* */`, by reading the
+changed lines.
 
 Read its standard error before trusting an empty result. Empty output with exit status 0 means every
 block it can see is filled; exit status 1 means a file or row could not be read, and a named path
@@ -116,9 +116,9 @@ Leave these alone, whether or not they changed:
   `# shellcheck disable=`, `# frozen_string_literal: true`, `// eslint-disable-next-line`,
   `# yamllint disable-line` or `<!-- markdownlint-disable -->`. Merging one into prose disables it
 - Any line a project rule keeps whole, such as a long shell `alias`
-- Files that must not be hard-wrapped at all: review, plan and handoff documents
-  (`*local-review*.md`, `*DOC-REVIEW*.md`, `*-REVIEW*.md`, `*PLAN.md`, `*HANDOFF.md`), pull request
-  and issue text and Markdown meant to be pasted into Teams or Slack
+- Files that must not be hard-wrapped at all: review, plan, handoff and impact documents
+  (`*local-review*.md`, `*DOC-REVIEW*.md`, `*-REVIEW*.md`, `*PLAN.md`, `*HANDOFF.md`, `*IMPACT.md`),
+  pull request and issue text and Markdown meant to be pasted into Teams or Slack
 - A file whose untouched paragraphs put one sentence per line: that is its style, so ask before
   filling it
 

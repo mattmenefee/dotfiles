@@ -17,8 +17,9 @@ This command automates the full dependency update workflow:
 7. Update tool and image pins that live outside the package manifests
 8. Handle RuboCop version bumps
 9. Handle haml-lint version bumps
-10. Build the final commit message with anchored changelog links
-11. Commit, push and open a PR
+10. Analyze the impact of every moved dependency, reading the code diff of each Deep one
+11. Build the final commit message with anchored changelog links
+12. Commit, push and open a PR
 
 ## Process
 
@@ -34,9 +35,10 @@ git log origin/main --format='%h  %ad  %s' --date=short --no-merges \
 
 Each subject it prints is one earlier run this month. The explicit `00:00` matters: Git fills a
 date-only `--since` with the current time of day, which drops every run committed earlier on the
-1st. `-i` also catches a run whose subject begins `Upgrade Rails to … and update the app's
-dependencies` (see [Step 11](#step-11-commit-push-and-create-the-pr)). Then list this month's run
-branches on the remote itself, since local remote-tracking refs can be stale:
+1st. `-i` also catches a run whose subject begins
+`Upgrade Rails to … and update the app's dependencies` (see
+[Step 12](#step-12-commit-push-and-create-the-pr)). Then list this month's run branches on the
+remote itself, since local remote-tracking refs can be stale:
 
 ```bash
 git ls-remote --heads origin "update-dependencies-*$(date +%B-%Y | tr '[:upper:]' '[:lower:]')"
@@ -196,9 +198,9 @@ two variables:
   drop the variable when that is `4320` or more, so a longer gate stands. A `0` is not a reason to
   drop it — a repository that turns the gate off for everyday `yarn add` still gets one during a
   dependency run. Yarn older than 4.10 has no gate, so drop the variable there and say so in the PR
-  body (see [Step 11](#step-11-commit-push-and-create-the-pr)). The gate guards against taking a
-  new release, which is why the restore prefix leaves it out. If it refuses a version a gated
-  command needs, stop and tell the user rather than dropping the gate.
+  body (see [Step 12](#step-12-commit-push-and-create-the-pr)). The gate guards against taking a new
+  release, which is why the restore prefix leaves it out. If it refuses a version a gated command
+  needs, stop and tell the user rather than dropping the gate.
 - **`YARN_ENABLE_SCRIPTS=false`** stops postinstall and build scripts. Nothing later in this command
   builds the app, so the only cost is that a package with a build step stays unbuilt until the next
   plain `yarn install` on a developer machine.
@@ -271,12 +273,12 @@ If it exits non-zero, `yarn.lock` still holds the result of the commands above, 
 restored range the ungated restore resolved. If any restored hold is a range, re-run those restores
 in one call with the gated prefix, and tell the user if the gate refuses one. Then tell the user the
 re-resolution failed and why, note it for the PR body (see
-[Step 11](#step-11-commit-push-and-create-the-pr)) and carry on with the hold check and Record the
+[Step 12](#step-12-commit-push-and-create-the-pr)) and carry on with the hold check and Record the
 Direct Dependency Changes below, which work from the lock file as it stands. If the error is
 `YN0028` (the lockfile would be modified), Yarn has turned on immutable installs because it believes
 it is running in CI; retry once with `YARN_ENABLE_IMMUTABLE_INSTALLS=false` added to the prefix.
 
-Re-resolve here, before the changelog and commit steps (Steps 10 and 11), so they work from the
+Re-resolve here, before the impact, message and commit steps (Steps 10 to 12), so they work from the
 lock file that ships.
 
 Then check that every hold survived. For each version-locked package and each hold restored above,
@@ -313,7 +315,7 @@ git diff yarn.lock | grep -E '^\+  resolution: ' | grep -vE '@(npm|workspace|pat
 Record each line that names a direct dependency as a direct change.
 
 Only direct dependencies appear in the commit message's dependency list — leave transitive changes
-out. When `yarn.lock` changed at all, [Step 10](#step-10-build-the-final-commit-message) adds one
+out. When `yarn.lock` changed at all, [Step 11](#step-11-build-the-final-commit-message) adds one
 line saying the lock file was re-resolved, which stands in for them.
 
 For each direct JavaScript dependency that changed version, build a changelog entry in the same
@@ -343,8 +345,8 @@ git ls-files --full-name ':/*.tf' ':(top,exclude)*.terraform/*'
 This exits 0 whether or not it matched, so read its output rather than its status. It does not see
 `.tf.json` files, untracked files or files inside submodules; handle those by hand in the rare repo
 that has them. The exclude keeps the module copies that `terraform init` vendors into `.terraform/`
-out of every listing in this step, matching Steps 6 and 11 — without it you can end up editing a
-vendored copy that Step 11 then refuses to stage. See
+out of every listing in this step, matching Steps 6 and 12 — without it you can end up editing a
+vendored copy that Step 12 then refuses to stage. See
 [Terraform Update Notes](#terraform-update-notes) for why the pathspecs and flags in this step are
 written the way they are.
 
@@ -641,7 +643,7 @@ wrote into one that was already there — Terraform does not report that — and
 cache: it holds the selected workspace name in `.terraform/environment` and the initialized backend
 configuration in `.terraform/terraform.tfstate`. Deleting it silently drops the operator back to the
 `default` workspace, so the next `terraform apply` they run believing they are on `staging` is not.
-[Step 11](#step-11-commit-push-and-create-the-pr) already excludes `.terraform/` from the commit, so
+[Step 12](#step-12-commit-push-and-create-the-pr) already excludes `.terraform/` from the commit, so
 removing it buys nothing. If the repository does not gitignore it, say so in your report and let the
 user decide.
 
@@ -680,7 +682,7 @@ git ls-files -z --full-name ':/*.tf' ':(top,exclude)*.terraform/*' \
 Treat a candidate as a root module if it declares a `backend` or `cloud` block, declares a
 `provider` block or is simply a directory you would run `terraform apply` in, and run
 `init -upgrade` in every one. If the repo clearly uses providers but tracks no lock files at all,
-check `.gitignore` and say in the PR body that lock files are not tracked — otherwise Step 11's
+check `.gitignore` and say in the PR body that lock files are not tracked — otherwise Step 12's
 `git add -- ':/*.terraform.lock.hcl'` aborts with `fatal: pathspec … did not match any files` and
 leaves your `.tf` changes unstaged.
 
@@ -700,7 +702,7 @@ notes that it changed the selections recorded in `.terraform.lock.hcl`. A module
 without that second message, which is expected rather than a sign the run did nothing — the lock
 file records nothing about modules. Its evidence is the `Downloading <source> <version> for <name>`
 line in the output instead. Copy that line out as you go: no file in the repository will show that
-the module moved, so it is the only thing [Step 10](#step-10-build-the-final-commit-message) has to
+the module moved, so it is the only thing [Step 11](#step-11-build-the-final-commit-message) has to
 cite.
 
 Terraform installs the providers it can reach before failing, so `Installed …` lines in the output
@@ -806,8 +808,8 @@ credentials in this environment" is the entire message. To evidence the plan che
 one-line summary (`Plan: 0 to add, 3 to change, 0 to destroy`) and nothing else.
 
 Then stage the lock file along with the `.tf` changes (see
-[Step 11](#step-11-commit-push-and-create-the-pr)), and record each version change for the commit
-message (see [Step 10](#step-10-build-the-final-commit-message)).
+[Step 12](#step-12-commit-push-and-create-the-pr)), and record each version change for the commit
+message (see [Step 11](#step-11-build-the-final-commit-message)).
 
 ### Step 7: Update Tool and Image Pins
 
@@ -864,8 +866,8 @@ Two lookup traps are recorded under [Known Changelog Quirks](#known-changelog-qu
 not start with a digit, and release pages that only point elsewhere.
 
 Record every bump for the commit message with its upstream release notes, in the same format as the
-other entries. [Step 11](#step-11-commit-push-and-create-the-pr) checks that every staged pin
-change has one.
+other entries. [Step 12](#step-12-commit-push-and-create-the-pr) checks that every staged pin change
+has one.
 
 #### Verify the Bumps
 
@@ -894,13 +896,13 @@ gh api 'repos/{owner}/{repo}/dependabot/alerts?state=open' --paginate \
 ```
 
 Bump anything with a fix that this run has not already reached, like any other update: a gem with
-`bundle update <gem> --conservative`, a transitive npm package with the gated
-`yarn up -R '<pkg>'` and a direct one with the gated `yarn up '<pkg>'` (both from
+`bundle update <gem> --conservative`, a transitive npm package with the gated `yarn up -R '<pkg>'`
+and a direct one with the gated `yarn up '<pkg>'` (both from
 [Step 4](#step-4-update-javascript-dependencies)). If the fix lies outside every range that holds
 the package, tell the user rather than adding a `resolutions` entry. Record each bump like any
 other, and note every alert the run closes for the PR summary in
-[Step 11](#step-11-commit-push-and-create-the-pr). Never dismiss an alert without the user's
-say-so. A `403` or `404` means alerts are off or out of reach for this token; say so and carry on.
+[Step 12](#step-12-commit-push-and-create-the-pr). Never dismiss an alert without the user's say-so.
+A `403` or `404` means alerts are off or out of reach for this token; say so and carry on.
 
 #### Stop If Nothing Changed
 
@@ -934,7 +936,7 @@ If `rubocop` itself was updated, whether or not any plugin was too:
    The diff should be the header (version and timestamp) plus any real shrinkage. If `bin/rubocop`
    reports offenses, the regeneration lost exclusions: restore the file with
    `git restore .rubocop_todo.yml` and investigate before going on.
-4. Note the RuboCop fixes for inclusion in the commit message body (see Step 10).
+4. Note the RuboCop fixes for inclusion in the commit message body (see Step 11).
 
 If only `rubocop-*` plugins were updated (for example `rubocop-rails`), run items 1, 2 and 4 but
 **not** item 3. The `.rubocop_todo.yml` header records only the core RuboCop version, so
@@ -974,23 +976,210 @@ If haml-lint was updated:
    # `bin/haml-lint --auto-gen-config --auto-gen-exclude-limit 1000`
    ```
 
-3. Note the haml-lint fixes for inclusion in the commit message body (see Step 10).
+3. Note the haml-lint fixes for inclusion in the commit message body (see Step 11).
 
 A successful `bin/rails lint:haml` run exits 0 with no reported offenses. Any violations must be
 fixed manually before proceeding.
 
-### Step 10: Build the Final Commit Message
+### Step 10: Analyze the Impact of Every Change
 
-#### Read the Changelogs for Behavior Changes
+Release notes say what a maintainer meant to change, not what the app will see. A patch release can
+move a hook or widen an allow list under a note that carries no warning keyword, and a changelog can
+report no behavior change over a diff that has several. So triage every dependency that moved, and
+read the code diff of each Deep one, whose release touches something the app relies on, whatever its
+version number. Run this step after Steps 8 and 9, on the dependency set that ships: a linter bump
+is a moved dependency like any other, and `bin/rubocop -A` rewrites source, so `file:line` evidence
+taken before it can go stale.
 
-A minor or patch release can change behavior that matters, so do not reserve release-note scrutiny
-for majors. Before building the message, read the changelog of every **direct** dependency that
-changed — gems, npm packages, Bundler, Git-sourced gems and tool pins — for entries marked
-`WARNING`, `BREAKING`, `security` or `deprecat`. For any flagged entry in an authorization,
-authentication, sanitization or serialization library, find where the app uses the behavior it
-describes and decide whether the app is affected. Run the specs that cover that usage, not only the
-linters. Each conclusion goes into the commit body, and each check you ran is a verification result
-for the sub-agent below.
+#### List What Moved
+
+List every dependency that moved, direct and transitive:
+
+- **Gems** — each spec line that changed in `git diff Gemfile.lock` (the four-space-indented
+  `name (version)` lines), Bundler and the Git-sourced gems from
+  [Step 3](#step-3-update-ruby-dependencies) and the linter gems Steps 8 and 9 handled
+- **npm packages** — each `"<name>@npm:` entry whose `version:` changed in `git diff yarn.lock`,
+  transitive ones included, and the Git and URL dependencies
+  [Step 4](#step-4-update-javascript-dependencies) recorded
+- **Terraform** — the providers and modules Steps 5 and 6 recorded
+- **Tool and image pins** — the bumps [Step 7](#step-7-update-tool-and-image-pins) recorded
+
+#### Triage Into Two Tiers
+
+Sort each dependency into a tier by what its release touches, never by its version number or the
+keywords in its notes:
+
+- **Deep** — a direct dependency, or a transitive one on a path the app relies on, whose release
+  touches any of these: sanitization or HTML rendering, authentication or authorization,
+  serialization or persisted formats, content the app stores (an editor that writes markup), the
+  deploy or SSH path, request building or signing, test framework semantics (matchers, mocks,
+  example groups) or a Terraform provider resource type the configuration uses. A dependency the
+  project's `CLAUDE.md` names in a hold or a specialized-agent trigger is always Deep.
+- **Quick** — everything else. For a direct dependency, read its changelog entry, and where the
+  entry is boilerplate, such as a code-generated SDK bump or a packaging fix, read the file list of
+  its diff (below) instead. A transitive one gets no changelog read: record in one line why it is
+  not on a Deep path, from `yarn why <pkg>` for an npm package or the dependency entries in
+  `Gemfile.lock` for a gem. When the reading or the path check shows a Deep touchpoint, move the
+  dependency to Deep; otherwise record "no Deep touchpoint" with the evidence that shows it.
+
+#### Read the Code Diff of Each Deep Dependency
+
+Read the code diff, not only the release notes. Three sources are fastest:
+
+- **Gems** — `bundle update` normally leaves both versions installed, so compare them locally, with
+  no network. List both directories first, since a platform gem's directory ends in its platform
+  (`nokogiri-<version>-arm64-darwin`):
+
+  ```bash
+  gems="$(gem env gemdir)/gems"
+  ls "$gems" | grep '^<name>-[0-9]'
+  diff -ruN "$gems/<old directory>" "$gems/<new directory>"
+  ```
+
+  When the new version is missing there, the project installs gems elsewhere, and
+  `bundle info --path <name>` prints where it lives. When the old one is gone, fetch it with
+  `gem fetch <name> -v <old>` and unpack the `.gem` file it downloads with `gem unpack`, or compare
+  on GitHub as below.
+
+- **npm packages, and anything else on GitHub** — read the file list first, to see whether CSS,
+  public API or stored-format code changed, and then only those files' hunks:
+
+  ```bash
+  gh api 'repos/<owner>/<repo>/compare/<old>...<new>' --jq '.files[].filename'
+  gh api 'repos/<owner>/<repo>/compare/<old>...<new>' \
+    --jq '.files[] | select(.filename == "<path>") | .patch'
+  ```
+
+  Pass each release's tag as the repository names it: `v1.2.3`, `1.2.3` or `<pkg>@1.2.3` in a
+  monorepo. The file list stops at 300 files; past that, compare the published packages locally,
+  each fetched with `npm pack <pkg>@<version>`.
+
+- **Terraform providers** — compare the files the release changed with the resource and data source
+  types the configuration uses. The second listing reads the module copies Step 6's `init -upgrade`
+  downloaded into each root module's `.terraform/modules/`: they are untracked, but they hold the
+  resources a registry or Git module creates:
+
+  ```bash
+  git grep -ohE '^(resource|data) "[a-z0-9_]+"' -- ':/*.tf' ':(top,exclude)*.terraform/*' | sort -u
+  find . -path '*/.terraform/modules/*' -name '*.tf' \
+    -exec grep -hoE '^(resource|data) "[a-z0-9_]+"' {} + | sort -u
+  ```
+
+Then find the app's touchpoints, with grep or an LSP, for each class, method, hook, option and
+configuration key the diff changes, and give each Deep dependency one impact level with `file:line`
+evidence:
+
+- **None** — the app never reaches the changed code
+- **Low** — the app reaches it, but what the app sees or stores does not change
+- **Needs a change** — the app breaks, or behaves differently in a way that matters, until its own
+  code changes
+
+Two checks settle what reading alone cannot:
+
+- **Eager loading** — for any change to boot, initializers or hook order (`on_load`,
+  `after_initialize`, `to_prepare`), check the behavior with eager loading both on and off. An
+  initializer that runs after an engine's hook under lazy loading can run before it under eager
+  loading, which production enables and CI often does. `config/environments/test.rb` shows what
+  turns it on in test, often an environment variable such as `CI`.
+- **Probes** — a `bin/rails runner` check, or a plain-Ruby probe of a matcher or API run once
+  against each installed version (`gem '<name>', '<version>'` before the `require` selects one),
+  answers a question faster than reading. Run a matcher probe inside an object that includes
+  `RSpec::Matchers`: at the top level, `include` resolves to `Module#include` rather than the
+  matcher, and the probe reports nonsense.
+
+#### Delegate by Domain
+
+When more than one dependency is Deep, delegate the reading by domain; a single Deep dependency the
+main session reads itself. Send each domain to the specialized agent the project's `CLAUDE.md` names
+for it, such as a Rails, frontend, infrastructure or security agent, and fall back to a
+general-purpose agent where it names none. Send them all in one message so they run in parallel, and
+give each its dependencies with their old and new versions, the diff sources and impact levels above
+and the eager-loading and probe checks.
+
+The agents work read-only in this checkout: no edits, commits or spec runs. Several agents running
+specs in one checkout corrupt each other's test database, and an isolated worktree is no way around
+that: an ad hoc worktree has no credentials, so the app cannot boot there, and a project's rules may
+forbid copying keys into one. An agent that needs a spec to settle a question names the command, and
+the main session runs it.
+
+#### Verify Before Relaying
+
+Whoever read the diff, run the specs that cover each touchpoint before recording its impact, after
+whatever check the project's `CLAUDE.md` requires before running specs in a shared checkout. An
+agent's finding is a lead, not a result. Before recording one:
+
+- Re-check its load-bearing claim against the live source: the installed gem's file, the compare
+  diff or the app's `file:line`. Most findings rest on one or two such claims, each checkable in a
+  single command.
+- Run every spec an agent recommends.
+- Fix a finding the bump causes in the dependency commit itself, since a commit that fails CI must
+  not land, and run the linters Steps 8 and 9 use over the files the fix changed. Ask the user about
+  a pre-existing problem the analysis merely surfaced; do not fix it unasked.
+
+#### Write the Impact File
+
+Save the verified findings to `<branch>-IMPACT.md` in the project root. Like a review or handoff
+file, it is an untracked working document: leave it out of the commit and out of `.gitignore`, and
+do not hard-wrap it — one line per paragraph or table row — since a ship command may post it
+verbatim. Write it knowing it will be published: summarize plan and command output rather than
+pasting it, and quote no credential, hostname or account identifier.
+
+```markdown
+# Dependency Impact Analysis
+
+| | |
+| --- | --- |
+| **Branch** | `<branch>` |
+| **Base** | `<short SHA of HEAD>`; the analysis covers the uncommitted dependency changes on top of it |
+| **Created** | <YYYY-MM-DD> |
+| **Dependencies analyzed** | <n> Deep, <n> Quick |
+
+## Summary
+
+| Finding | Severity | Category | Dependency | Impact | Status |
+| --- | --- | --- | --- | --- | --- |
+| F1 | 🔴 Critical | Security | <name> <old> → <new> | Needs a change | ✅ |
+| F2 | 🟢 Low | Test framework | <name> <old> → <new> | Low | 🚫 |
+
+## Deep Dependencies
+
+### F1 🔴 Critical - <name> <old> → <new>: <domain, e.g. sanitization> — <one-line impact>
+
+- **Tier** — Deep: <what it touches, and any `CLAUDE.md` hold or agent trigger>
+- **What changed** — <the change the diff shows, which may differ from the release notes>
+- **Touchpoints** — `<file>:<line>`, …
+- **Impact** — <None, Low or Needs a change, and why>
+- **Evidence** — <the command or spec run that shows it, and its result>
+- **Manual check** — <a check no command here can run, or none>
+- **Status** — <what was done, or the user's ruling>
+
+## Quick Dependencies
+
+- <name> <old> → <new> — no Deep touchpoint: <evidence>
+```
+
+Give every Deep dependency a finding, one whose impact is None included, so the file shows it was
+read. A severity comes from the review files' scale, 🔴 Critical, 🟠 High, 🟡 Medium or 🟢 Low, with
+⚖️ Decision for a choice the user must make. The Status cell takes ✅ (fixed), ⏸️ (deferred), 🚫 (no
+action needed) and ❓ (awaiting the user), the same glyphs review files use, and never a blank cell
+or a dash, which would read as settled. Unlike a review file's, most of these statuses are the
+session's to set, since an impact backed by evidence is a measurement rather than a defect awaiting
+triage: a finding whose impact is None or Low and needs no change takes 🟢 Low and 🚫, with its
+evidence on its Status line, and one that needed a change takes ✅ once the dependency commit fixes
+it. Keep ❓ for a pre-existing problem put to the user and for a ⚖️ Decision. A ship command that
+already reads review files for open rows then reads this one unchanged.
+
+File a finding that weakens security, such as a sanitizer, authentication, authorization or
+request-signing regression, under the category `Security`, and name the domain in its heading: a
+ship command's check for a deferred 🟠 High weakness looks for that category, not for the domain.
+
+This command never posts the impact file. A project whose ship command posts review and handoff
+files to the pull request should post it the same way, as a sanitized copy in a collapsed comment,
+once no finding is ❓. Elsewhere, the PR body's Impact analysis section
+([Step 12](#step-12-commit-push-and-create-the-pr)) and the commit body's impact sentences
+([Step 11](#step-11-build-the-final-commit-message)) are the only published record.
+
+### Step 11: Build the Final Commit Message
 
 #### Draft the Message
 
@@ -1002,9 +1191,10 @@ Give it:
 - The conventions below, and the whole [Known Changelog Quirks](#known-changelog-quirks) section, so
   it does not rediscover a known quirk
 - **Every verification result from this run** — specs run, plans run and their summary lines, usage
-  audits and their conclusions — and the instruction that every behavioral claim in its prose must
-  either cite one of these results or be phrased as what the changelog says. Without them it writes
-  from the changelogs alone and can state as fact what this session has already shown to be false
+  audits and their conclusions and the impact file's verified findings — and the instruction that
+  every behavioral claim in its prose must either cite one of these results or be phrased as what
+  the changelog says. Without them it writes from the changelogs alone and can state as fact what
+  this session has already shown to be false
 - If Terraform changed, the evidence Steps 5 and 6 collected:
   - Each lock file's version changes against the Step 5 baseline, including transitive providers
     that no `required_providers` block names
@@ -1012,7 +1202,7 @@ Give it:
     the only record of a module bump
   - Each Git module's resolved commit SHA from Step 5
 
-When the draft comes back, check each claim in its prose against those results before Step 11, and
+When the draft comes back, check each claim in its prose against those results before Step 12, and
 correct any it cannot support.
 
 The agent should:
@@ -1078,7 +1268,12 @@ The agent should:
    [v1.2.0 changelog](url)
    ```
 
-7. If RuboCop or haml-lint fixes were needed (Steps 8 and 9), append to the end of the commit body,
+7. For each Deep dependency from [Step 10](#step-10-analyze-the-impact-of-every-change) whose impact
+   needs a change or is worth a reader knowing, add one or two sentences after the dependency list
+   and the `yarn.lock` line (item 5), each citing the verification that shows it. Leave out the
+   findings whose impact is None.
+
+8. If RuboCop or haml-lint fixes were needed (Steps 8 and 9), append to the end of the commit body,
    keeping only the sections that apply:
 
    ```text
@@ -1089,7 +1284,7 @@ The agent should:
    - LinterName: Brief description of the fix
    ```
 
-### Step 11: Commit, Push and Create the PR
+### Step 12: Commit, Push and Create the PR
 
 Stage all files changed during this workflow:
 
@@ -1103,7 +1298,7 @@ for f in Gemfile Gemfile.lock package.json yarn.lock .rubocop_todo.yml .haml-lin
 done
 # Workspace manifests that yarn up rewrote below the root (none outside a workspace repository)
 git diff --name-only -- '**/package.json' | while IFS= read -r f; do git add -- "$f"; done
-# Plus any source files modified by bin/rubocop -A or bin/rails lint:haml
+# Plus any source files modified by bin/rubocop -A, bin/rails lint:haml or a Step 10 fix
 
 # Changed Terraform manifests and the lock files rewritten by terraform init -upgrade.
 # Prefer staging the exact paths identified in Steps 5 and 6. If you glob, keep :/*.tf and
@@ -1127,9 +1322,9 @@ git diff --cached --stat -- . ':!*.lock' ':!yarn.lock' ':!*.terraform.lock.hcl'
 ```
 
 Every version that moved in those files — a manifest pin, a Terraform constraint, a Step 7 tool or
-image pin — needs an entry in the commit body from Step 10. Add any that is missing before going on.
+image pin — needs an entry in the commit body from Step 11. Add any that is missing before going on.
 
-Then use the `/commit` command to create the commit. Provide the changelog body from Step 10 as
+Then use the `/commit` command to create the commit. Provide the changelog body from Step 11 as
 context so `/commit` can incorporate it into the commit message. If a Rails upgrade ships in this PR
 (see [Step 2](#step-2-create-the-feature-branch)), its commit stays first and this one goes after
 it.
@@ -1168,10 +1363,15 @@ gh pr create --title "<title>" --body "$(cat <<'EOF'
 - Updated N Ruby dependencies and M JavaScript packages, plus P Terraform providers and modules
 - [Notable updates, e.g. "Rails 8.1.1 → 8.1.2", "RuboCop 1.85 → 1.86 (with auto-fixes)"]
 
+## Impact analysis
+
+- [Each Deep dependency, e.g. "editor-gem 1.0.3 → 1.0.4 — needs a change: <one line of evidence>"]
+
 ## Test plan
 
 - [ ] CI passes
 - [ ] Smoke test the app locally
+- [ ] [Each manual check the impact analysis recommends, e.g. "Edit a post in the browser"]
 EOF
 )" --label "<label>" --label "<label>"
 ```
@@ -1186,6 +1386,12 @@ upgrade shipping in this PR — which also goes in the title, as
 Terraform providers **or modules** changed, add a
 `- [ ] terraform plan shows no unexpected resource changes` checkbox to the test plan — a module
 major changes inputs and outputs, which is at least as plan-visible as a provider bump.
+
+[Step 10](#step-10-analyze-the-impact-of-every-change) fills the Impact analysis section: one bullet
+per Deep dependency, giving its impact level and one line of evidence, summarized from the impact
+file rather than pasted from an agent's report. Add each manual check it recommends, such as a
+staging deploy for a deploy-path gem or a browser check for an editor, to the test plan as an
+unticked item. Leave the section out when no dependency was Deep.
 
 Step 4 decides what the PR body says about JavaScript. Add each that applies; a `yarn.lock` change
 alone counts as a JavaScript change, so do not omit the category for it:
@@ -1440,7 +1646,7 @@ The gem's `4.<x>.<y>` maps to the protobuf release tag `v<x>.<y>`: 4.35.0 is
 ### Gems with no changelog
 
 `playwright-ruby-client` and `capybara-playwright-driver` publish no changelog and no GitHub
-releases, so link [Diffend](https://my.diffend.io) as Step 10 describes.
+releases, so link [Diffend](https://my.diffend.io) as Step 11 describes.
 `active_storage_validations` is not one of them: it keeps `CHANGES.md` and publishes releases.
 
 ### Changelogs without usable anchors
@@ -1468,8 +1674,11 @@ releases, so link [Diffend](https://my.diffend.io) as Step 10 describes.
 - **Count this month's runs from history, not branches** — see
   [Step 1](#step-1-determine-the-branch-name-and-pr-title).
 - **Every pin that moved gets a commit-message entry**, including Bundler, Git-sourced gems and tool
-  and image pins — see [Step 11](#step-11-commit-push-and-create-the-pr).
-- **Changelog links are required** — see [Step 10](#step-10-build-the-final-commit-message).
+  and image pins — see [Step 12](#step-12-commit-push-and-create-the-pr).
+- **Triage every moved dependency and read the code diff of each Deep one**, whatever its version
+  number, and verify each finding before relaying it — see
+  [Step 10](#step-10-analyze-the-impact-of-every-change).
+- **Changelog links are required** — see [Step 11](#step-11-build-the-final-commit-message).
 - **Never skip linter checks** — see [Step 8](#step-8-handle-rubocop-updates) and
   [Step 9](#step-9-handle-haml-lint-updates).
 - **Run `terraform init -upgrade` in every root module whenever the repo has `.tf` files** — even
