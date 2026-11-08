@@ -150,7 +150,23 @@ Save the verified findings to `<branch>-IMPACT.md` in the project root. Like a r
 file, it is an untracked working document: leave it out of the commit and out of `.gitignore`, and
 do not hard-wrap it — one line per paragraph or table row — since a ship command may post it with
 its line breaks intact. Write it knowing it will be published: summarize plan and command output
-rather than pasting it, and quote no credential, hostname or account identifier.
+rather than pasting it. Write none of these, quoted or summarized:
+
+- Credentials
+- Hostnames, IP addresses and CIDR ranges of the project's or the user's own infrastructure, the
+  user's own IP address included, even one allowed through a firewall only for this run
+- Account IDs and cloud resource names, IDs and ARNs, state bucket names included
+- The SSH keys installed on hosts: their owners, comments, types, fingerprints and the keys
+  themselves, and the accounts they log in as
+- Anything read from the user's machine outside the project checkout, such as `~/.ssh` or a local
+  tool's configuration
+
+Cite the project's own files by path relative to the project root, and the specs and probes run
+against them by command and result, but keep the values above out of what you quote from them.
+Published package source that the code diff compares, installed gem directories and fetched packages
+included, is not the user's: quote it, with the home directory written as `~`, along with any host
+or range it contains, such as one a release adds to an allow list. The exemption covers only values
+found in the package itself; the same value read from the project's own configuration stays out.
 
 ```markdown
 # Dependency Impact Analysis
