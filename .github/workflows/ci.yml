@@ -39,6 +39,13 @@ jobs:
         # The file is not executable, so call it through bash
         run: bash .claude/skills/ship-it/scripts/test-scrub.sh
 
+      - name: Test the /doc-review posting scripts
+        # It also runs header.sh, scrub.sh and post.sh by path, so it fails if one loses its mode
+        run: bash home/.claude/skills/doc-review/scripts/test-post.sh
+
+      - name: Test the /resume-handoff loss check
+        run: bash home/.claude/skills/resume-handoff/scripts/test-check-loss.sh
+
       - name: Test the /reflow block detector
         # The fixtures pin the block edges the helper's heuristics must keep, and ubuntu-latest
         # ships the python3 it runs on
