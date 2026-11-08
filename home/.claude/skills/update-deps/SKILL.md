@@ -345,6 +345,9 @@ Give it:
   every behavioral claim in its prose must either cite one of these results or be phrased as what
   the changelog says. Without them it writes from the changelogs alone and can state as fact what
   this session has already shown to be false.
+- The redaction list from [Write the Impact File](impact.md#write-the-impact-file), with its
+  exemptions, pasted into its prompt: the verification results carry the values it forbids, and a
+  commit message cannot be edited once merged
 - Each gem hold re-checked or changed in
   [Re-check the Project's Gem Holds](#re-check-the-projects-gem-holds), and the result
 - If Terraform changed, the evidence Steps 5 and 6 collected:
@@ -354,8 +357,8 @@ Give it:
     the only record of a module bump
   - Each Git module's resolved commit SHA from Step 5
 
-When the draft comes back, check each claim in its prose against those results before Step 12, and
-correct any it cannot support.
+When the draft comes back, check each claim in its prose against those results before Step 12,
+correct any it cannot support and remove any value the redaction list forbids.
 
 The agent should:
 
@@ -509,7 +512,8 @@ gh label list --limit 1000 --json name --jq '.[].name' \
 Pass one `--label` flag per label it printed, and omit the rest. Repeating the flag avoids the
 comma-separated form, where a space after a comma becomes part of the next label's name.
 
-Create the PR with a summary body:
+Create the PR with a summary body. The body is published, so no section of it may carry a value the
+redaction list in [Write the Impact File](impact.md#write-the-impact-file) forbids:
 
 ```bash
 gh pr create --title "<title>" --body "$(cat <<'EOF'
