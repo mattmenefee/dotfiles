@@ -84,32 +84,44 @@ editors are neutralized, as in the fallback below — use these instead:
 
   ```bash
   git add <file> \
-    && [ "$(git branch --show-current)" = <branch> ] && git history fixup --update-refs=head <sha>
+    && [ "$(git branch --show-current)" = <branch> ] \
+    && git history fixup --update-refs=head --empty=abort <sha>
   ```
 
   This keeps the target's message, leaves unstaged changes alone, works even when `<sha>` is the
   root commit and refuses cleanly (`fixup would produce conflicts; aborting`) instead of dropping
-  you into a half-finished rebase. It needs Git 2.55+, is EXPERIMENTAL and — like
-  `git history reword` — does **not** run hooks. Like any history rewrite it changes the SHA of the
-  target and of every commit after it, so an already-pushed branch then needs
-  `git push --force-with-lease --force-if-includes`.
-
-  Fall back to fixup+autosquash on older Git, or whenever a `pre-commit` or `commit-msg` hook must
-  run, since `git commit --fixup` is an ordinary commit and fires hooks normally:
+  you into a half-finished rebase. `--empty=abort` stops it too when a commit would become empty,
+  for the user to decide, where the default would drop that commit without a word. It needs Git
+  2.55+, is EXPERIMENTAL and — like `git history reword` — does **not** run hooks. Like any history
+  rewrite it changes the SHA of the target and of every commit after it, so an already-pushed branch
+  then needs a force push, guarded like every other push here:
 
   ```bash
-  git commit --fixup <sha> \
+  [ "$(git branch --show-current)" = <branch> ] && git push --force-with-lease --force-if-includes
+  ```
+
+  Fall back to fixup+autosquash whenever a `pre-commit` or `commit-msg` hook must run, or on a Git
+  too old for `git history`, since `git commit --fixup` is an ordinary commit and fires hooks
+  normally:
+
+  ```bash
+  git diff --quiet && ! git log --format=%s <sha>..HEAD | grep -qE '^(fixup|amend|squash)! ' \
+    && git commit --fixup <sha> \
     && [ "$(git branch --show-current)" = <branch> ] && git rebase --autosquash <sha>~1
   ```
 
-  A bare `--autosquash` requires Git 2.44+; older versions accept the flag and silently ignore it,
-  leaving the `fixup!` commit unmerged, so on those neutralize the todo editor instead:
-  `GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash <sha>~1`. When `<sha>` is the root commit,
-  `<sha>~1` does not resolve — use `--root` in place of it.
+  `git diff --quiet` refuses to start while unstaged changes remain: the rebase would refuse the
+  dirty tree after the `fixup!` commit was made, leaving it on HEAD with the target unchanged.
+  Commit or set aside other work first, never with `git stash`, whose stack every worktree and
+  session shares. The `git log` test stops it when the range already holds a `fixup!`, `amend!` or
+  `squash!` commit, which the rebase would fold too: the branch carries pending fold commits, so
+  hand the rebase back to the user, as the scope bullet below requires.
+
+  When `<sha>` is the root commit, `<sha>~1` does not resolve — use `--root` in place of it.
 
   `--squash` is interactive by design: it opens an editor when creating the commit and again when
   the rebase combines the messages. When both messages matter, use a fixup and reword the result
-  with `/commit reword <sha>`.
+  with `/commit reword <new sha>`, taking the target's new SHA from the `git range-diff` map below.
 
 - **Reordering, dropping or splitting commits** is a judgment call about what the history should
   say. **Stop and hand it back to the user** rather than reconstructing it — explain what reshaping
@@ -176,13 +188,20 @@ New body, written literally.
 MSG
 } > "$msg"
 test -s "$msg" && ! LC_ALL=en_US.UTF-8 grep -n '.\{73,\}' "$msg" \
+  && git diff --quiet && git diff --cached --quiet \
+  && ! git log --format=%s <sha>..HEAD | grep -qE '^(fixup|amend|squash)! ' \
   && [ "$(git branch --show-current)" = <branch> ] \
   && GIT_EDITOR="cp $msg" git commit --allow-empty --fixup=reword:<sha> \
   && GIT_EDITOR=true git rebase --autosquash <sha>~1
 ```
 
 A line the `grep` prints is over 72 characters, and a hook that rejects the `amend!` commit stops
-the chain too, so the rebase never runs on a half-finished reword.
+the chain too, so the rebase never runs on a half-finished reword. The two `git diff --quiet` tests
+stop it before the `amend!` commit is made while any change is staged or unstaged, since the rebase
+would refuse that tree and leave the commit on HEAD with the target's message unchanged. Commit or
+set aside other work first, never with `git stash`, whose stack every worktree and session shares.
+The `git log` test stops it when the range already holds a pending `fixup!`, `amend!` or `squash!`
+commit, which the rebase would fold too; hand that rebase back to the user.
 
 The `amend! <sha>` first line is what `--autosquash` matches on, so it must survive into the message
 file — replace the body, never that line. Drop it and the stub is left behind as a stray empty
