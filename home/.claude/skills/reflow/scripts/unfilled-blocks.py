@@ -31,6 +31,7 @@ WORKING_DOCUMENTS = (
     "*-REVIEW*.md",
     "*PLAN.md",
     "*HANDOFF.md",
+    "*IMPACT.md",
 )
 LEADERS = {
     "//": (

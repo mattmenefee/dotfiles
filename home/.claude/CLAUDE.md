@@ -15,8 +15,8 @@
 - After a push or merge mishap, recommend a server-side guardrail (a GitHub ruleset or branch
   protection) over client-side git configuration, and leave existing local configuration alone
 - Never add review or working documents (`*local-review*.md`, `*-DOC-REVIEW*.md`, `*-REVIEW*.md`,
-  `*PLAN.md`, `*-HANDOFF.md`) to `.gitignore`. Commit one only where the project's `/ship-it`
-  expects it; otherwise leave it untracked.
+  `*PLAN.md`, `*-HANDOFF.md`, `*-IMPACT.md`) to `.gitignore`. Commit one only where the project's
+  `/ship-it` expects it; otherwise leave it untracked.
 - Before changing an open-source project, read its `CONTRIBUTING.md` (or `.github/CONTRIBUTING.md`)
   and follow its conventions exactly. Add a changelog entry only for a change the library's users
   would notice, not for CI or tooling.

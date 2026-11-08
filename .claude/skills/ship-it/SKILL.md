@@ -142,8 +142,9 @@ Arguments: `$ARGUMENTS`
    git status --porcelain --untracked-files=no
    ```
 
-   Abort if it prints anything. Untracked files do not block: review files, handoffs and plans are
-   untracked by design. Never `git stash` to get past this; the stash is shared by every worktree.
+   Abort if it prints anything. Untracked files do not block: review and impact files, handoffs and
+   plans are untracked by design. Never `git stash` to get past this; the stash is shared by every
+   worktree.
 
 1. **Fetch, and count what the branch is missing:**
 
@@ -543,10 +544,11 @@ Look in the repository root for this branch's artifacts, recording each one's pa
 work='<work dir>'
 root=$(git rev-parse --show-toplevel) || exit 1
 find "$root" -maxdepth 1 ! -type f \( -name '*local-review*.md' -o -name '*-REVIEW*.md' \
-  -o -name '*-PLAN.md' -o -name PLAN.md -o -name '*-HANDOFF.md' \) \
+  -o -name '*-PLAN.md' -o -name PLAN.md -o -name '*-HANDOFF.md' -o -name '*-IMPACT.md' \) \
   -exec printf 'not a regular file: %s\n' {} \;
 work=$work find "$root" -maxdepth 1 -type f \( -name '*local-review*.md' -o -name '*-REVIEW*.md' \
-  -o -name '*-PLAN.md' -o -name PLAN.md -o -name '*-HANDOFF.md' \) -exec bash -c '
+  -o -name '*-PLAN.md' -o -name PLAN.md -o -name '*-HANDOFF.md' -o -name '*-IMPACT.md' \) \
+  -exec bash -c '
     for p do
       n=1
       while [ -e "$work/artifact-$n" ] && [ "$(cat -- "$work/artifact-$n")" != "$p" ]; do
@@ -562,14 +564,17 @@ named like an artifact that points outside the repository would have its target 
 Each other line names an artifact as `artifact-<n>`, the name every block below takes, followed by
 its path quoted for the shell. Read a file with the `Read` tool, which takes the path unquoted;
 never paste the path into a command. `*-REVIEW*.md` takes in a `*-DOC-REVIEW*.md` and a review
-merged from several reviewers alike. Use `find`, never a shell glob: an unmatched glob is an error
-under zsh. A root can hold artifacts for other in-flight work, so read each file's header table and
-post only those whose **Branch** row names the current branch in this repository. Both `/doc-review`
-and `/handoff` write it as a table row with **Branch** in the first cell and the backticked name in
-the second; a handoff follows the name with its base. Ask about one that names another branch or
-another repository, and about a review or handoff with no Branch row. A plan without a header
-belongs to the branch its filename names. A plan that `git ls-files` lists is tracked, which this
-repository's workflow never does: stop and ask the user about it rather than posting or deleting it.
+merged from several reviewers alike. A `*-IMPACT.md`, the dependency impact file `/update-deps`
+writes, is a review file for every block below: its summary rows take the review files' shape and
+its statuses their glyphs, though its 🚫 means no action was needed (see Build, check and post). Use
+`find`, never a shell glob: an unmatched glob is an error under zsh. A root can hold artifacts for
+other in-flight work, so read each file's header table and post only those whose **Branch** row
+names the current branch in this repository. `/doc-review`, `/handoff` and `/update-deps` write it
+as a table row with **Branch** in the first cell and the backticked name in the second; a handoff
+follows the name with its base. Ask about one that names another branch or another repository, and
+about a review, impact file or handoff with no Branch row. A plan without a header belongs to the
+branch its filename names. A plan that `git ls-files` lists is tracked, which this repository's
+workflow never does: stop and ask the user about it rather than posting or deleting it.
 
 A number names one file for the whole run. Running discovery again keeps every number it gave and
 gives a new file the next free one; a source deleted after posting keeps its number, which the
@@ -799,7 +804,8 @@ Redacted before posting: [count and kinds, or none]
 Derive the title and stats line from the file: finding counts for a review, the plan's title for a
 plan. `[base name]` is the source's file name without its directory, in backticks, so the next run
 can find the comment. Name every status bucket separately (fixed, refuted, deferred, ignored,
-observations) and omit empty ones; a refuted finding is never counted as fixed. A cleared Sensitive
+observations) and omit empty ones; a refuted finding is never counted as fixed. In a `*-IMPACT.md`,
+🚫 means no action was needed: count it as `no action`, never as ignored. A cleared Sensitive
 Information finding counts in its bucket like any other; a withheld one appears only in the neutral
 count. When this run rewrote history, or Step 2 committed a refill, add a line saying file and line
 references may have drifted, naming cited SHAs too only when history was rewritten.

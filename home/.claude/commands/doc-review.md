@@ -38,7 +38,7 @@ it is committed. Deleted files are left out, since there is nothing to read.
 Keep the **documents** among the changed files: names ending `.md`, `.mdx`, `.markdown`, `.txt`,
 `.rst`, `.adoc` or `.pdf`, compared case-insensitively. Drop the working files these commands and ad
 hoc reviews write to the project root — `*local-review*.md`, `*-DOC-REVIEW*.md`, `*-REVIEW*.md`,
-`*-HANDOFF.md` and `*PLAN.md` — which are a run's output rather than documentation.
+`*-HANDOFF.md`, `*-IMPACT.md` and `*PLAN.md` — which are a run's output rather than documentation.
 
 A named path is reviewed as given, with one exception: in a project that has `/local-review`, its
 output `local-review.md`, or a carried `*-local-review.md` on a stacked branch, is not a valid
@@ -305,10 +305,11 @@ Choose a reading strategy before reviewing:
   and fast to search, but it loses table and visual formatting. Delete the directory with `rm -rf`
   when the review is done: it is a plaintext copy of a document that may hold exactly the
   credentials and PII the Sensitive Information criteria are looking for, and nothing downstream
-  covers it — the scrub matches four filename patterns, `/ship-it` (a shipping command available in
-  project repositories) deletes only the artifacts it posts and a stray `document.txt` left in the
-  working tree can be committed. A name derived from the PDF's would collide when two reviewers
-  convert PDFs that share a base name, and a fixed path follows a planted symlink
+  covers it — the scrub matches only the working-file names PR Comment Format lists, `/ship-it` (a
+  shipping command available in project repositories) deletes only the artifacts it posts and a
+  stray `document.txt` left in the working tree can be committed. A name derived from the PDF's
+  would collide when two reviewers convert PDFs that share a base name, and a fixed path follows a
+  planted symlink
 - **Table- or form-heavy PDFs:** use the `Read` tool's `pages` parameter (max 20 pages per request;
   required for PDFs over 10 pages). It renders pages as images, so it captures tables and diagrams
   accurately.
@@ -563,8 +564,9 @@ rule that stops where the patterns stop leaves a personal name, a customer datum
 repository's name to a backstop that was never built to catch it.
 
 This rule governs every artifact `/ship-it` publishes, not just the one this command writes — it
-posts `local-review.md` and `*-PLAN.md` whole as well, and the scrub's own filename list in PR
-Comment Format is the proof that an authoring rule scoped to a single file is scoped too narrowly.
+posts `local-review.md`, `*-PLAN.md` and `*-IMPACT.md` whole as well, and the scrub's own filename
+list in PR Comment Format is the proof that an authoring rule scoped to a single file is scoped too
+narrowly.
 
 The artifact **may** be published verbatim into a pull request comment — PR Comment Format says when
 — and `/ship-it` deletes the local copy once it has posted it, so a quoted secret outlives both the
@@ -1531,8 +1533,8 @@ secrets="$secrets"'|eyj[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.|bearer[[:space:]]+[a-z0-
 
 artifacts() {
   find "$root" -maxdepth 1 \
-    \( -name '*local-review*.md' -o -name '*-DOC-REVIEW*.md' \
-       -o -name '*-HANDOFF.md' -o -name '*PLAN.md' \) "$@"
+    \( -name '*local-review*.md' -o -name '*-REVIEW*.md' \
+       -o -name '*-HANDOFF.md' -o -name '*-IMPACT.md' -o -name '*PLAN.md' \) "$@"
 }
 
 # Drop a hit only when its text after `<file>:<line>:` is exactly a line the user cleared.
@@ -1678,13 +1680,12 @@ credentials always arrive escorted by a path, so a secret the authoring agent fa
 no second check and both stages had a documented reason not to look.
 
 This section is the **normative definition** of the scrub, and every other command that publishes
-these artifacts carries its own copy of it — notably a project's `/ship-it`, which posts
-`local-review.md`, `*-DOC-REVIEW.md` and `*-PLAN.md` together and then deletes them, so it publishes
-two artifacts this command never writes. Duplicate the check into each publisher; do not
-cross-reference this section. A cross-reference between command files reaches nobody — the same
-reason the status rule is restated in the prompt at the top of this file — and the agent running
-`/ship-it` never reads this one. Duplication costs a few lines; a missing scrub costs a disclosure
-that cannot be undone once posted.
+these artifacts carries its own copy of it — notably a project's `/ship-it`, which posts its review,
+plan, handoff and impact files together and then deletes them, most of which this command never
+writes. Duplicate the check into each publisher; do not cross-reference this section. A
+cross-reference between command files reaches nobody — the same reason the status rule is restated
+in the prompt at the top of this file — and the agent running `/ship-it` never reads this one.
+Duplication costs a few lines; a missing scrub costs a disclosure that cannot be undone once posted.
 
 **Ask before withholding.** Reviewers file two kinds of finding under `## Sensitive Information`:
 ones that point at a value, and ones about what gets published that name no value, such as a comment
