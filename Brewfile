@@ -24,6 +24,7 @@ cask 'raycast'
 cask 'rectangle'
 cask 'caffeine'
 brew 'mole' # for deep cleaning and optimizing your Mac
+cask 'cleanmymac'
 
 # Programming languages and related tools
 brew 'rust' # for running Ruby with the YJIT compiler
@@ -86,12 +87,13 @@ brew 'ansible-lint'
 brew 'shellcheck'
 brew 'shfmt' # Autoformat shell script source code
 
-# Other programs
+# Writing and document tools
 cask 'basictex'
 cask 'calibre'
 cask 'typora'
+
+# Collaboration and meeting tools
 cask 'zoom'
-cask 'cleanmymac'
 cask 'linear'
 cask 'granola'
 
