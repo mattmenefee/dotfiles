@@ -92,6 +92,8 @@ cask 'calibre'
 cask 'typora'
 cask 'zoom'
 cask 'cleanmymac'
+cask 'linear'
+cask 'granola'
 
 # Claude
 cask 'claude' # Desktop app; Claude Code comes from Anthropic's installer (see README)
