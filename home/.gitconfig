@@ -115,3 +115,7 @@
   showUntrackedFiles = all
 [init]
   defaultBranch = main
+# The Heroku CLI adds this helper before nearly every command whenever it is missing, so keeping it
+# here keeps that write from showing up as a change
+[credential "https://git.heroku.com"]
+  helper = !heroku git:credentials
