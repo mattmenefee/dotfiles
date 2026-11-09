@@ -9,6 +9,7 @@
       "Use Separate Colors for Light and Dark Mode" : false,
       "Allow Title Setting" : true,
       "Allow Title Reporting" : false,
+      "Custom Directory" : "Recycle",
       "Background Color" : {
         "Red Component" : 0.0806884765625,
         "Color Space" : "sRGB",
