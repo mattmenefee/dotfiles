@@ -12,12 +12,6 @@ alias tn='tmux -2 new'
 alias tm='tmux -2 new -A -s mobile'
 alias vim='mvim -v'
 
-# Ruby
-alias be="bundle exec"
-alias bi="bundle install -j 8"
-alias bo="bundle outdated"
-alias bu="bundle update"
-
 # Rails
 alias r="bin/rails"
 alias bd="bin/dev"
