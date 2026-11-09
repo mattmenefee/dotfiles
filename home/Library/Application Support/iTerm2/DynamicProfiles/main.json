@@ -8,7 +8,56 @@
       "Dynamic Profile Parent Name" : "Default",
       "Use Separate Colors for Light and Dark Mode" : false,
       "Allow Title Setting" : true,
-      "Allow Title Reporting" : false
+      "Allow Title Reporting" : false,
+      "Background Color" : {
+        "Red Component" : 0.0806884765625,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.12103271484375,
+        "Alpha Component" : 1.0,
+        "Green Component" : 0.09911105036735535
+      },
+      "Foreground Color" : {
+        "Red Component" : 0.8619791269302368,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.8619885444641113,
+        "Alpha Component" : 1.0,
+        "Green Component" : 0.86199951171875
+      },
+      "Bold Color" : {
+        "Red Component" : 0.9999960064888,
+        "Color Space" : "sRGB",
+        "Blue Component" : 1.0,
+        "Alpha Component" : 1.0,
+        "Green Component" : 1.0
+      },
+      "Cursor Color" : {
+        "Red Component" : 0.9999763369560242,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.9999872446060181,
+        "Alpha Component" : 1.0,
+        "Green Component" : 1.0
+      },
+      "Cursor Text Color" : {
+        "Red Component" : 0.0,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.0,
+        "Alpha Component" : 1.0,
+        "Green Component" : 0.0
+      },
+      "Cursor Guide Color" : {
+        "Red Component" : 0.37649588016392954,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.9409904479980469,
+        "Alpha Component" : 0.25,
+        "Green Component" : 0.8023261774920553
+      },
+      "Badge Color" : {
+        "Red Component" : 0.9787440299987793,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.6521859746214886,
+        "Alpha Component" : 0.5,
+        "Green Component" : 0.6521859746214886
+      }
     }
   ]
 }
