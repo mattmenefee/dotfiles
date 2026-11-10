@@ -58,6 +58,160 @@
         "Blue Component" : 0.6521859746214886,
         "Alpha Component" : 0.5,
         "Green Component" : 0.6521859746214886
+      },
+      "IME Cursor Color" : {
+        "Red Component" : 0.9969714283943176,
+        "Color Space" : "P3",
+        "Blue Component" : 0.32116127014160156,
+        "Alpha Component" : 1,
+        "Green Component" : 0.9860088229179382
+      },
+      "Selected Text Color" : {
+        "Red Component" : 0,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0,
+        "Alpha Component" : 1,
+        "Green Component" : 0
+      },
+      "Ansi 11 Color" : {
+        "Red Component" : 0.9259033203125,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0,
+        "Alpha Component" : 1,
+        "Green Component" : 0.8833775520324707
+      },
+      "Selection Color" : {
+        "Red Component" : 0.7019608020782471,
+        "Color Space" : "sRGB",
+        "Blue Component" : 1,
+        "Alpha Component" : 1,
+        "Green Component" : 0.843137264251709
+      },
+      "Ansi 4 Color" : {
+        "Red Component" : 0.15404300391674042,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.7821617722511292,
+        "Alpha Component" : 1,
+        "Green Component" : 0.2647435665130615
+      },
+      "Active Pane Border Color" : {
+        "Red Component" : 0.24512207508087158,
+        "Color Space" : "P3",
+        "Blue Component" : 0.9708847403526306,
+        "Alpha Component" : 1,
+        "Green Component" : 0.578912079334259
+      },
+      "Ansi 3 Color" : {
+        "Red Component" : 0.7805864810943604,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0,
+        "Alpha Component" : 1,
+        "Green Component" : 0.7695948481559753
+      },
+      "Link Color" : {
+        "Red Component" : 0.1980242282152176,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.9337158203125,
+        "Alpha Component" : 1,
+        "Green Component" : 0.5578983426094055
+      },
+      "Ansi 14 Color" : {
+        "Red Component" : 0.3759753108024597,
+        "Color Space" : "sRGB",
+        "Blue Component" : 1,
+        "Alpha Component" : 1,
+        "Green Component" : 0.9926329255104065
+      },
+      "Ansi 2 Color" : {
+        "Red Component" : 0,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0,
+        "Alpha Component" : 1,
+        "Green Component" : 0.7607843279838562
+      },
+      "Ansi 9 Color" : {
+        "Red Component" : 0.8659515380859375,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.45833224058151245,
+        "Alpha Component" : 1,
+        "Green Component" : 0.4752407670021057
+      },
+      "Ansi 12 Color" : {
+        "Red Component" : 0.6534907817840576,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.9485321044921875,
+        "Alpha Component" : 1,
+        "Green Component" : 0.6704471707344055
+      },
+      "Ansi 1 Color" : {
+        "Red Component" : 0.7074432373046875,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.16300037503242493,
+        "Alpha Component" : 1,
+        "Green Component" : 0.23660069704055786
+      },
+      "Match Background Color" : {
+        "Red Component" : 0.9969714283943176,
+        "Color Space" : "P3",
+        "Blue Component" : 0.32116127014160156,
+        "Alpha Component" : 1,
+        "Green Component" : 0.9860088229179382
+      },
+      "Ansi 8 Color" : {
+        "Red Component" : 0.4078176021575928,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.4078223705291748,
+        "Alpha Component" : 1,
+        "Green Component" : 0.40782788395881653
+      },
+      "Ansi 10 Color" : {
+        "Red Component" : 0.3450070321559906,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.5654193758964539,
+        "Alpha Component" : 1,
+        "Green Component" : 0.9042816162109375
+      },
+      "Ansi 0 Color" : {
+        "Red Component" : 0.0784313753247261,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.11764705926179886,
+        "Alpha Component" : 1,
+        "Green Component" : 0.09803921729326248
+      },
+      "Ansi 7 Color" : {
+        "Red Component" : 0.7810397744178772,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.7810482978820801,
+        "Alpha Component" : 1,
+        "Green Component" : 0.7810582518577576
+      },
+      "Ansi 15 Color" : {
+        "Red Component" : 0.9999960064888,
+        "Color Space" : "sRGB",
+        "Blue Component" : 1,
+        "Alpha Component" : 1,
+        "Green Component" : 1
+      },
+      "Ansi 6 Color" : {
+        "Red Component" : 0,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.7816620469093323,
+        "Alpha Component" : 1,
+        "Green Component" : 0.7742590308189392
+      },
+      "Ansi 13 Color" : {
+        "Red Component" : 0.8821563720703125,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.8821563720703125,
+        "Alpha Component" : 1,
+        "Green Component" : 0.4927266538143158
+      },
+      "Ansi 5 Color" : {
+        "Red Component" : 0.752197265625,
+        "Color Space" : "sRGB",
+        "Blue Component" : 0.7449436187744141,
+        "Alpha Component" : 1,
+        "Green Component" : 0.24931684136390686
       }
     }
   ]
