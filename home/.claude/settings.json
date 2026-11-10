@@ -302,7 +302,8 @@
     "claude-code-setup@claude-plugins-official": false,
     "design@synced": false,
     "engineering@synced": false,
-    "productivity@synced": false
+    "productivity@synced": false,
+    "cc-plugin-you-should-know@builtin": true
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
