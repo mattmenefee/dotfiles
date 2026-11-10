@@ -100,4 +100,4 @@ cask 'granola'
 # Claude
 cask 'claude' # Desktop app; Claude Code comes from Anthropic's installer (see README)
 brew 'gum' # Interactive terminal UI for multi-select menus in Claude Code commands
-
+cask 'agentsview' # Browse and search past AI coding sessions
