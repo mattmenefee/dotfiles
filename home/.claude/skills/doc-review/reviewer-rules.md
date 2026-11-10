@@ -107,7 +107,10 @@ know what a report contains.
   `git diff`. The one exception is Reading Strategy's PDF conversion, which writes only to a private
   `mktemp -d` directory outside the repository. You must not run anything that modifies the
   repository or writes to state the project's tests or services share: a test database, a search
-  index, uploaded-file storage, build output.
+  index, uploaded-file storage, build output. To compare text that moved between files, such as a
+  section the scope split out of another file, feed both sides to `diff` through process
+  substitution rather than a file:
+  `diff <(git show <base>:<old path> | sed -n '<old range>p') <(sed -n '<new range>p' <new path>)`.
 - **Hand back any check you cannot make this way**, naming the exact command and the result that
   would confirm or refute the claim, and write it on the finding's **Verification** line as
   `unverified` with that command. Handing it back ends your part in it — do not run it yourself once
