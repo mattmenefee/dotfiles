@@ -1429,18 +1429,19 @@ on F5, and "all" would take G2 and G4.
 
 ### PR Comment Format
 
-<!-- Keep in sync with a project's /ship-it, where one exists: Step 8 of
-     .claude/commands/ship-it.md in some projects, and in the dotfiles repository Step 6 of
+<!-- Keep in sync with a project's /ship-it, where one exists: in some projects the Scrubbing Text
+     Before It Is Published subsection and the Post Review Artifacts and Post the Handoff steps of
+     .claude/commands/ship-it.md, and in the dotfiles repository the Post Review Artifacts step of
      .claude/skills/ship-it/SKILL.md with the patterns in scripts/scrub.sh beside it, whose header
      lists the differences from this section that are intended; update that list whenever this
      section changes, and re-derive it before syncing in either direction. Each restates the
-     stats-line rule
-     and carries its own copies of the scrub pattern set (with the placeholder exemption built into
-     `paths`), the cleared-lines rule and the Sensitive Information withholding -->
+     stats-line rule and carries its own copies of the scrub pattern set (with the placeholder
+     exemption built into `paths`), the cleared-lines rule and the Sensitive Information
+     withholding -->
 
-<!-- Keep in sync with Step 8 of another project's .claude/commands/ship-it.md, where the amended
-     `keys`, `schemes` and `secrets` set below was tested against credential samples and harmless
-     negatives -->
+<!-- Keep in sync with the Scrubbing Text Before It Is Published subsection of another project's
+     .claude/commands/ship-it.md, where the amended `keys`, `schemes` and `secrets` set below was
+     tested against credential samples and harmless negatives -->
 
 When posting review findings as a PR comment (e.g. during `/ship-it` or when explicitly asked),
 build a temporary file with a collapsible `<details><summary>` wrapper and post it with
