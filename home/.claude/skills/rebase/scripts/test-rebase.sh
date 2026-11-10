@@ -812,6 +812,22 @@ contains 'push: repeat says so' 'nothing to push' "${err}"
 git branch --quiet fresh && run 0 'push: first push' "${scripts}/push-lease.sh" fresh
 check 'push: first push confirmed' yes "$(kv confirmed)"
 
+# A branch left alone until gc expired its reflog: the pre-rebase tip survives only as the old value
+# of the rebase's own entry, and the clone still had it on the branch
+git switch --quiet -c stale && commit stale.txt stale 'Add stale' && git push --quiet origin stale
+them git fetch --quiet && them git merge --quiet --ff-only origin/main
+them commit moved.txt moved 'Move main' && them git push --quiet origin main
+git reflog expire --expire=now refs/heads/stale
+git fetch --quiet origin && git rebase --quiet origin/main
+check 'push: expired reflog holds only the rebase' 1 \
+  "$(wc -l <"$(git rev-parse --git-path logs/refs/heads/stale)" | tr -d ' ')"
+run 0 'prepare: expired reflog after the rebase' "${scripts}/prepare.sh" stale main main origin
+check 'prepare: expired reflog integrated' yes "$(kv remote_integrated)"
+run 0 'push: rebased branch with an expired reflog' "${scripts}/push-lease.sh" stale
+check 'push: expired reflog pushed' "$(git rev-parse stale)" \
+  "$(git ls-remote origin refs/heads/stale | cut -f1)"
+git switch --quiet feature
+
 # The colleague pushes to the branch; a clone that fetched but never integrated it may not overwrite
 them git fetch --quiet
 them git switch --quiet feature
@@ -826,12 +842,18 @@ run 3 'push: fetched but unintegrated' "${scripts}/push-lease.sh" feature
 check 'push: remote left alone' "${theirs}" "$(git ls-remote origin refs/heads/feature | cut -f1)"
 git reset --quiet --hard origin/feature
 
-# A reflog entry from before the branch was recreated proves nothing about the new branch
+# A reflog entry from before the branch was recreated proves nothing about the new branch. The
+# branch sits at theirs, so the reset entry's own old value is theirs, which must not count either.
 git switch --quiet -C feature origin/main
 commit unrelated.txt unrelated 'Unrelated work'
 run 3 'push: recreated branch' "${scripts}/push-lease.sh" feature
 check 'push: recreated branch left the remote alone' "${theirs}" \
   "$(git ls-remote origin refs/heads/feature | cut -f1)"
+git reset --quiet --hard "${theirs}"
+# Git keeps a tab in a committer name, so the reflog message is not simply what follows a tab
+GIT_COMMITTER_NAME=$(printf 'Tab\tName') git switch --quiet -C feature origin/main
+commit unrelated.txt unrelated 'Unrelated work'
+run 3 'push: recreated by a name with a tab' "${scripts}/push-lease.sh" feature
 git reset --quiet --hard "${theirs}"
 
 # Someone pushes between the script's ls-remote and its push: the lease must reject it
@@ -1086,6 +1108,32 @@ check 'fork: remote' upstream "$(kv remote)"
 check 'fork: repo slug' up/proj "$(kv repo)"
 contains 'fork: gh asked about the upstream slug' 'repo view up/proj' \
   "$(cat "${FAKE_GH}/calls.log")"
+
+# The reftable backend keeps no reflog file, so the reflog check falls back to new values alone
+echo '== a reftable clone'
+if git init --quiet --bare -b main --ref-format=reftable "${dir}/rt/origin.git" 2>/dev/null; then
+  git clone --quiet --ref-format=reftable "${dir}/rt/origin.git" "${dir}/rt/me" 2>/dev/null
+  cd "${dir}/rt/me" || exit 2
+  commit base.txt base 'Add base' && git push --quiet origin main
+  git switch --quiet -c rt && commit rt.txt rt 'Add rt' && git push --quiet origin rt
+  check 'reftable: no reflog file' no \
+    "$([[ -e $(git rev-parse --git-path logs/refs/heads/rt) ]] && echo yes || echo no)"
+  git switch --quiet main && commit main.txt one 'Move main' && git push --quiet origin main
+  git switch --quiet rt && git rebase --quiet main
+  run 0 'reftable: rebased branch' "${scripts}/push-lease.sh" rt
+  pushed=$(git rev-parse rt)
+  git switch --quiet -C rt main && commit other.txt other 'Other work'
+  run 3 'reftable: recreated branch' "${scripts}/push-lease.sh" rt
+  git reset --quiet --hard "${pushed}"
+  # Only the file backend records the pre-rebase tip once older entries expire
+  git reflog expire --expire=now refs/heads/rt
+  git switch --quiet main && commit main.txt two 'Move main again' && git push --quiet origin main
+  git switch --quiet rt && git rebase --quiet main
+  run 3 'reftable: expired reflog still refused' "${scripts}/push-lease.sh" rt
+  check 'reftable: remote left alone' "${pushed}" "$(git ls-remote origin refs/heads/rt | cut -f1)"
+else
+  echo 'skipped: this git cannot create a reftable repository'
+fi
 
 if ((failed)); then exit 1; fi
 echo 'All /rebase script tests passed.'
