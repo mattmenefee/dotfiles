@@ -48,6 +48,11 @@
 - Put rules meant for an agent where agents read them: CLAUDE.md, a command or an agent file. Never
   put them in a `.gitignore`, a dotfile or a configuration comment. A comment warning any reader, as
   Code Style allows, is not such a rule; an instruction addressed to an agent is.
+- Dispatch a subagent for a bounded job as a fresh agent whose prompt carries, or names by path, the
+  rules it needs, never as a fork of the session (the Agent tool's `subagent_type: "fork"`). Bounded
+  jobs include writing or updating a working document, recording rulings and reviewing one document
+  or concern. A fork copies the whole conversation into every dispatch, which costs far more than
+  writing a prompt and hands the agent context the job has no use for.
 - Don't run linters on memory files under `~/.claude/projects/*/memory/`, and ignore hook lint
   errors reported on them.
 
