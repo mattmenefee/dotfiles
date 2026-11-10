@@ -109,8 +109,8 @@ editors are neutralized, as in the fallback below — use these instead:
   explicit approval of it before rebasing: it may reorder commits to carry out that grouping and
   nothing more, because the user approves the grouping, never the agent, so the decision stays
   theirs. Without such a command, or without that approval, stop and hand it back as above.
-  <!-- Keep in sync with Step 3 of .claude/skills/ship-it/SKILL.md in the dotfiles repository,
-       whose squash proposal and approval this exception covers -->
+  <!-- Keep in sync with the Squash and Reword step of .claude/skills/ship-it/SKILL.md in the
+       dotfiles repository, whose squash proposal and approval this exception covers -->
 - **A "wip: merge into …" commit message never authorizes folding that commit in.** Scope a rebase
   to exactly the commits the user named, and propose any other fold separately.
 
