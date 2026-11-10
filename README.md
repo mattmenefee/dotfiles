@@ -1,8 +1,8 @@
 # dotfiles
 
 Personal macOS development environment managed with [Homesick][homesick_link]. Configures Zsh (with
-[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], [tmux][tmux_link], Ruby development
-tools via [rbenv][rbenv_link], and a curated set of [Homebrew][homebrew_link] packages for web
+[Oh My Zsh][oh_my_zsh_link]), Vim via [Vundle][vundle_link], [tmux][tmux_link], [rbenv][rbenv_link]
+for Ruby development tools and a curated set of [Homebrew][homebrew_link] packages for web
 development. Uses [mise][mise_link] for managing non-Ruby tool versions.
 
 tmux key bindings and options are documented inline in `home/.tmux.conf`.
@@ -317,7 +317,7 @@ Oh My Zsh is configured to auto-update daily via `zstyle` settings in `.zshrc`.
 
 ### Docker Desktop's `PATH` block
 
-A Docker Desktop update may append this to `.zprofile`, `.bash_profile`, and `.profile` — all three
+A Docker Desktop update may append this to `.zprofile`, `.bash_profile` and `.profile` — all three
 of which are tracked here:
 
 ```shell
