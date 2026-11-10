@@ -66,6 +66,15 @@ expect "front matter after a byte-order mark is still front matter" p.md 80 \
 expect "a working document is skipped" x-HANDOFF.md 80 "" 'one\ntwo\n'
 expect "an ad hoc review report is skipped" x-REVIEW.md 80 "" 'one\ntwo\n'
 expect "a dependency impact file is skipped" x-IMPACT.md 80 "" 'one\ntwo\n'
+expect "a root local review is skipped" local-review.md 80 "" 'one\ntwo\n'
+mkdir -p .claude/commands docs
+expect "a command file named like a review is checked" .claude/commands/local-review.md 80 \
+  ".claude/commands/local-review.md:1-2: line 1 can take 'two' from line 2" 'one\ntwo\n'
+expect "a doc in a subdirectory named like a plan is checked" docs/MIGRATION-PLAN.md 80 \
+  "docs/MIGRATION-PLAN.md:1-2: line 1 can take 'two' from line 2" 'one\ntwo\n'
+expect "a root working document written with ./ is skipped" ./x-HANDOFF.md 80 "" 'one\ntwo\n'
+expect "a root working document named by absolute path is skipped" "${dir}/x-HANDOFF.md" 80 \
+  "" 'one\ntwo\n'
 
 # Block quotes
 expect "a bare > separates quoted paragraphs" p.md 80 \
@@ -125,6 +134,14 @@ expect_run "a named path written with ./ still matches" 0 \
 expect_run "a named directory selects the files under it" 0 "" 'p.md\t1-2\n' sub
 expect_run "a file that cannot be read fails the run" 1 "" 'missing.md\t1-2\n'
 expect_run "a malformed row fails the run without a traceback" 1 "" 'p.md\tx-y\n'
+mkdir notes
+printf 'one\ntwo\n' >notes/a-PLAN.md
+ln -s notes/a-PLAN.md a-PLAN.md
+expect_run "a root working document that is a symlink is skipped" 0 "" 'a-PLAN.md\t1-2\n'
+printf 'one\ntwo\n' >b-PLAN.md
+ln -s ../b-PLAN.md docs/b-PLAN.md
+expect_run "a subdirectory symlink to a root working document is checked" 0 \
+  "docs/b-PLAN.md:1-2: line 1 can take 'two' from line 2" 'docs/b-PLAN.md\t1-2\n'
 
 if [ "${failed}" -eq 0 ]; then
   echo "test-unfilled-blocks: ${n} cases passed"

@@ -111,14 +111,16 @@ Leave these alone, whether or not they changed:
 - Code statements, commented-out code and diagrams drawn in comments. Line length in code is the
   formatter's call, and a formatter rewrites more than line breaks, so list each over-limit code
   line in the step 6 report and suggest the project's formatter or linter (e.g. `bin/rubocop -A`) as
-  a separate step rather than running it here
+  a separate step rather than running it here.
 - A trailing comment on a line of code, and tool directives such as `# rubocop:disable`,
   `# shellcheck disable=`, `# frozen_string_literal: true`, `// eslint-disable-next-line`,
-  `# yamllint disable-line` or `<!-- markdownlint-disable -->`. Merging one into prose disables it
+  `# yamllint disable-line` or `<!-- markdownlint-disable -->`. Merging one into prose disables it.
 - Any line a project rule keeps whole, such as a long shell `alias`
-- Files that must not be hard-wrapped at all: review, plan, handoff and impact documents
-  (`*local-review*.md`, `*DOC-REVIEW*.md`, `*-REVIEW*.md`, `*PLAN.md`, `*HANDOFF.md`, `*IMPACT.md`),
-  pull request and issue text and Markdown meant to be pasted into Teams or Slack
+- Files that must not be hard-wrapped at all: review, plan, handoff and impact documents in the
+  repository root (`*local-review*.md`, `*DOC-REVIEW*.md`, `*-REVIEW*.md`, `*PLAN.md`,
+  `*HANDOFF.md`, `*IMPACT.md`), pull request and issue text and Markdown meant to be pasted into
+  Teams or Slack. A file with a matching name in a subdirectory, such as a command file, is ordinary
+  prose.
 - A file whose untouched paragraphs put one sentence per line: that is its style, so ask before
   filling it
 

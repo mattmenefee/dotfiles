@@ -369,6 +369,15 @@ def normalized(path):
     return os.path.relpath(os.path.realpath(path))
 
 
+def is_working_document(path):
+    """Return whether path is a review, plan, handoff or impact document, which the workflow writes
+    only to the repository root; a tracked file elsewhere with a matching name is ordinary prose."""
+    directory, base = os.path.split(path)
+    # Resolve only the directory, so a symlinked file is judged by its own name and place
+    directory = os.path.relpath(os.path.realpath(directory or os.curdir))
+    return directory == os.curdir and any(fnmatch.fnmatch(base, name) for name in WORKING_DOCUMENTS)
+
+
 def selected(path, named):
     """Return the named paths that select path: the path itself or a directory holding it."""
     path = normalized(path)
@@ -392,7 +401,7 @@ def main():
             if not names:
                 continue
             matched.update(names)
-        if any(fnmatch.fnmatch(os.path.basename(path), name) for name in WORKING_DOCUMENTS):
+        if is_working_document(path):
             print(f"skipped a working document: {path}", file=sys.stderr)
             continue
         try:
