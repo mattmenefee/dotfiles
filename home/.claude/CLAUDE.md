@@ -332,9 +332,14 @@ The shell is zsh, not bash, and each of these has broken commands before:
 
 # Serena MCP Server
 
-- Serena must be activated at the start of each session before its tools can be used
+- Activate Serena at the start of each Claude Code session, before using its REPL
 - Activation steps:
-  1. Load the tool: `ToolSearch` with query `select:mcp__serena__activate_project`
-  2. Activate the project: `mcp__serena__activate_project` with the current project path
-- Serena has project memories that can be read with `mcp__serena__read_memory` when relevant
-- Do NOT attempt to call any `mcp__serena__*` tool without first loading it via `ToolSearch`
+  1. Load all three tools with one `ToolSearch` call, query
+     `select:mcp__serena__initial_instructions,mcp__serena__activate_project,mcp__serena__serena_repl`
+  2. Call `mcp__serena__initial_instructions`, which returns the session ID
+  3. Call `mcp__serena__activate_project` with the current project path and that session ID
+- Every other Serena operation runs through `mcp__serena__serena_repl`, called with the same session
+  ID, project memories included: read them with the REPL's `s.mem.list_memories` and
+  `s.mem.read_memory` when relevant
+- Run shell commands with the Bash tool, never the REPL's `s.shell`
+- Never call a `mcp__serena__*` tool before loading it with `ToolSearch`
