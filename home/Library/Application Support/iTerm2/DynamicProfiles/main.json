@@ -10,6 +10,7 @@
       "Allow Title Setting" : true,
       "Allow Title Reporting" : false,
       "Custom Directory" : "Recycle",
+      "Scrollback Lines" : 100000,
       "Background Color" : {
         "Red Component" : 0.0806884765625,
         "Color Space" : "sRGB",
