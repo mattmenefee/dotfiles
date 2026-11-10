@@ -57,7 +57,8 @@ Arguments: `$ARGUMENTS`
   ```
 
   It sits inside the git directory, so it is never committed, and each worktree has its own. Remove
-  it with `rm -rf -- '<work dir>'` when the run ends.
+  it with `rm -rf -- '<work dir>'` when the run ends, after any background CI wait Step 7 started
+  has reported.
 - **Write derived text with the `Write` tool, never a heredoc or `echo`.** That covers every commit
   message, pull request title and body, comment header and handoff comment: anything built from
   commits, the diff or an artifact. A quoted heredoc still ends at a line that matches its
@@ -505,8 +506,8 @@ the pull request exists: Step 7 reads the rollup again. A `CANCELLED` check was 
 later push or stopped by hand: it is neither a pass nor a failure, so leave the item open and ask
 rather than tick it or call it red. A check `SKIPPED` while the pull request is a draft has not run:
 CI skips drafts and starts when the pull request is marked ready, so leave the item open without
-calling it red; Step 7 waits for that run. A CI item already ticked for an earlier commit is
-reopened until the rollup passes on this one.
+calling it red; Step 7 starts the wait for that run. A CI item already ticked for an earlier commit
+is reopened until the rollup passes on this one.
 
 When an open pull request already has a body, carry over anything in it that was not derived from
 the commits, such as a note for a reviewer or a screenshot, and ask when unsure: the edit replaces
@@ -1084,8 +1085,8 @@ lands on exactly what was reviewed, pushed and is about to merge. Carry the prin
 the recorded head; Step 8 merges only that commit.
 
 When this run marked the pull request ready and the CI item is still open, `gh pr ready` has just
-started CI on the head. Wait for it with the Bash tool's `run_in_background`, so the session is
-woken when it ends, rather than finishing with the item open:
+started CI on the head. Start the wait for it with the Bash tool's `run_in_background`, so the
+session is woken when it ends, rather than finishing with the item open:
 
 ```bash
 head=$(git rev-parse HEAD) || exit 1
@@ -1100,9 +1101,10 @@ done
 gh run watch "$run" --exit-status
 ```
 
-When it exits, read the rollup again with Step 5's rollup block and tick the item by Step 5's rule,
-sending it with Step 5's check-and-send block. When the run failed, or none started, leave the item
-open and say which.
+Then go on to Step 8 at once and ask its question while CI runs; never hold the question until the
+run ends. When the run exits, whatever the answer to Step 8, read the rollup again with Step 5's
+rollup block and tick the item by Step 5's rule, sending it with Step 5's check-and-send block. When
+the run failed, or none started, leave the item open and say which.
 
 ## Step 8: Watch CI and Merge
 
@@ -1130,10 +1132,12 @@ covers one head SHA only.
    It must equal the recorded head Step 7 carried forward. Anything else was pushed after the status
    was recorded and carries none: report it, end the step and leave the pull request for the next
    run. Otherwise ask with `AskUserQuestion`, printing that full SHA in the question, with **Watch
-   CI and merge** (left out when sub-step 1 withheld it), **Watch CI only** and **Stop here**.
-   Record the SHA as the approved head. This step never pushes, and a new head carries no `ship-it`
-   status, so any other head appearing at any point ends the step: report it and leave the pull
-   request for the next run. Never pass `gh pr merge` these flags:
+   CI and merge** (left out when sub-step 1 withheld it), **Watch CI only** and **Stop here**. Ask
+   as soon as Step 7 hands over, whether or not CI has finished: the answer covers the head, not a
+   CI result, and the next sub-step waits for CI before anything merges. Record the SHA as the
+   approved head. This step never pushes, and a new head carries no `ship-it` status, so any other
+   head appearing at any point ends the step: report it and leave the pull request for the next run.
+   Never pass `gh pr merge` these flags:
    - `--admin`, which bypasses `main`'s ruleset
    - `--auto`, which merges later without this step's checks
    - `--delete-branch`, which switches this checkout to `main` before deleting the local branch
@@ -1149,12 +1153,13 @@ covers one head SHA only.
          + " \(.detailsUrl // .targetUrl // "")")'
    ```
 
-   While `lint` is queued or in progress, wait with Step 7's background block, unless Step 7 is
-   already waiting on that run, then read the rollup again. When `lint` is absent, or its latest
-   check is still the draft run's `SKIPPED`, the run that marking ready starts has not registered:
-   wait the same way, since that block first waits for a run to start. A `ship-it` missing from the
-   list ends the step: the head has no status. `mergeStateStatus` `DIRTY` means a conflict with
-   `main`: stop and report as Merge describes, without attempting it. Do not use
+   While `lint` is queued or in progress, wait for it: when Step 7's background wait on that run is
+   running, wait for its notification and apply Step 7's tick first, so it never runs after a merge;
+   otherwise wait with Step 7's background block. Then read the rollup again. When `lint` is absent,
+   or its latest check is still the draft run's `SKIPPED`, the run that marking ready starts has not
+   registered: wait the same way, since that block first waits for a run to start. A `ship-it`
+   missing from the list ends the step: the head has no status. `mergeStateStatus` `DIRTY` means a
+   conflict with `main`: stop and report as Merge describes, without attempting it. Do not use
    `gh pr checks --watch`, which reports a canceled run as `fail`. A failed read stops the step;
    never infer green from a missing result. CI is green when the printed head is the approved SHA,
    the list holds both required checks, `lint` and `ship-it`, and every check listed reports
@@ -1222,11 +1227,14 @@ covers one head SHA only.
 
 ## Finish
 
-Finish every run this way, including one that skipped Step 8 or stopped in `squash` mode. Tell the
-user what was pushed and how, which files were posted and deleted, which were kept and why, whether
-the CI item was ticked and on which commit or what kept it open, whether the `ship-it` status was
-recorded and on which commit or what withheld it, whether the pull request merged and as which
-commit on `main` or what stopped it and the pull request URL, then remove the work directory.
+Finish every run this way, including one that skipped Step 8 or stopped in `squash` mode. When Step
+7's background CI wait is still running, wait for its notification and apply Step 7's tick first:
+the tick reads `title.txt` and `body.txt` from the work directory, and the report states the CI
+item. Then tell the user what was pushed and how, which files were posted and deleted, which were
+kept and why, whether the CI item was ticked and on which commit or what kept it open, whether the
+`ship-it` status was recorded and on which commit or what withheld it, whether the pull request
+merged and as which commit on `main` or what stopped it and the pull request URL, then remove the
+work directory.
 
 ## Confirmations
 
