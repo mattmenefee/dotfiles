@@ -115,8 +115,11 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
 1. Install [Oh My Zsh][oh_my_zsh_link]
 
     ```shell
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --keep-zshrc
     ```
+
+    `--keep-zshrc` keeps the `.zshrc` Homesick linked above; without it the installer offers to
+    replace that file with its template and defaults to yes.
 
     The following Oh My Zsh plugins are enabled in `.zshrc`:
 
