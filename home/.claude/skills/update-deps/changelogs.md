@@ -52,3 +52,10 @@ is not one of them: it keeps `CHANGES.md` and publishes releases.
 - **`jq`** tags its releases `jq-1.8.2`, so a `^v?[0-9]` tag filter returns nothing. Match the `jq-`
   prefix
 - **Elasticsearch**'s GitHub release page is only a pointer. Link the real notes on `elastic.co`
+- **CircleCI orbs** carry no release notes in the registry. Find the orb's repository with
+  `circleci orb source '<namespace>/<orb>@<version>' | grep -A3 '^display:'`, which prints it as
+  `source_url`, and link its release for the full version the pin now resolves to, the one the
+  registry lookup in Step 7 printed, even when the pin keeps only its major and minor. Orb
+  repositories usually tag it `v1.2.3`; read the tag from the releases page when unsure. When the
+  source has no `display:` block, link the orb's registry page,
+  `https://circleci.com/developer/orbs/orb/<namespace>/<orb>`.
