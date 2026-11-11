@@ -115,6 +115,13 @@ imperatives to whichever party carries them out, and none of the files addresses
 A one-document scope runs the same pipeline: one reviewer, then the collator. There is no shortcut
 in which a reviewer writes the file, so there is one procedure to keep correct rather than two.
 
+Dispatch the collator and every recording agent with the Agent tool's `model` set to `"sonnet"`: the
+collator merges findings it does not originate and a recording agent only writes the user's rulings,
+so neither needs Opus. The call's `model` overrides the `model` in the documentation-expert's
+frontmatter for that dispatch alone, so the agent keeps its frontmatter model everywhere else.
+Dispatch the reviewers with no `model`, since they originate every finding and run on the
+frontmatter's model.
+
 Every agent the orchestrator dispatches runs in the session's own checkout, never with
 `isolation: "worktree"`. The reviewers and the collator are bound by Reviewing Without Editing in
 `reviewer-rules.md`, the recording agents by the tool limit under Recording the rulings. An isolated
@@ -199,8 +206,8 @@ the read is skipped. The list is a symptom check, not a substitute for the files
    example beneath them, which carries the checkbox-plus-glyph shape the rules do not state on their
    own; and the collator writes only the review file and never runs `/doc-review` on it
 
-Dispatch every reviewer in one message, in the session's own checkout, so they run concurrently; the
-review criteria reach each one through `reviewer-rules.md`.
+Dispatch every reviewer in one message, with no `model`, in the session's own checkout, so they run
+concurrently; the review criteria reach each one through `reviewer-rules.md`.
 
 ## After the Review
 
@@ -274,13 +281,13 @@ written.
 
 Resolve the header values with `'${CLAUDE_SKILL_DIR}/scripts/header.sh' <document>...`, every
 document in scope order (see Document Header in `review-file.md`), compose the collator's prompt as
-Composing the Prompts describes and dispatch it in the foreground: nothing that follows can start
-without the file. When it returns, read the file back before showing anything — a returned agent has
-stopped, not necessarily succeeded. Check that every reviewer's findings are there, each numbered,
-merged into a finding that names it under **Concurred by**, cited by an existing number or listed
-under `## Checked and refuted`; that every new actionable finding is ❓; and that the header and
-Documents table carry the values supplied. Re-dispatch a collator with the gaps named rather than
-patching the file by hand, then display the review.
+Composing the Prompts describes and dispatch it in the foreground with `model: "sonnet"`: nothing
+that follows can start without the file. When it returns, read the file back before showing anything
+— a returned agent has stopped, not necessarily succeeded. Check that every reviewer's findings are
+there, each numbered, merged into a finding that names it under **Concurred by**, cited by an
+existing number or listed under `## Checked and refuted`; that every new actionable finding is ❓;
+and that the header and Documents table carry the values supplied. Re-dispatch a collator with the
+gaps named rather than patching the file by hand, then display the review.
 
 ### Walkthrough and Finding Selection
 
@@ -404,11 +411,12 @@ waits on a file edit. Two writers on one file lose edits silently — each reads
 and saves over the other's — so exactly one party writes the review file at a time:
 
 - **Dispatch.** At the end of phase 1 and of phase 2, when it changed anything, dispatch one
-  background documentation-expert with that phase's batch. Do not wait for a phase end that may
-  never come: a ruling given outside those two phases — volunteered during the order proposal or
-  group work — and the rulings of a phase the user leaves partway, by picking a group, changing the
-  subject or ending the session, go out as a batch straight away. While a batch's agent is still
-  running, carry on with the conversation and hold the next batch until its notification arrives.
+  background documentation-expert with `model: "sonnet"` and that phase's batch. Do not wait for a
+  phase end that may never come: a ruling given outside those two phases — volunteered during the
+  order proposal or group work — and the rulings of a phase the user leaves partway, by picking a
+  group, changing the subject or ending the session, go out as a batch straight away. While a
+  batch's agent is still running, carry on with the conversation and hold the next batch until its
+  notification arrives.
 - **Read back.** A notification says the agent stopped, not that it succeeded: one that erred, ran
   out of turns or saved half its batch notifies just the same. When one arrives, read back every
   finding the batch named before counting the batch as written, checking each write where it lands:
