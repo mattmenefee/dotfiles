@@ -100,6 +100,10 @@ becomes the heading of a published comment (see PR Comment Format in `posting.md
 path. **Scope** records what was asked for — the path, the paths or the description with its base
 commit — so a later run can tell whether it covers the same ground.
 
+The Review History heading's `by` names the reviewers' model, or each reviewer's when they differ,
+as the **Reviewed by** row records it, and never the collator's, which only **Collated by** names.
+The collator originates no finding, so naming it there would misattribute the review.
+
 The file as a whole takes this shape. Heading levels are part of the specification, not a
 preference: the merge rules, the Completion rule's `### G3 ✅ — …` form and every cross-reference in
 this skill's files assume it.
@@ -113,7 +117,7 @@ this skill's files assume it.
 
 ## Review History
 
-### <date> — <what this run did> by <model>
+### <date> — <what this run did> by <reviewer model>
 
 ## Overall Assessment
 
