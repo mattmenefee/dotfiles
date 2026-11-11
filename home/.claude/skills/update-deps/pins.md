@@ -14,6 +14,8 @@ git grep -nE --full-name '^[[:space:]]*(-[[:space:]]+)?image:' -- ':/.circleci/*
   ':/*compose.y*ml'
 git grep -niE --full-name '^[[:space:]]*FROM[[:space:]]' -- ':/*Dockerfile*' ':/*Containerfile*'
 git grep -nE --full-name '^[[:space:]]*[a-z0-9_]+_version:[[:space:]]' -- ':/*.yml' ':/*.yaml'
+git grep -nE --full-name '^[[:space:]]+[A-Za-z0-9_-]+:[[:space:]]*[[:punct:]]?[a-z0-9-]+/[a-z0-9_-]+@' \
+  -- ':/.circleci/*.yml'
 ```
 
 `git ls-files` exits 0 either way, and `git grep` exits 1 when it finds nothing, which is not an
@@ -22,12 +24,17 @@ CircleCI, which lists its Docker images as sequence items (`- image: cimg/ruby:<
 base image is a pin like any other; one written as `FROM ruby:${RUBY_VERSION}` takes its version
 from an `ARG` line, so bump it there.
 
-The last search lists every YAML key ending in `_version`, wherever it lives, such as an Ansible
+The fourth search lists every YAML key ending in `_version`, wherever it lives, such as an Ansible
 `redis_version: 8.10.2`. Bump only a value that pins which release of a third-party tool or service
 gets installed. Skip a value built from Jinja `{{ }}` or set to `latest`; the `min_ansible_version`
 key in a role's `meta/main.yml`, which states the Ansible version the role needs; the project's own
 version in a docs or site config; and a CI matrix or per-environment set that lists several versions
 on purpose, which does not move together.
+
+The last search lists the CircleCI orbs, each an `orbs:` entry naming `<namespace>/<orb>@<version>`.
+An orb defined inline under `orbs:` has no version and does not show. Skip a reference to
+`@volatile`, which already follows the latest release, or to a `@dev:` label, which names an
+unpublished build.
 
 Add any other pin the project's `CLAUDE.md` or README names.
 
@@ -48,15 +55,31 @@ For each pin, look up the newest stable upstream release and bump to it, followi
   the user like any other
 - **A Terraform CLI pin must still satisfy every `required_version`** found in Step 5. Never widen
   `required_version` to fit a new CLI
-- **Leave `.ruby-version` and CI orb versions alone** unless the user asks: a Ruby upgrade is its
-  own change, and orbs follow their own release process
+- **Leave `.ruby-version` alone** unless the user asks: a Ruby upgrade is its own change
+- **An orb keeps its pin's precision.** Read the published versions from the orb registry:
+
+  ```bash
+  circleci orb get '<namespace>/<orb>' --json --jq '.latest_version'
+  circleci orb get '<namespace>/<orb>' --json \
+    --jq '[.versions[].version | select(startswith("<major>."))] | sort_by(split(".") | map(tonumber)) | last'
+  ```
+
+  The second prints the newest release within the pin's current major. Bump a full `1.2.3` pin to
+  that version, and a `1.2` pin, which already admits every patch, to its major and minor alone
+  (`1.5`, not `1.5.1`); a `1` pin is major-only, as above. When the first prints a newer major, ask
+  as for any major: a major orb release can rename or remove a job, command or parameter the config
+  uses, so compare its release notes and its `circleci orb diff` (see
+  [Read the Code Diff of Each Deep Dependency](impact.md#read-the-code-diff-of-each-deep-dependency))
+  with the config before asking. These commands come from the preview CircleCI CLI
+  (`circleci@next`); if `circleci orb get --help` fails, tell the user and leave the orbs unbumped.
 - **A provisioning pin moves only to a version its role's install source carries.** The role that
   reads it installs from its own source — an apt or yum repository, a vendor package repository or a
   download URL — which can lag the newest upstream release or name it differently, so confirm the
   new version exists where the role's tasks install from before bumping it.
 
-Two lookup traps are recorded under [Known Changelog Quirks](changelogs.md#known-changelog-quirks):
-tags that do not start with a digit, and release pages that only point elsewhere.
+Lookup traps are recorded under [Known Changelog Quirks](changelogs.md#known-changelog-quirks): tags
+that do not start with a digit, release pages that only point elsewhere and orbs, whose registry
+carries no release notes.
 
 Record every bump for the commit message with its upstream release notes, in the same format as the
 other entries. [Step 12](SKILL.md#step-12-commit-push-and-create-the-pr) checks that every staged
@@ -70,6 +93,14 @@ moved, Steps 5 and 6 ran `init` and any plan with the old one, so re-run
 [Step 6](terraform.md#step-6-re-resolve-and-verify-terraform-lock-files)'s `init -upgrade` in every
 root module with the new CLI, and plan again wherever Step 6 did. Otherwise the lock files and plan
 in the PR come from a CLI it no longer pins.
+
+After bumping an orb, run `circleci config validate <file>` on each CircleCI config file that
+changed. It resolves every orb against the registry and exits nonzero, naming the reference, when a
+version does not exist or the config no longer compiles against the new one. A private orb resolves
+only with a token for its organization, which the CLI takes from `--org`, a `circleci project link`
+binding or the git remote, in that order; pass `--org <vcs>/<org>` when the remote does not name the
+orb's organization. When validation still cannot reach the orb, say so rather than calling the bump
+verified.
 
 A provisioning pin cannot be run here, so add an unchecked
 `- [ ] Provision a host with the new <service> version` item to the PR's test plan, since nothing in

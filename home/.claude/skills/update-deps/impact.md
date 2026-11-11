@@ -40,12 +40,14 @@ keywords in its notes:
   entry is boilerplate, such as a code-generated SDK bump or a packaging fix, read the file list of
   its diff (below) instead. A transitive one gets no changelog read: record in one line why it is
   not on a Deep path, from `yarn why <pkg>` for an npm package or the dependency entries in
-  `Gemfile.lock` for a gem. When the reading or the path check shows a Deep touchpoint, move the
-  dependency to Deep; otherwise record "no Deep touchpoint" with the evidence that shows it.
+  `Gemfile.lock` for a gem. For a CircleCI orb, read its whole `circleci orb diff` (below) in place
+  of a changelog entry: it is one short YAML diff. When the reading or the path check shows a Deep
+  touchpoint, move the dependency to Deep; otherwise record "no Deep touchpoint" with the evidence
+  that shows it.
 
 ### Read the Code Diff of Each Deep Dependency
 
-Read the code diff, not only the release notes. Three sources are fastest:
+Read the code diff, not only the release notes. Four sources are fastest:
 
 - **Gems** — `bundle update` normally leaves both versions installed, so compare them locally, with
   no network. List both directories first, since a platform gem's directory ends in its platform
@@ -89,6 +91,15 @@ Read the code diff, not only the release notes. Three sources are fastest:
   git grep -ohE '^(resource|data) "[a-z0-9_]+"' -- ':/*.tf' ':(top,exclude)*.terraform/*' | sort -u
   find . -path '*/.terraform/modules/*' -name '*.tf' \
     -exec grep -hoE '^(resource|data) "[a-z0-9_]+"' {} + | sort -u
+  ```
+
+- **CircleCI orbs** — the CLI diffs two published versions straight from the registry. Compare what
+  changed with the jobs, commands and parameters the config uses, which it calls through the alias
+  its `orbs:` key gives the orb rather than the orb's registry name, so search for the alias:
+
+  ```bash
+  circleci orb diff '<namespace>/<orb>' --from <old> --to <new>
+  git grep -nE '<alias>/' -- ':/.circleci/*.yml'
   ```
 
 Then find the app's touchpoints, with grep or an LSP, for each class, method, hook, option and

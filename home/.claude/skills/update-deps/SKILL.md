@@ -655,6 +655,8 @@ lookups and Step 11's changelog links all rely on.
   commit or release of any age; the gem and npm changes are listed for review in
   [Check Git-Sourced Gems](#check-git-sourced-gems),
   [Record the Direct Dependency Changes](javascript.md#record-the-direct-dependency-changes) and the
-  release-age check's `404` and `not on rubygems.org` lines.
+  release-age check's `404` and `not on rubygems.org` lines. Nor does one cover the tool, image and
+  CircleCI orb pins in [Step 7](pins.md#step-7-update-tool-and-image-pins), which move to the newest
+  release of any age.
 - If no dependencies changed at all, inform the user and stop. A change to `yarn.lock` alone is put
   to the user first — see [Stop If Nothing Changed](pins.md#stop-if-nothing-changed).
