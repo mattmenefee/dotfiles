@@ -5,6 +5,9 @@ description: >-
   line length allowed for its file type, changing only line breaks. Use when a branch's prose or
   comments break short of the limit or run past it.
 argument-hint: "[--base <ref>] [path...]"
+model: sonnet
+context: fork
+background: false
 ---
 
 # Reflow Changed Lines

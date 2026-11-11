@@ -5,6 +5,7 @@ description: >-
   issues, rewrite it with whatever drifted, report the drift and stop before starting any of its
   work. Run first when resuming from a handoff.
 argument-hint: "[path/to/file-HANDOFF.md] [note]"
+model: sonnet
 ---
 
 # Resume Handoff
