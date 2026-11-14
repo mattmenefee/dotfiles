@@ -1,0 +1,20 @@
+accessories:
+  redis:
+    image: valkey/valkey:8
+    # Keep on the web host: the app reaches it by container name over Kamal's Docker network.
+    # Moving it means publishing its port on the new host's private address only
+    # ("10.0.0.2:6379:6379", never a bare 6379, whose Docker rule bypasses the host firewall) and
+    # pointing REDIS_URL there.
+    host: 192.168.0.1
+    # Every container on the host's kamal network can reach it, so it requires the password. Single
+    # quotes leave $REDIS_PASSWORD for the container's shell, and the image's entrypoint drops root.
+    # noeviction refuses writes when full rather than dropping queued jobs, and append-only
+    # persistence keeps them across a restart.
+    cmd: >-
+      sh -c 'exec docker-entrypoint.sh valkey-server --appendonly yes --maxmemory 256mb
+      --maxmemory-policy noeviction --requirepass "$REDIS_PASSWORD"'
+    env:
+      secret:
+        - REDIS_PASSWORD
+    directories:
+      - data:/data
