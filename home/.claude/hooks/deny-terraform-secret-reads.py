@@ -33,7 +33,7 @@ GIT_NAME_ONLY_SUBCOMMANDS = {"check-ignore", "ls-files", "status"}
 GIT_VALUE_OPTIONS = {"-C", "-c"}
 # find prints names unless one of these runs a command on what it finds
 FIND_ACTIONS = {"-exec", "-execdir", "-ok", "-okdir"}
-TERRAFORM_PRINTERS = (("output",), ("show",), ("state", "pull"))
+TERRAFORM_PRINTERS = (("console",), ("output",), ("show",), ("state", "pull"))
 GREP_COMMANDS = {"egrep", "fgrep", "ggrep", "grep"}
 SEARCH_COMMANDS = {"ack", "ag", "rg"}
 # Searches that skip gitignored files unless told otherwise
