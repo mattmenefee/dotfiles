@@ -101,6 +101,13 @@
       "Bash(heroku pg:upgrade*)",
       "Bash(heroku run*)",
       "Bash(security find-generic-password*)",
+      "Bash(terraform output*)",
+      "Bash(terraform show*)",
+      "Bash(terraform state pull*)",
+      "Read(//**/*.tfstate)",
+      "Read(//**/*.tfstate.*)",
+      "Read(//**/*.tfvars)",
+      "Read(//**/*.tfvars.json)",
       "Read(//**/.env)",
       "Read(//**/.env.*.local)",
       "Read(//**/.env.local)",
@@ -114,6 +121,8 @@
       "Read(~/.gnupg/**)",
       "Read(~/.netrc)",
       "Read(~/.ssh/**)",
+      "Read(~/.terraform.d/credentials.tfrc.json)",
+      "Read(~/.terraformrc)",
       "mcp__circleci-cli__circleci_api",
       "mcp__heroku__deploy_one_off_dyno",
       "mcp__heroku__deploy_to_heroku",
@@ -193,6 +202,15 @@
             "type": "command",
             "command": "~/.config/iterm2/cc-status",
             "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/deny-terraform-secret-reads.py"
           }
         ]
       }
