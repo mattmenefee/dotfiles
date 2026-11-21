@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 #
-# Asserts which Bash commands the deny-terraform-secret-reads hook denies. Run it after any change
-# to the hook:
+# Asserts which Bash commands the deny-secret-reads hook denies. Run it after any change to the
+# hook:
 #
-#   bash test/test-deny-terraform-secret-reads.sh
+#   bash test/test-deny-secret-reads.sh
 #
 # Every case runs against a private directory whose infra/ holds empty secret files, so no real
 # Terraform file is ever read. repo/ is a git repository that ignores its secret file, and skipped/
-# holds one only under node_modules.
+# holds one only under node_modules. app/dump.rb is a script whose code reads Rails credentials, and
+# no command here runs it.
 
 # The commands hold literal shell syntax, which must not expand
 # shellcheck disable=SC2016
 
-hook="$(cd "$(dirname "$0")/.." && pwd)/home/.claude/hooks/deny-terraform-secret-reads.py"
+hook="$(cd "$(dirname "$0")/.." && pwd)/home/.claude/hooks/deny-secret-reads.py"
 command -v jq >/dev/null || { echo "jq is required" >&2; exit 2; }
 dir=$(mktemp -d) || exit 2
 trap 'rm -rf "${dir}"' EXIT
@@ -26,6 +27,7 @@ mkdir -p "${dir}/infra" "${dir}/app/models" "${dir}/repo/infra" \
 : >"${dir}/skipped/node_modules/module/example.tfvars"
 git -C "${dir}/repo" init -q || exit 2
 echo '*.tfvars' >"${dir}/repo/.gitignore"
+echo 'puts Rails.application.credentials.config' >"${dir}/app/dump.rb"
 
 failed=0
 n=0
@@ -147,6 +149,68 @@ expect allow "${dir}" 'git grep -n key'
 expect allow "${repo}" 'rg --files'
 expect allow "${repo}" 'rg -t ruby key'
 
+# Ruby that reads Rails credentials, however the command runs it
+expect deny "${dir}" "bin/rails runner 'puts Rails.application.credentials.config'"
+expect deny "${dir}" 'bundle exec rails r "p Rails.application.credentials.aws"'
+expect deny "${dir}" "bin/rails runner -e production 'pp Rails.application.credentials.to_h'"
+expect deny "${dir}" "bin/spring rails runner 'p Rails.application.secret_key_base'"
+expect deny "${dir}" "ruby -e 'puts ActiveSupport::EncryptedFile.new(**opts).read'"
+expect deny "${dir}" "ruby -e 'puts File.read(%q(config/master.key))'"
+expect deny "${dir}" "ruby -e 'puts File.read(%q(config/credentials/production.key))'"
+expect deny "${dir}" "echo 'puts Rails.application.credentials.config' | bin/rails c"
+expect deny "${dir}" $'bin/rails runner - <<\'EOF\'\nputs Rails.application.credentials.config\nEOF'
+expect deny "${dir}" $'bin/rails console <<\'EOF\'\nRails.application.encrypted("x.enc").read\nEOF'
+expect deny "${dir}" "bash -c \"bin/rails runner 'p Rails.application.credentials.config'\""
+expect deny "${dir}" "ssh app1 'bin/rails runner \"p Rails.application.credentials\"'"
+expect deny "${dir}" $'irb <<\'EOF\'\np Rails.application.credentials\nEOF'
+expect deny "${dir}" "jruby -e 'p Rails.application.credentials'"
+expect deny "${dir}" 'bin/rails runner "p Rails.application.credentials'
+
+# Code sent to another host or a container, in arguments, on stdin or by heredoc
+expect deny "${dir}" "ssh app1 'bin/rails runner \"p Rails.application.credentials\"'"
+expect deny "${dir}" $'ssh app1 bin/rails c <<\'EOF\'\np Rails.application.credentials\nEOF'
+expect deny "${dir}" "echo 'p Rails.application.credentials' | ssh app1 'bin/rails c'"
+expect deny "${dir}" $'kubectl exec -i web -- bin/rails r - <<\'EOF\'\np Rails.application.credentials\nEOF'
+expect deny "${dir}" "docker exec web bin/rails runner 'p Rails.application.credentials'"
+expect deny "${dir}" "docker-compose exec web bin/rails runner 'p Rails.application.credentials'"
+expect deny "${dir}" "podman exec web ruby -e 'p Rails.application.credentials'"
+expect deny "${dir}" $'bash -lc \'bin/rails runner -\' <<\'EOF\'\np Rails.application.credentials\nEOF'
+expect deny "${dir}" "echo 'p Rails.application.credentials' | bash -c 'bin/rails c'"
+
+# A file holding such code, however the command hands it to Ruby
+expect deny "${dir}" 'bin/rails runner app/dump.rb'
+expect deny "${dir}" 'ruby app/dump.rb'
+expect deny "${dir}" 'cd app && bin/rails runner dump.rb'
+expect deny "${dir}" 'bin/rails c < app/dump.rb'
+expect deny "${dir}" 'cat app/dump.rb | bin/rails c'
+expect deny "${dir}" 'bin/rails runner "$(cat app/dump.rb)"'
+expect deny "${dir}" 'ruby -r./app/dump.rb -e 1'
+
+# A command that reads a key file, whatever runs it
+expect deny "${dir}" 'base64 config/master.key'
+expect deny "${dir}" 'xxd config/credentials/production.key'
+expect deny "${dir}" "python3 -c \"print(open('config/master.key').read())\""
+
+# Accepted false positive: unrelated Ruby in a command that mentions the API
+expect deny "${dir}" "grep -rn 'Rails.application.credentials' app && bin/rails runner 'puts 1'"
+
+# Mentions that run no Ruby, and Ruby that reads no credentials
+expect allow "${dir}" "grep -rn 'Rails.application.credentials' app"
+expect allow "${dir}" "git log -S 'Rails.application.credentials' --oneline"
+expect allow "${dir}" 'git commit -m "Read Rails.application.credentials lazily"'
+expect allow "${dir}" $'cat > app/token.rb <<\'EOF\'\nT = Rails.application.credentials.token\nEOF'
+expect allow "${dir}" "bin/rails runner 'puts User.count'"
+expect allow "${dir}" "ruby -e 'puts 1'"
+expect allow "${dir}" 'ruby app/models/user.rb'
+expect allow "${dir}" 'bin/rails credentials:help'
+expect allow "${dir}" 'bin/rails runner app/missing.rb'
+expect allow "${dir}" $'# Check Rails.application.credentials use\nbin/rails runner \'puts User.count\''
+expect allow "${dir}" "docker exec web bin/rails runner 'puts User.count'"
+expect allow "${dir}" 'ls config/*.key'
+expect allow "${dir}" 'git check-ignore -v config/master.key'
+expect allow "${dir}" "echo '/config/master.key' >> .gitignore"
+expect allow "${dir}" 'grep -n master.key .gitignore'
+
 # Input the hook cannot use fails open
 n=$((n + 1))
 if [ -n "$(echo 'not json' | "${hook}")" ]; then
@@ -155,6 +219,6 @@ if [ -n "$(echo 'not json' | "${hook}")" ]; then
 fi
 
 if [ "${failed}" -eq 0 ]; then
-  echo "test-deny-terraform-secret-reads: ${n} cases passed"
+  echo "test-deny-secret-reads: ${n} cases passed"
 fi
 exit "${failed}"

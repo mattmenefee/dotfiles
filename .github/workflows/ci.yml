@@ -55,9 +55,9 @@ jobs:
         # --print-html skips the macOS clipboard, so the conversion runs on Linux
         run: bash test/test-teams-copy.sh
 
-      - name: Test the Terraform secret-read hook
+      - name: Test the secret-read hook
         # It runs the hook by path, so it also fails if the hook loses its mode
-        run: bash test/test-deny-terraform-secret-reads.sh
+        run: bash test/test-deny-secret-reads.sh
 
       - name: Lint teams-copy with Ruff
         # Super-linter routes an extensionless file by what `file` reports, and the `file` in its
