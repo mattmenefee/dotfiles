@@ -221,7 +221,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/deny-terraform-secret-reads.py"
+            "command": "~/.claude/hooks/deny-secret-reads.py"
           }
         ]
       }
