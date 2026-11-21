@@ -80,6 +80,13 @@ export PATH="$HOME/.local/bin:$PATH"
 # Fix Ruby Debug from hanging when using save_and_open_screenshot
 export RUBY_DEBUG_FORK_MODE="parent"
 
+# Raise the open-file soft limit above the macOS default of 256, which apps launched from the Dock
+# pass to their shells and which a few concurrent background jobs can exhaust. Never lower a higher
+# limit: `ulimit -n` can print "unlimited", which arithmetic would read as zero.
+if [[ $(ulimit -n) != unlimited ]] && (( $(ulimit -n) < 10240 )); then
+  ulimit -n 10240
+fi
+
 # Rollbar MCP server, read from the Keychain so the token stays out of this repo
 export ROLLBAR_ACCESS_TOKEN="$(security find-generic-password -s rollbar-mcp -w 2>/dev/null)"
 
