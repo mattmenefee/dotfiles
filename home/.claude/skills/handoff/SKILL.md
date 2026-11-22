@@ -171,7 +171,7 @@ line, as Writing Guidelines requires.
 
 | | |
 |---|---|
-| **Status** | <In progress, Blocked, Ready for review or Paused> |
+| **Status** | <In progress, Blocked, Ready for review, Paused or Merged, awaiting a named check> |
 | **Created** | YYYY-MM-DD |
 | **Updated** | YYYY-MM-DD |
 | **Branch** | `<branch>` (base: `<base-branch>`) |
@@ -459,6 +459,29 @@ clobber it:
    an earlier pass's hard wrap: rejoin each wrapped paragraph or bullet onto one line, changing no
    words
 
+## After the Branch Merges
+
+Until its branch merges, a handoff stays untracked in its worktree for the project's `/ship-it` (see
+**Output File**). A handoff left in a worktree after its branch merges is either clutter or a
+follow-up nobody will find. When this skill runs on a branch whose pull request has merged (the
+`state` field of the script's `== pull request` part reads `MERGED`), or the user asks what to do
+with a handoff once it has, propose one of these rather than asking the user what to do, and act on
+their answer:
+
+- **Delete it** when nothing in it is open, meaning every Next Step is done and no Open Question
+  remains, and its durable sections are on the pull request (see **Output File**) or the user
+  confirms they need not be
+- **Carry it forward** when its open items are follow-up work rather than a wait: put each in an
+  issue or in the follow-up branch's handoff, then delete this one under the same condition as
+  **Delete it**
+- **Move it to the project's main checkout** when its items wait on a deploy or a later check, such
+  as a production verification or a log window. The main checkout is the first `worktree` line of
+  `git worktree list --porcelain`, on whatever branch it has checked out; when the handoff is
+  already there, update it in place. Update it as a pass under **Merging with an Existing Handoff**,
+  with **Status**, **Branch** and **Start Here** saying the branch has merged and what the file now
+  waits on, keep it there until those items close, then propose deleting it. If a file of the same
+  name is already there, ask before replacing it.
+
 ## Writing Guidelines
 
 - **Write for a stranger.** No "the fix we discussed", "as mentioned above" or "the file I edited" —
@@ -490,6 +513,9 @@ clobber it:
    work, read it and follow **Merging with an Existing Handoff**
 1. Gather repository, pull request, issue and check state using `gather-state.sh` and the follow-up
    queries in **Gathering State**, recording your own model from your environment context
+1. If the `state` field of the script's `== pull request` part reads `MERGED`, or the user asked
+   what to do with a handoff after its merge, follow **After the Branch Merges** instead of the
+   steps below
 1. Re-run verification commands whose recorded results would otherwise be stale
 1. Draft the document, working backwards from **Next Steps** — deciding what the next agent must do
    first reveals which context it actually needs
