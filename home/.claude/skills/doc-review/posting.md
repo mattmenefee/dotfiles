@@ -270,6 +270,11 @@ posted, or the review file when nothing is withheld, in full for a credential in
 key cell takes one of the forms above that no term matches, and treat each one as a blocked secret
 hit: report it to the user and post nothing until it is resolved, never rewriting it.
 
+**Rewrite a NUL escape before posting.** GitHub stores a literal six-character NUL escape
+(backslash, `u` and four zeros) in a comment body as the three characters backslash, caret and at
+sign, `\^@`. Write it as `\x00` instead, in the file passed as `--post`, or in the review file when
+there is none.
+
 The local artifact keeps every finding, as the count line says; only the copy is posted. Withhold
 before the body is assembled, not after — `post.sh` reads the copy whole, so a rule applied to the
 finished comment has already published what it meant to withhold — and it refuses the post while any

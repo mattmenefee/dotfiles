@@ -180,8 +180,10 @@ When `parent` is set, drop its commits instead:
 The rebase is not interactive, so `rebase.autosquash` does not apply and `fixup!`, `amend!` and
 `squash!` commits stay as they are. List any that remain with
 `git log --format='%h %s' '<target>'..'<branch>'` and report them as left unfolded; folding them is
-the project's squash command's job or `/commit`'s. With `rerere.enabled`, git may print
-`Resolved '<path>' using previous resolution`: review that replay in step 6 like any other
+the project's squash command's job or `/commit`'s. An `amend!` marker that names its target by full
+SHA now names a rewritten commit, so report it as stale too and point to `/commit`'s When a Pending
+Stub Goes Stale, giving `<old_head>` as the tip from before the rebase. With `rerere.enabled`, git
+may print `Resolved '<path>' using previous resolution`: review that replay in step 6 like any other
 resolution.
 
 If the rebase finishes cleanly, go to step 7.
@@ -214,6 +216,16 @@ Then resolve by the first kind that fits:
 
 Explain each resolution before applying it: what each side wanted and what was kept. Keep the
 explanations for the report. When regeneration cannot run, stop rather than hand-merge.
+
+**A re-indented region.** When a path the last three rows cover conflicts because the base
+re-indented a region the commit edits, the conflict hunk swallows the whole block and taking either
+side loses something: the base's side drops the commit, and the commit's side reverts base edits
+inside the block. Rebuild the file as the base's version (`git show HEAD:'<path>'`) plus the
+commit's own patch (`git show REBASE_HEAD -- '<path>'`), matching each hunk's context with
+indentation ignored and shifting its added lines by the indent difference. Each rebuilt hunk still
+resolves only as its row allows: in logic, templates, specs and locale files, only when both sides'
+intent is clear and compatible. Stop on a hunk that matches no place or several, which is a real
+structural conflict.
 
 Run this step from the repository root, since `state.sh` prints root-relative paths, and put
 `GIT_LITERAL_PATHSPECS=1` before each git command that names a path you were given, so a name such
@@ -308,6 +320,20 @@ GIT_EDITOR=true git rebase --continue
 Repeat until `state.sh` prints `op=none`. When a commit becomes empty because the base already holds
 its change, ask before `git rebase --skip`. Never `git rebase --abort` without the user's say-so;
 when they want out, it restores `orig_head`.
+
+If a conflict stop died with `Unable to create '…/MERGE_RR.lock': File exists` and
+`git rebase --continue` then refuses with "you have staged changes", another process held rerere's
+lock, so git died before recording the stop: `REBASE_HEAD` and the rebase's message file are
+missing, and `git show REBASE_HEAD` fails. The commit that stopped is `<original sha>`, the commit
+on the last line of `"$(git rev-parse --git-path rebase-merge)/done"`; take the branch's side from
+it rather than from `REBASE_HEAD`. Before committing, check that
+`"$(git rev-parse --git-path MERGE_RR.lock)"` is gone: `git commit` takes the same lock after
+recording the commit, so a held lock fails it again with the commit already made. When the lock is
+still there, stop and report it, and never delete it without the user's say-so, since its holder may
+still be running. Diff `MERGE_MSG` against `git log -1 --format=%B '<original sha>'`. When they
+match, run `GIT_EDITOR=true git commit -C '<original sha>'`, then continue; when they differ, stop
+and show the difference. Never `--skip` or `--abort` without the user's say-so: both discard the
+resolution.
 
 ## 7. Compare Before and After
 

@@ -706,6 +706,10 @@ without reproducing it, every credential, token, connection string, internal hos
 email address, customer datum, personal name other than the user's and name or URL of a private
 repository or client.
 
+Rewrite each literal six-character NUL escape (backslash, `u` and four zeros) in the copy as `\x00`:
+GitHub stores the escape as the three characters backslash, caret and at sign, so the comparison in
+Verify, then delete would report a mismatch.
+
 **Report every credential you redact.** Name each to the user in conversation, with its file and
 line, as one to rotate, and keep the source file until the user confirms it was rotated or was not
 real. The comment shows only a count, so the conversation is the only place the location survives.
