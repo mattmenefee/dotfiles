@@ -37,6 +37,7 @@ brew 'uv' # Python package installer, runner, and virtualenv manager
 brew 'git'
 brew 'gh' # for the GitHub CLI
 brew 'git-lfs' # .gitconfig sets `required = true`, so LFS repos fail to check out without it
+brew 'gitleaks' # secret scanner that /config-review runs over its transcript corpus
 cask 'github'
 
 # Continuous Integration tools
