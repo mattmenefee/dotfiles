@@ -113,7 +113,7 @@ Leave these alone, whether or not they changed:
   run long rather than break it
 - Code statements, commented-out code and diagrams drawn in comments. Line length in code is the
   formatter's call, and a formatter rewrites more than line breaks, so list each over-limit code
-  line in the step 6 report and suggest the project's formatter or linter (e.g. `bin/rubocop -A`) as
+  line in the step 7 report and suggest the project's formatter or linter (e.g. `bin/rubocop -A`) as
   a separate step rather than running it here.
 - A trailing comment on a line of code, and tool directives such as `# rubocop:disable`,
   `# shellcheck disable=`, `# frozen_string_literal: true`, `// eslint-disable-next-line`,
@@ -145,11 +145,13 @@ comment leader) and give every continuation line the indentation the block alrea
 item's text column, the comment's own leader and the folded scalar's indent.
 
 In Markdown, never start a continuation line with a word that would open a new block: `-`, `+` or
-`*` followed by a space, a number followed by `.` or `)` and a space, `#`, `>`, a fence (three or
-more backticks or tildes), `<` opening an HTML block or `|`. Nor leave a continuation line made only
-of `=` or `-` (a setext underline) or of three or more `*`, `-` or `_`, with or without spaces
-between them (a thematic break); bold or italic text may start a line. Move one more word down
-instead. Keep a code span or link text on one line when it fits on the next line whole.
+`*` followed by a space, a number followed by `.` or `)` and a space, `#` (an issue or pull request
+number such as `#123` included, which markdownlint's MD018 flags as a heading missing its space and
+`mdl` reads as a heading), `>`, a fence (three or more backticks or tildes), `<` opening an HTML
+block or `|`. Nor leave a continuation line made only of `=` or `-` (a setext underline) or of three
+or more `*`, `-` or `_`, with or without spaces between them (a thematic break); bold or italic text
+may start a line. Move one more word down instead. Keep a code span or link text on one line when it
+fits on the next line whole.
 
 Make each edit with the Edit tool, one block at a time.
 
@@ -176,10 +178,24 @@ other files, use the linter or formatter step 2 took the limit from. Where there
 `LC_ALL=en_US.UTF-8 grep -n '.\{<limit + 1>,\}' <file>` lists every line over the limit; each one it
 prints must be a line step 3 leaves alone.
 
-## 6. Report
+## 6. Check Punctuation and Comments
+
+This step reports and changes nothing. Among the blocks step 1's rows touch, refilled or not, list:
+
+- Each comment or list item that breaks the punctuation rule in force: the project's own, or else
+  the user-wide ones in `~/.claude/CLAUDE.md` › Code Style for comments and › Writing & Copy
+  Conventions for list items
+- Each comment the branch adds or rewrites that the project's comment policy would not admit, naming
+  the clause it breaks. Where the project states no policy, use the user-wide one in
+  `~/.claude/CLAUDE.md` › Code Style.
+
+Fix one only when the user says so, after the step 7 report and as a change separate from the
+refill, so the refill's diff stays line breaks alone.
+
+## 7. Report
 
 List each block refilled as `path:first-last`, each file reflowed with its limit and where that
 limit came from, each changed block left alone with the reason and each over-limit code line, with
-the formatter or linter that would fix it. Leave the changes uncommitted and suggest `/commit`. When
-the branch already has commits, a reflow of lines they introduced reads best folded into those
-commits, which `/commit amend <sha>` does.
+the formatter or linter that would fix it, then step 6's findings. Leave the changes uncommitted and
+suggest `/commit`. When the branch already has commits, a reflow of lines they introduced reads best
+folded into those commits, which `/commit amend <sha>` does.

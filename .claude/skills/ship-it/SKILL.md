@@ -199,12 +199,17 @@ to the file's line limit, changing only line breaks, and leaves the result uncom
 closing suggestion to run `/commit`: this step commits the refill itself. When the skill is not
 available, say so and go on to the review.
 
+`/reflow`'s report lists each block it refilled, each changed block it left alone and why, each
+over-limit code line with the formatter that would fix it and each punctuation or comment-policy
+break its step 6 found. Show the user any break it lists even when nothing was refilled, and pass
+the formatter suggestions on without running them, since a formatter changes more than line breaks.
+A break the user asks to fix is a separate edit made after the refill is committed or discarded, and
+committed on its own with a message written and checked as the refill's is, never folded into the
+refill commit, whose message says only line breaks changed.
+
 Step 1 confirmed no tracked file was modified, so when `git status --porcelain --untracked-files=no`
-prints nothing, `/reflow` changed nothing: go on to the review. Otherwise show the user
-`git diff --stat` and `/reflow`'s report, which lists each block it refilled, each changed block it
-left alone and why, and each over-limit code line with the formatter that would fix it. Pass those
-formatter suggestions on without running them, since a formatter changes more than line breaks. Then
-ask with `AskUserQuestion`:
+prints nothing, `/reflow` refilled nothing: go on to any break it reported, then to the review.
+Otherwise show the user `git diff --stat` with the report, then ask with `AskUserQuestion`:
 
 - **Commit the refill**
 - **Discard it**: `git restore -- <file>...`, naming each file `git diff --name-only` lists, then go
