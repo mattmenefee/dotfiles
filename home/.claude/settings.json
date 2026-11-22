@@ -134,6 +134,7 @@
       "Read(~/.ssh/**)",
       "Read(~/.terraform.d/credentials.tfrc.json)",
       "Read(~/.terraformrc)",
+      "Read(~/Library/Application Support/doctl/**)",
       "mcp__circleci-cli__circleci_api",
       "mcp__heroku__deploy_one_off_dyno",
       "mcp__heroku__deploy_to_heroku",
@@ -319,6 +320,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "askUserQuestionTimeout": "never",
+  "cleanupPeriodDays": 90,
   "pluginConfigs": {
     "agents-md@builtin": {
       "options": {
