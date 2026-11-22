@@ -115,6 +115,15 @@ missing.
 - `render inline:` with user input
 - Authentication or authorization `before_action`s scoped with an `only:` allowlist that new actions
   escape, or `skip_before_action` exempting more actions than intended
+- Active Storage blob data read as trusted. `blob.filename` returns an `ActiveStorage::Filename`
+  whose `to_s` replaces `<`, `>` and `"` (though not `'` or `&`), but the column itself
+  (`blob[:filename]`, `pluck(:filename)`) holds the client's raw name. `DirectUploadsController`
+  permits an arbitrary `metadata` hash, and an analyzer merges over it only the keys it emits, and
+  only after the attachment commits, so a validation reads the client's values for every key.
+  Without the CVE-2026-33173 fix (check `Gemfile.lock` against the advisory), a client can also set
+  `analyzed` or `identified` and skip analysis and content-type identification. Treat any blob
+  metadata, and any raw filename, that a validation or a view reads as user input, and when a
+  remediation calls for a spec, have it set metadata through `blob.update!(metadata: …)`.
 
 ### Data Exposure & Privacy
 
