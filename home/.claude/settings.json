@@ -87,6 +87,7 @@
       "Bash(*credentials:edit*)",
       "Bash(*credentials:fetch*)",
       "Bash(*credentials:show*)",
+      "Bash(*doctl auth token*)",
       "Bash(*encrypted:edit*)",
       "Bash(*encrypted:show*)",
       "Bash(aws configure get*)",
@@ -207,6 +208,16 @@
         ]
       }
     ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/require-handoff-before-compact.sh"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "hooks": [
@@ -283,6 +294,10 @@
           {
             "type": "command",
             "command": "~/.config/iterm2/cc-status"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/name-session.sh"
           }
         ]
       }

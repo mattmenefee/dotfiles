@@ -59,6 +59,10 @@ jobs:
         # It runs the hook by path, so it also fails if the hook loses its mode
         run: bash test/test-deny-secret-reads.sh
 
+      - name: Test the session-naming and handoff-before-compact hooks
+        # It runs both hooks by path, so it also fails if either loses its mode
+        run: bash test/test-session-hooks.sh
+
       - name: Lint teams-copy with Ruff
         # Super-linter routes an extensionless file by what `file` reports, and the `file` in its
         # image classifies this script as an HTML document, so its Ruff run never sees the file.
