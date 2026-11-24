@@ -469,7 +469,7 @@ Then, in a command that repeats the branch guard:
   `--force`. A branch never pushed before has no lease to pin and cannot meet this refusal.
 - **Upstream, nothing rewritten:** `git push`, behind the same guard.
 
-## Step 5: Write the Pull Request
+## Step 5: Write the Pull Request and Mark It Ready
 
 ```bash
 gh pr view --json number,state,title,body,url
@@ -511,12 +511,13 @@ Tick the CI item only when local `HEAD`, the pushed branch and `headRefOid` all 
 rollup lists at least one check and every check listed reports `SUCCESS`, and name that commit's
 short SHA in the item. Step 4's push has usually just started the checks, so leave the item open
 while any is pending, while the list is empty because the checks have not registered yet, or before
-the pull request exists: Step 7 reads the rollup again. A `CANCELLED` check was superseded by a
-later push or stopped by hand: it is neither a pass nor a failure, so leave the item open and ask
-rather than tick it or call it red. A check `SKIPPED` while the pull request is a draft has not run:
-CI skips drafts and starts when the pull request is marked ready, so leave the item open without
-calling it red; Mark ready and start CI, below, starts the wait for that run. A CI item already
-ticked for an earlier commit is reopened until the rollup passes on this one.
+the pull request exists: Mark ready and start CI, below, or Step 7 reads the rollup again. A
+`CANCELLED` check was superseded by a later push or stopped by hand: it is neither a pass nor a
+failure, so leave the item open and ask rather than tick it or call it red. A check `SKIPPED` while
+the pull request is a draft has not run: CI skips drafts and starts when the pull request is marked
+ready, so leave the item open without calling it red; Mark ready and start CI, below, starts the
+wait for that run. A CI item already ticked for an earlier commit is reopened until the rollup
+passes on this one.
 
 When an open pull request already has a body, carry over anything in it that was not derived from
 the commits, such as a note for a reviewer or a screenshot, and ask when unsure: the edit replaces
@@ -561,20 +562,32 @@ gh pr view --json state,isDraft,labels \
 A review comment records how the review ended, so a pull request whose review is still open is not
 marked ready. Before asking, find what Step 6 will post: run its discovery block and settle which
 files belong to this run as it describes, asking here about a file whose Branch row names another
-branch or repository, or that has none. Carry each answer to Step 6, which does not ask again. Then
-run Step 6's check in Only finished reviews are posted on each review file this run will post.
+branch or repository, or that has none. Carry each answer to Step 6, which does not ask again. A
+stop the discovery block raises holds marking ready too: resolve it with the user first. Then run
+Step 6's check in Only finished reviews are posted on each review file this run will post.
 
 When that check finds an open finding, leave the pull request as it is: name the findings holding it
 and go on to Step 6, which posts the rest. Otherwise, if it is a draft or carries `wip`, ask with
-`AskUserQuestion` before marking it ready, stating the CI state Step 5's rollup block last read
-(passed on which commit, pending, canceled, failed or skipped until marked ready), since marking
-ready notifies watchers, before any review comment is up, and cannot be recalled. On approval, run
-`gh pr edit --remove-label wip` only when the labels printed include `wip`, and `gh pr ready` only
-when it printed `draft=true`.
+`AskUserQuestion` before marking it ready, reading the rollup again with Step 5's rollup block and
+stating what it shows (passed on which commit, pending, canceled, failed or skipped until marked
+ready), since marking ready notifies watchers, before any review comment is up, and cannot be
+recalled. On approval, run `gh pr edit --remove-label wip` only when the labels printed include
+`wip`, and `gh pr ready` only when it printed `draft=true`.
 
-When this run marked the pull request ready and the CI item is still open, `gh pr ready` has just
-started CI on the head. Start the wait for it with the Bash tool's `run_in_background`, so the
-session is woken when it ends, and go on to Step 6 at once:
+When the pull request is out of draft and the CI item is still open, find whether a CI run is still
+to come:
+
+```bash
+gh run list --workflow ci.yml --commit "$(git rev-parse HEAD)" --json status \
+  --jq '[.[] | select(.status != "completed")] | length'
+```
+
+When this run ran `gh pr ready`, it has just started CI, whose run may not be listed yet; otherwise
+Step 4's push started it, if anything did. When this run did not run `gh pr ready` and the count is
+0, no run is pending: read the rollup again with Step 5's rollup block and tick the item by Step 5's
+rule now, sending it with Step 5's check-and-send block. Otherwise start the wait for the run with
+the Bash tool's `run_in_background`, so the session is woken when it ends, and go on to Step 6 at
+once:
 
 ```bash
 head=$(git rev-parse HEAD) || exit 1
@@ -657,7 +670,9 @@ command grep -n '^- \[ \]' /dev/null "$f"; b=$?
 ```
 
 If either grep printed anything, do not post that file. Name the open findings to the user and leave
-the file in place; Step 7 records no `ship-it` status while one stays open. Dispositions come from
+the file in place; Step 7 records no `ship-it` status while one stays open. When Step 5's check did
+not cover the file, as when it appeared after Mark ready and start CI ran, the pull request may
+already be out of draft: say so, and that Step 7 will withhold the status. Dispositions come from
 the user, never from a reviewer's recommendation, so do not mark any finding yourself. A review that
 quotes a summary row or an unchecked item at the start of a line can never pass this check; tell the
 user that is why, rather than loosening it.
@@ -1119,7 +1134,7 @@ item open.
 
 On every run, name each finding listed under Step 6's Deferred findings that describe a weakness,
 with its follow-up, and ask whether that follow-up has landed. When Step 6 left a review unposted
-because a finding is open, tell the user which findings are holding the pull request.
+because a finding is open, tell the user which findings are holding the merge.
 
 Then record the run, unless Step 6 left a review unposted because a finding is open. When a weakness
 deferral's follow-up named above has not landed, ask with `AskUserQuestion` whether to record the
