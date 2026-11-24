@@ -19,11 +19,12 @@ This skill automates the full dependency update workflow:
 1. Determine the branch name and PR title
 2. Create a feature branch from `main`, or from a Rails upgrade in flight
 3. Update Ruby dependencies using `gem_update`, then Bundler and any Git-sourced gems
-4. Update JavaScript dependencies using `yarn up`, then re-resolve every transitive dependency with
-   `yarn up -R`
+4. Bump any Yarn pin in `package.json`'s `packageManager` field, update JavaScript dependencies
+   using `yarn up`, then re-resolve every transitive dependency with `yarn up -R`
 5. Decide Terraform provider and module version bumps, if the repo uses Terraform
 6. Re-resolve and verify the Terraform lock files
-7. Update tool and image pins that live outside the package manifests
+7. Update tool and image pins that live outside the package manifests, and any `packageManager` pin
+   Step 4 did not handle
 8. Handle RuboCop version bumps
 9. Handle haml-lint version bumps
 10. Analyze the impact of every moved dependency, reading the code diff of each Deep one
@@ -335,10 +336,11 @@ Launch a **documentation-expert** sub-agent (using the Agent tool) to refine the
 Give it:
 
 - The `gem_update` output from Step 3, with the Bundler and Git-sourced gem entries, any JavaScript
-  dependency changes from Step 4, any tool and image pin bumps from Step 7 and every later gem or
-  npm bump (release-age holds, the Bundler hold, security-alert fixes, version-locked packages),
-  with each Ruby entry checked against `git diff Gemfile.lock` so a line `gem_update` printed for a
-  version that no longer ships is corrected
+  dependency changes from Step 4, any `packageManager` pin bump from Step 4 or 7, any tool and image
+  pin bumps from Step 7 and every later gem or npm bump (release-age holds, the Bundler hold,
+  security-alert fixes, version-locked packages), with each Ruby entry checked against
+  `git diff Gemfile.lock` so a line `gem_update` printed for a version that no longer ships is
+  corrected
 - The conventions below, and the full contents of `${CLAUDE_SKILL_DIR}/changelogs.md` (Known
   Changelog Quirks), pasted into its prompt, so it does not rediscover a known quirk
 - **Every verification result from this run** — specs run, plans run and their summary lines, usage
@@ -375,8 +377,8 @@ The agent should:
      or `/v1/modules/$ns/$name/$provider` for a module); use its releases page or changelog file. A
      Git module's changelog lives in the repository its `source` points at.
    - A Git-sourced gem keeps the `[compare]` link from Step 3 in place of a changelog
-   - A tool or image pin from Step 7 links its upstream release page, minding the traps in the Known
-     Changelog Quirks it was given
+   - A tool or image pin from Step 7, or a `packageManager` pin from Step 4 or 7, links its upstream
+     release page, minding the traps in the Known Changelog Quirks it was given
 
    **Prefer GitHub releases** if the repo uses them (link to the specific release tag page).
    Otherwise, fall back to whichever changelog or history document the repo uses. Common file names
@@ -398,10 +400,10 @@ The agent should:
    heading source to find the correct slug. For GitHub releases links, link directly to the specific
    release tag (e.g. `https://github.com/org/repo/releases/tag/v1.2.0`).
 
-4. Add any JavaScript, Terraform, Bundler, Git-sourced gem and tool or image pin changes in the same
-   format, interleaved alphabetically with the Ruby dependencies. Name a provider by its source
-   address and a module by its block name and source type, and give a Git module's commit SHA beside
-   its version:
+4. Add any JavaScript, Terraform, Bundler, Git-sourced gem, `packageManager` and tool or image pin
+   changes in the same format, interleaved alphabetically with the Ruby dependencies. Name a
+   provider by its source address and a module by its block name and source type, and give a Git
+   module's commit SHA beside its version:
 
    ```text
    * hashicorp/aws 5.80.0 → 5.81.0
@@ -470,6 +472,15 @@ git diff --name-only -- '**/package.json' | while IFS= read -r f; do git add -- 
 git add -- ':/*.tf' ':(top,exclude)*.terraform/*'
 git add -- ':/*.terraform.lock.hcl' ':(top,exclude)*.terraform/*'
 
+# Yarn's own files, each only where the repository tracks it: the release and .yarnrc.yml a Yarn
+# bump under yarnPath rewrites, and the Plug'n'Play files a zero-install repository commits. -A
+# also stages a new or deleted release or cache archive. A pnpm or npm lock file a packageManager
+# bump rewrote is staged the same way (see Update the Package Manager Pin in pins.md). The test
+# skips an untracked path, which a repository that ignores .yarn/cache would refuse to add.
+for p in .yarnrc.yml .yarn/releases .pnp.cjs .pnp.loader.mjs .yarn/cache pnpm-lock.yaml \
+  package-lock.json; do
+  if git ls-files --error-unmatch -- "$p" >/dev/null 2>&1; then git add -A -- "$p"; fi
+done
 # Plus the exact files Step 7 bumped (mise files, CI and Compose files, requirements.yml, ...)
 ```
 
@@ -550,7 +561,9 @@ required code changes, etc.). Also add a bullet for each of these that applies:
   [Close Open Security Alerts](pins.md#close-open-security-alerts)
 - **The security alerts this run closes** —
   [Close Open Security Alerts](pins.md#close-open-security-alerts)
-- **Tool and image pin bumps** — [Step 7](pins.md#step-7-update-tool-and-image-pins)
+- **Tool, image and `packageManager` pin bumps** —
+  [Step 7](pins.md#step-7-update-tool-and-image-pins), or
+  [Step 4](javascript.md#update-the-package-manager) for a Yarn pin
 - **A Rails upgrade shipping in this PR** — [Step 2](#step-2-create-the-feature-branch)
 
 A Rails upgrade also goes in the title, as
@@ -627,8 +640,9 @@ lookups and Step 11's changelog links all rely on.
   see [Step 2](#step-2-create-the-feature-branch)
 - **Count this month's runs from history, not branches** — see
   [Step 1](#step-1-determine-the-branch-name-and-pr-title)
-- **Every pin that moved gets a commit-message entry**, including Bundler, Git-sourced gems and tool
-  and image pins — see [Step 12](#step-12-commit-push-and-create-the-pr)
+- **Every pin that moved gets a commit-message entry**, including Bundler, Git-sourced gems, tool
+  and image pins and the `packageManager` pin — see
+  [Step 12](#step-12-commit-push-and-create-the-pr)
 - **Triage every moved dependency and read the code diff of each Deep one**, whatever its version
   number, and verify each finding before relaying it — see
   [Step 10](impact.md#step-10-analyze-the-impact-of-every-change)
@@ -657,6 +671,8 @@ lookups and Step 11's changelog links all rely on.
   [Record the Direct Dependency Changes](javascript.md#record-the-direct-dependency-changes) and the
   release-age check's `404` and `not on rubygems.org` lines. Nor does one cover the tool, image and
   CircleCI orb pins in [Step 7](pins.md#step-7-update-tool-and-image-pins), which move to the newest
-  release of any age.
+  release of any age. The `packageManager` pin is the exception: its own lookup in
+  [Update the Package Manager Pin](pins.md#update-the-package-manager-pin) takes a release at least
+  one day old.
 - If no dependencies changed at all, inform the user and stop. A change to `yarn.lock` alone is put
   to the user first — see [Stop If Nothing Changed](pins.md#stop-if-nothing-changed).

@@ -40,18 +40,21 @@ is not one of them: it keeps `CHANGES.md` and publishes releases.
 - **`msgpack`** keeps a plain-text `ChangeLog` with no headings to anchor, so link the file itself
 - **`ssrf_filter`** puts the release date in each heading, so its slugs carry the date as well as
   the version — 1.6.0 slugs to the form `#160-982026`. Read the slug from the rendered page rather
-  than deriving it
+  than deriving it.
 
 ### Changelogs on Another Branch or Repository
 
 - **`appsignal`** 4.10.x patch releases are documented only on the `4.x-stable` branch, not `main`
-- **`cancancan`** has moved to `coorasse/cancancan`. The old URLs redirect, but link the new home
+- **`cancancan`** has moved to `coorasse/cancancan`. The old URLs redirect, but link the new home.
 
 ### Tool and Image Pins
 
 - **`jq`** tags its releases `jq-1.8.2`, so a `^v?[0-9]` tag filter returns nothing. Match the `jq-`
-  prefix
-- **Elasticsearch**'s GitHub release page is only a pointer. Link the real notes on `elastic.co`
+  prefix.
+- **Yarn** keeps no current changelog: the root `CHANGELOG.md` of `yarnpkg/berry` stops at 4.1.0.
+  Link the release, tagged `@yarnpkg/cli/<version>`, as
+  `https://github.com/yarnpkg/berry/releases/tag/%40yarnpkg/cli/<version>`.
+- **Elasticsearch**'s GitHub release page is only a pointer. Link the real notes on `elastic.co`.
 - **CircleCI orbs** carry no release notes in the registry. Find the orb's repository with
   `circleci orb source '<namespace>/<orb>@<version>' | grep -A3 '^display:'`, which prints it as
   `source_url`, and link its release for the full version the pin now resolves to, the one the

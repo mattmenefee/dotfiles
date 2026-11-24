@@ -3,8 +3,20 @@
 ## Step 4: Update JavaScript Dependencies
 
 Skip this step if the repository has no `yarn.lock`. Run every command in it from the repository
-root, where Yarn keeps the lock file, and read the Yarn version and the repository's own release-age
-gate first:
+root, where Yarn keeps the lock file.
+
+### Update the Package Manager
+
+When `package.json` pins Yarn in its `packageManager` field, bump that pin first, following
+[Update the Package Manager Pin](pins.md#update-the-package-manager-pin), so every command below
+runs on the new Yarn. A Yarn that moves from before 4.10 to 4.10 or later also gains the release-age
+gate that
+[Run Yarn with a Release-Age Gate and No Install Scripts](#run-yarn-with-a-release-age-gate-and-no-install-scripts)
+relies on.
+
+### Read the Yarn Version and Release-Age Gate
+
+Read the Yarn version and the repository's own release-age gate:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
@@ -32,7 +44,9 @@ caught and pulled before it can land, and no newly resolved package runs code on
   younger than the gate (see [Close Open Security Alerts](pins.md#close-open-security-alerts))
 
 Commands that resolve nothing — `yarn --version`, `yarn config get`, `yarn why` — take neither. The
-two variables:
+package manager bump above follows its own rules in
+[Update the Package Manager Pin](pins.md#update-the-package-manager-pin), where a one-day release
+lookup stands in for the gate. The two variables:
 
 - **`YARN_NPM_MINIMAL_AGE_GATE=1440`** skips any release younger than one day and takes the newest
   one old enough. The value is in minutes: Yarn 4.10 reads a duration such as `1d` as 1 minute with
