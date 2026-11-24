@@ -219,6 +219,79 @@ This route is also how to reword an older commit whose new message has a line st
 which `git history reword` strips. Pass `--cleanup=whitespace` to the `git commit`, or its editor
 step drops the line; the autosquash rebase then carries the message over as written.
 
+### When a Pending Stub Goes Stale
+
+A stub stays pending when the block above stops between its `git commit` and its rebase, or when
+another workflow commits stubs to fold later in one rebase. Its marker names the target by full SHA,
+which ties it to one commit object, so the marker goes stale whenever a rebase rewrites the target
+without folding the stub, as a plain restack onto a moved base does; an `-i` rebase under
+`rebase.autosquash` folds it instead. Autosquash matches the marker only against commits in its own
+todo list, so a later fold exits cleanly with the stub left behind and the target's message
+unchanged.
+
+Repair the marker, then stop. Rewriting one line of the stub's message is a reword, which is this
+skill's job, but when the stub folds is for whoever made it, so this is no exception to handing a
+pending fold back to the user: report the repair and leave the fold to the user or the workflow that
+made the stub. A stub this section's own block made folds with that block's
+`git rebase --autosquash <new target>~1`.
+
+1. **Map the commits** straight after the rebase, before another command moves `ORIG_HEAD`; if one
+   has, use the tip printed before the rebase in its place. The map gives the target's new SHA and
+   the stub's current one, and the `HEAD` it prints is the tip to recover to (see Reshaping
+   History):
+
+   ```bash
+   git branch --show-current && git rev-parse ORIG_HEAD HEAD && git range-diff ORIG_HEAD...HEAD
+   ```
+
+1. **Rewrite the marker and nothing else.** Each block builds the message file from the stub's own
+   message with only its first line replaced, rewrites the stub and then `diff`s its body against
+   the old one, which must print nothing. A stub is an empty commit, so the HEAD route needs
+   `--allow-empty`. For a stub at HEAD, the one route that keeps a line starting with `#`:
+
+   ```bash
+   old=$(git rev-parse <stub>) && msg=$(mktemp -t commit-msg) \
+     && { echo "amend! $(git rev-parse <new target>)"; git log -1 --format=%B "$old" | tail -n +2; } > "$msg" \
+     && [ "$old" = "$(git rev-parse HEAD)" ] && [ "$(git branch --show-current)" = <branch> ] \
+     && git commit --amend --only --allow-empty -F "$msg" --cleanup=whitespace \
+     && diff <(git log -1 --format=%B "$old" | tail -n +2) <(git log -1 --format=%B HEAD | tail -n +2)
+   ```
+
+   For a stub with commits after it, which `git history reword` rewrites along with every commit
+   after it:
+
+   ```bash
+   old=$(git rev-parse <stub>) && n=$(git rev-list --count "$old"..HEAD) && msg=$(mktemp -t commit-msg) \
+     && { echo "amend! $(git rev-parse <new target>)"; git log -1 --format=%B "$old" | tail -n +2; } > "$msg" \
+     && ! grep -q '^#' "$msg" && [ "$(git branch --show-current)" = <branch> ] \
+     && GIT_EDITOR="cp $msg" git history reword --update-refs=head "$old" \
+     && diff <(git log -1 --format=%B "$old" | tail -n +2) <(git log -1 --format=%B "HEAD~$n" | tail -n +2)
+   ```
+
+   The `grep` stops the chain when the body has a line starting with `#`, which `git history reword`
+   would strip; hand that repair back to the user. A `diff` that prints anything means the body
+   changed: recover with `git reset --soft` to the tip step 1 printed.
+
+1. **Trial the fold** in a throwaway worktree, which leaves the branch untouched. When several stubs
+   are pending, `<new target>` is the oldest of their targets:
+
+   ```bash
+   wt=$(mktemp -d) && git worktree add -q --detach "$wt" HEAD \
+     && GIT_EDITOR=true git -C "$wt" rebase -q --autosquash <new target>~1; \
+     git -C "$wt" log --format='%h %s' <new target>~1..HEAD; \
+     ! git -C "$wt" log --format=%s <new target>~1..HEAD | grep -qE '^(fixup|amend|squash)! ' \
+     && [ "$(git -C "$wt" rev-parse 'HEAD^{tree}')" = "$(git rev-parse 'HEAD^{tree}')" ] \
+     && echo "trial folds cleanly"; git worktree remove --force "$wt"
+   ```
+
+   The trial passes when it prints `trial folds cleanly` and its log shows the target under its new
+   subject. The `;` before `git worktree remove` runs it whatever the trial did, so a failed trial
+   leaves no worktree behind. As in the main block, use `--root` in place of `<new target>~1` when
+   the target is the root commit.
+
+The rewrite gave the stub and every commit after it a new SHA, so a branch already pushed needs the
+guarded force push under Reshaping History.
+
 ## Commit Message Guidelines
 
 Follow these commit message best practices:
