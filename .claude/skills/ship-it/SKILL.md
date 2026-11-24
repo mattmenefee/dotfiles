@@ -3,9 +3,10 @@ name: ship-it
 description: >-
   Ship the current dotfiles branch: rebase onto origin/main, refill the prose it changed, review
   each commit against its message, squash into the commits worth keeping on main, push, write the
-  pull request description, post finished review artifacts and handoff notes as collapsible
-  comments, mark the pull request ready, post the ship-it commit status main requires and offer to
-  watch CI and merge. Run it when a branch is done and about to go up for merge.
+  pull request description, mark the pull request ready so CI starts, post finished review artifacts
+  and handoff notes as collapsible comments while it runs, post the ship-it commit status main
+  requires and offer to watch CI and merge. Run it when a branch is done and about to go up for
+  merge.
 disable-model-invocation: true
 ---
 
@@ -23,9 +24,10 @@ pushed, and everything published is checked before it leaves the machine.
 1. Squash into as few commits as tell the story, once the user approves the list, and reword any
    message that misdescribes its commit
 1. Push
-1. Create or update the pull request
+1. Create or update the pull request, then mark it ready, if it is a draft, so CI starts
 1. Post review artifacts, an untracked plan and a handoff's durable sections as collapsible comments
-1. Mark the pull request ready, if it is a draft, and post the `ship-it` status `main` requires
+   while CI runs
+1. Post the `ship-it` status `main` requires
 1. Offer to watch CI and merge the pull request once it passes, for the head the user approves
 
 ## Arguments
@@ -57,7 +59,7 @@ Arguments: `$ARGUMENTS`
   ```
 
   It sits inside the git directory, so it is never committed, and each worktree has its own. Remove
-  it with `rm -rf -- '<work dir>'` when the run ends, after any background CI wait Step 7 started
+  it with `rm -rf -- '<work dir>'` when the run ends, after any background CI wait Step 5 started
   has reported.
 - **Write derived text with the `Write` tool, never a heredoc or `echo`.** That covers every commit
   message, pull request title and body, comment header and handoff comment: anything built from
@@ -513,8 +515,8 @@ the pull request exists: Step 7 reads the rollup again. A `CANCELLED` check was 
 later push or stopped by hand: it is neither a pass nor a failure, so leave the item open and ask
 rather than tick it or call it red. A check `SKIPPED` while the pull request is a draft has not run:
 CI skips drafts and starts when the pull request is marked ready, so leave the item open without
-calling it red; Step 7 starts the wait for that run. A CI item already ticked for an earlier commit
-is reopened until the rollup passes on this one.
+calling it red; Mark ready and start CI, below, starts the wait for that run. A CI item already
+ticked for an earlier commit is reopened until the rollup passes on this one.
 
 When an open pull request already has a body, carry over anything in it that was not derived from
 the commits, such as a note for a reviewer or a screenshot, and ask when unsure: the edit replaces
@@ -536,7 +538,8 @@ else
 fi
 ```
 
-A new pull request opens as a draft, so marking it ready waits for Step 7, which asks first.
+A new pull request opens as a draft, so marking it ready waits for the subsection below, which asks
+first.
 
 The title is read with `$(cat …)`, whose output the shell does not expand a second time, so a
 backticked command in it stays text. `--narrow` runs the secret check and the path terms only: a
@@ -544,9 +547,58 @@ dotfiles change routinely describes the shell's home variable and quotes `git@` 
 keys, while a home path or a credential is never acceptable. A hit stops the command; rewrite it in
 the file and run it again.
 
+### Mark ready and start CI
+
+CI skips a draft, so on a draft nothing has run yet. Mark the pull request ready here, before Step
+6, so CI runs while Step 6 asks its questions and posts, instead of starting only once every comment
+is up. Read its state:
+
+```bash
+gh pr view --json state,isDraft,labels \
+  --jq '"state=\(.state) draft=\(.isDraft) labels=\([.labels[].name] | join(","))"'
+```
+
+A review comment records how the review ended, so a pull request whose review is still open is not
+marked ready. Before asking, find what Step 6 will post: run its discovery block and settle which
+files belong to this run as it describes, asking here about a file whose Branch row names another
+branch or repository, or that has none. Carry each answer to Step 6, which does not ask again. Then
+run Step 6's check in Only finished reviews are posted on each review file this run will post.
+
+When that check finds an open finding, leave the pull request as it is: name the findings holding it
+and go on to Step 6, which posts the rest. Otherwise, if it is a draft or carries `wip`, ask with
+`AskUserQuestion` before marking it ready, stating the CI state Step 5's rollup block last read
+(passed on which commit, pending, canceled, failed or skipped until marked ready), since marking
+ready notifies watchers, before any review comment is up, and cannot be recalled. On approval, run
+`gh pr edit --remove-label wip` only when the labels printed include `wip`, and `gh pr ready` only
+when it printed `draft=true`.
+
+When this run marked the pull request ready and the CI item is still open, `gh pr ready` has just
+started CI on the head. Start the wait for it with the Bash tool's `run_in_background`, so the
+session is woken when it ends, and go on to Step 6 at once:
+
+```bash
+head=$(git rev-parse HEAD) || exit 1
+run=
+for _ in $(seq 30); do
+  run=$(gh run list --workflow ci.yml --commit "$head" --json databaseId,status \
+    --jq '[.[] | select(.status != "completed")][0].databaseId // empty')
+  [ -n "$run" ] && break
+  sleep 10
+done
+[ -n "$run" ] || { echo "no CI run started on $head" >&2; exit 1; }
+gh run watch "$run" --exit-status
+```
+
+When the CI run exits, whatever step this workflow has reached, finish the block or question in
+progress, then read the rollup again with Step 5's rollup block and tick the item by Step 5's rule,
+sending it with Step 5's check-and-send block, which edits the body and leaves the comments alone.
+When the CI run failed, or none started, leave the item open and say which.
+
 ## Step 6: Post Review Artifacts
 
-Look in the repository root for this branch's artifacts, recording each one's path:
+Look in the repository root for this branch's artifacts, recording each one's path. Mark ready and
+start CI in Step 5 has usually run this block already; run it again, which keeps every number it
+gave and picks up a file added since:
 
 ```bash
 work='<work dir>'
@@ -580,9 +632,10 @@ other in-flight work, so read each file's header table and post only those whose
 names the current branch in this repository. `/doc-review`, `/handoff` and `/update-deps` write it
 as a table row with **Branch** in the first cell and the backticked name in the second; a handoff
 follows the name with its base. Ask about one that names another branch or another repository, and
-about a review, impact file or handoff with no Branch row. A plan without a header belongs to the
-branch its filename names. A plan that `git ls-files` lists is tracked, which this repository's
-workflow never does: stop and ask the user about it rather than posting or deleting it.
+about a review, impact file or handoff with no Branch row, unless Step 5 already asked. A plan
+without a header belongs to the branch its filename names. A plan that `git ls-files` lists is
+tracked, which this repository's workflow never does: stop and ask the user about it rather than
+posting or deleting it.
 
 A number names one file for the whole run. Running discovery again keeps every number it gave and
 gives a new file the next free one; a source deleted after posting keeps its number, which the
@@ -604,10 +657,10 @@ command grep -n '^- \[ \]' /dev/null "$f"; b=$?
 ```
 
 If either grep printed anything, do not post that file. Name the open findings to the user and leave
-the file in place; the pull request stays out of ready (Step 7). Dispositions come from the user,
-never from a reviewer's recommendation, so do not mark any finding yourself. A review that quotes a
-summary row or an unchecked item at the start of a line can never pass this check; tell the user
-that is why, rather than loosening it.
+the file in place; Step 7 records no `ship-it` status while one stays open. Dispositions come from
+the user, never from a reviewer's recommendation, so do not mark any finding yourself. A review that
+quotes a summary row or an unchecked item at the start of a line can never pass this check; tell the
+user that is why, rather than loosening it.
 
 ### Deferred findings that describe a weakness
 
@@ -1057,25 +1110,16 @@ Only once both checks pass, ask with `AskUserQuestion`:
 When either check failed, say so and do not offer deletion. Delete only on the first answer, with
 the delete block above, naming the handoff's `artifact-<n>`.
 
-## Step 7: Mark Ready and Record the Run
+## Step 7: Record the Run
 
-```bash
-gh pr view --json state,isDraft,labels \
-  --jq '"state=\(.state) draft=\(.isDraft) labels=\([.labels[].name] | join(","))"'
-```
-
-When Step 5 left the CI item open, read the rollup again with Step 5's rollup block. If the checks
-now pass by Step 5's rule, tick the item with that commit's short SHA in `body.txt` and send it with
-Step 5's check-and-send block. Otherwise leave the item open.
+When the CI item is still open and Step 5's background wait is not running, read the rollup again
+with Step 5's rollup block. If the checks now pass by Step 5's rule, tick the item with that
+commit's short SHA in `body.txt` and send it with Step 5's check-and-send block. Otherwise leave the
+item open.
 
 On every run, name each finding listed under Step 6's Deferred findings that describe a weakness,
 with its follow-up, and ask whether that follow-up has landed. When Step 6 left a review unposted
-because a finding is open, leave the pull request as it is and tell the user which findings are
-holding it. Otherwise, if it is a draft or carries `wip`, ask with `AskUserQuestion` before marking
-it ready, stating the CI state just read (passed on which commit, pending, canceled, failed or
-skipped until marked ready), since marking ready notifies watchers and cannot be recalled. On
-approval, run `gh pr edit --remove-label wip` only when the labels printed include `wip`, and
-`gh pr ready` only when it printed `draft=true`.
+because a finding is open, tell the user which findings are holding the pull request.
 
 Then record the run, unless Step 6 left a review unposted because a finding is open. When a weakness
 deferral's follow-up named above has not landed, ask with `AskUserQuestion` whether to record the
@@ -1101,27 +1145,9 @@ Local HEAD, the pushed branch and the pull request's head must all name one comm
 lands on exactly what was reviewed, pushed and is about to merge. Carry the printed SHA forward as
 the recorded head; Step 8 merges only that commit.
 
-When this run marked the pull request ready and the CI item is still open, `gh pr ready` has just
-started CI on the head. Start the wait for it with the Bash tool's `run_in_background`, so the
-session is woken when it ends, rather than finishing with the item open:
-
-```bash
-head=$(git rev-parse HEAD) || exit 1
-run=
-for _ in $(seq 30); do
-  run=$(gh run list --workflow ci.yml --commit "$head" --json databaseId,status \
-    --jq '[.[] | select(.status != "completed")][0].databaseId // empty')
-  [ -n "$run" ] && break
-  sleep 10
-done
-[ -n "$run" ] || { echo "no CI run started on $head" >&2; exit 1; }
-gh run watch "$run" --exit-status
-```
-
-Then go on to Step 8 at once and ask its question while CI runs; never hold the question until the
-run ends. When the run exits, whatever the answer to Step 8, read the rollup again with Step 5's
-rollup block and tick the item by Step 5's rule, sending it with Step 5's check-and-send block. When
-the run failed, or none started, leave the item open and say which.
+When Step 5's background CI wait is still running, go on to Step 8 at once and ask its question
+while CI runs; never hold the question until the run ends. Its tick, described in Mark ready and
+start CI, applies whatever the answer to Step 8.
 
 ## Step 8: Watch CI and Merge
 
@@ -1131,7 +1157,7 @@ covers one head SHA only.
 
 1. **Decide whether to offer it.** Offer it only when both hold:
    - Step 7 recorded the `ship-it` status on the head. Without it `main`'s ruleset blocks the merge.
-   - The pull request is out of draft, marked ready by Step 7 or already so. CI skips a draft, so
+   - The pull request is out of draft, marked ready by Step 5 or already so. CI skips a draft, so
      there is nothing to watch.
 
    When either fails, skip this step and say why. When a weakness deferral's follow-up Step 7 named
@@ -1170,9 +1196,9 @@ covers one head SHA only.
          + " \(.detailsUrl // .targetUrl // "")")'
    ```
 
-   While `lint` is queued or in progress, wait for it: when Step 7's background wait on that run is
-   running, wait for its notification and apply Step 7's tick first, so it never runs after a merge;
-   otherwise wait with Step 7's background block. Then read the rollup again. When `lint` is absent,
+   While `lint` is queued or in progress, wait for it: when Step 5's background wait on that run is
+   running, wait for its notification and apply Step 5's tick first, so it never runs after a merge;
+   otherwise wait with Step 5's background block. Then read the rollup again. When `lint` is absent,
    or its latest check is still the draft run's `SKIPPED`, the run that marking ready starts has not
    registered: wait the same way, since that block first waits for a run to start. A `ship-it`
    missing from the list ends the step: the head has no status. `mergeStateStatus` `DIRTY` means a
@@ -1245,7 +1271,7 @@ covers one head SHA only.
 ## Finish
 
 Finish every run this way, including one that skipped Step 8 or stopped in `squash` mode. When Step
-7's background CI wait is still running, wait for its notification and apply Step 7's tick first:
+5's background CI wait is still running, wait for its notification and apply Step 5's tick first:
 the tick reads `title.txt` and `body.txt` from the work directory, and the report states the CI
 item. Then tell the user what was pushed and how, which files were posted and deleted, which were
 kept and why, whether the CI item was ticked and on which commit or what kept it open, whether the
@@ -1263,16 +1289,16 @@ the answer:
 - committing or discarding what `/reflow` refilled
 - the squash, with the proposed list, or the reword when no list was proposed
 - the force push, and the pinned-lease push when `--force-if-includes` refuses it
+- posting an artifact whose Branch row names another branch or repository, or has none
+- marking the pull request ready
 - the destination of each deferred finding, with the exact text of any issue to be filed
 - how to publish each deferred finding that describes a weakness
 - posting in full each Sensitive Information finding that names no value
-- posting an artifact whose Branch row names another branch or repository, or has none
 - dropping a Location line from a withheld finding's term list
 - posting a review, plan or handoff comment whose scrub hit a secret-shaped line, or that names a
   person, organization or Linear link
 - deleting a handoff, a `*-DOC-REVIEW*.md` with a withheld finding or a source whose redacted
   credentials await the user's word on rotation
-- marking the pull request ready
 - recording the `ship-it` status while a weakness deferral's follow-up has not landed
 - watching CI and merging, with the head SHA the answer covers
 - rerunning a CI job the runner failed
