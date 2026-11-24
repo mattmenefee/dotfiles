@@ -73,8 +73,9 @@ tmux key bindings and options are documented inline in `home/.tmux.conf`.
 1. Install tools managed by Homebrew
 
     The Brewfile installs the CircleCI CLI from a third-party tap, which Homebrew's cask-trust gate
-    blocks until it is explicitly trusted. Run the one-time `brew trust` first, then
-    [`brew bundle`][brew_bundle_link]:
+    blocks until it is explicitly trusted. It also installs Mac App Store apps through `mas`, which
+    cannot sign in on current macOS, so sign in through the App Store app. Run the one-time
+    `brew trust` first, then [`brew bundle`][brew_bundle_link]:
 
     ```shell
     cd ~/.homesick/repos/dotfiles/

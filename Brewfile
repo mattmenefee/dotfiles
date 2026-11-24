@@ -101,3 +101,15 @@ cask 'granola'
 cask 'claude' # Desktop app; Claude Code comes from Anthropic's installer (see README)
 brew 'gum' # Interactive terminal UI for multi-select menus in Claude Code commands
 cask 'agentsview' # Browse and search past AI coding sessions
+
+# Mac App Store apps
+# `mas` cannot sign in on current macOS: sign in through the App Store app before `brew bundle`. It
+# installs only apps that Apple ID already owns, and it runs `sudo` to install or upgrade one, so
+# run `brew bundle` in a terminal window: without a TTY, an outdated App Store app fails to upgrade.
+brew 'mas'
+mas 'AdBlock Pro', id: 1018301773
+mas 'Microsoft Excel', id: 462058435
+mas 'Microsoft Outlook', id: 985367838
+mas 'Microsoft PowerPoint', id: 462062816
+mas 'Microsoft Word', id: 462054704
+mas 'OneDrive', id: 823766827
