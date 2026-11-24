@@ -85,6 +85,74 @@ Record every bump for the commit message with its upstream release notes, in the
 other entries. [Step 12](SKILL.md#step-12-commit-push-and-create-the-pr) checks that every staged
 pin change has one.
 
+### Update the Package Manager Pin
+
+A root `package.json` can pin the package manager that Corepack runs for the repository, in its
+`packageManager` field (`"packageManager": "yarn@4.19.0"`). No package manager updates that field on
+its own, so read it:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+test -f package.json && jq -r '.packageManager // empty' package.json
+```
+
+Skip this section when it prints nothing, and when
+[Step 4](javascript.md#update-the-package-manager) already handled a Yarn pin, whether or not it
+moved. Otherwise the value is `<name>@<version>`, sometimes followed by a Corepack integrity hash
+(`+sha512.<hex>`, or `+sha224.<hex>` from an older Corepack). Leave a `yarn@1.x` pin alone: Yarn
+Classic is frozen, and moving to Yarn 2 or later is a migration, not a bump.
+
+Find the newest stable release — no prerelease suffix — within the pin's current major that was
+published at least one day ago. No package manager applies a release-age gate when it replaces
+itself, so this lookup is the gate. Yarn 2 and later publishes to npm as `@yarnpkg/cli-dist`, and
+pnpm and npm under their own names. Set `<major>` to the pin's major version:
+
+```bash
+cutoff="$(date -u -v-1d +%Y-%m-%dT%H:%M:%S)"
+npm view <package> time --json | jq -r --arg cutoff "$cutoff" --arg major '<major>' '
+  to_entries
+  | map(select((.key | test("^" + $major + "\\.[0-9]+\\.[0-9]+$")) and .value < $cutoff))
+  | sort_by(.key | split(".") | map(tonumber)) | last | .key // empty'
+```
+
+If it prints the pinned version or an older one, which happens when the pin itself is under a day
+old, there is nothing to bump. If it prints nothing, check that the `date` command printed a cutoff
+and that `<major>` is right, and tell the user if both are. A newer major waits for the user, as for
+any other pin; `npm view <package> dist-tags.latest` shows whether one exists.
+
+Check `corepack --version` before any bump: a hash can be written back, and the bump confirmed, only
+through Corepack. Node no longer ships it from version 25, so if the check fails, tell the user and
+leave the pin unbumped. Then bump the pin as follows; Yarn's own command also moves the files that
+go with it:
+
+- **Yarn** — `yarn set version <version>`, adding `--no-yarn-path` when `.yarnrc.yml` sets no
+  `yarnPath`: run outside Corepack, Yarn would otherwise vendor a release and add a `yarnPath` of
+  its own. It rewrites `packageManager`, and when `.yarnrc.yml` sets `yarnPath`, it also downloads
+  `.yarn/releases/yarn-<version>.cjs`, deletes the old release and points `yarnPath` at the new one.
+  It drops an integrity hash without a warning, so when the old pin carried one, run
+  `YARN_ENABLE_SCRIPTS=false corepack use yarn@<version>` afterwards to write it back. That runs an
+  install, which in Step 4 re-resolves nothing the lock file already records. In Step 7, which
+  reaches a Yarn pin only in a repository with no `yarn.lock`, the install resolves the whole tree
+  ungated and creates `yarn.lock`, `.pnp.cjs` and `.yarn`. Delete every file it added that
+  `git status --porcelain` shows as untracked before Step 12, which stages any `yarn.lock` that
+  exists.
+- **pnpm or npm** — edit the version in the field by hand. When the old pin carried a hash, run
+  `pnpm_config_ignore_scripts=true corepack use pnpm@<version>` or
+  `npm_config_ignore_scripts=true corepack use npm@<version>` instead, which writes the field with a
+  fresh hash and runs an install with no dependency scripts; pnpm ignores the `npm_config_` form.
+  The pnpm install rewrites `pnpm-lock.yaml` even when nothing resolves differently; the npm install
+  changes `package-lock.json` only when something does.
+
+[Step 12](SKILL.md#step-12-commit-push-and-create-the-pr) stages `package.json` and whichever of
+`.yarnrc.yml`, `.yarn/releases`, the Plug'n'Play files and the lock file changed, the old release's
+deletion included.
+
+Then run `corepack <name> --version` from the repository root, which should print the new version. A
+bare `npm --version` would not: `corepack enable` installs no npm shim by default, so it runs the
+system npm. Record the bump for the commit message with its release notes like any other pin;
+[Tool and Image Pins](changelogs.md#tool-and-image-pins) says where Yarn's live, and pnpm and npm
+publish theirs as ordinary GitHub releases.
+
 ### Verify the Bumps
 
 After bumping a mise pin, install it and run it from the directory that holds the pin —
